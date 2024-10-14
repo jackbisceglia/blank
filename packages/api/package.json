@@ -1,0 +1,10 @@
+{
+  "name": "@blank/api-main",
+  "version": "0.0.0",
+  "dependencies": {
+    "@hono/zod-validator": "^0.4.1",
+    "@blank/core": "*",
+    "hono": "^4.6.3",
+    "sst": "3.2.12"
+  }
+}
