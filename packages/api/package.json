@@ -1,9 +1,12 @@
 {
   "name": "@blank/api-main",
   "version": "0.0.0",
+  "exports": {
+    ".": "./src/index.ts"
+  },
   "dependencies": {
-    "@hono/zod-validator": "^0.4.1",
     "@blank/core": "*",
+    "@hono/zod-validator": "^0.4.1",
     "hono": "^4.6.3",
     "sst": "3.2.12"
   }

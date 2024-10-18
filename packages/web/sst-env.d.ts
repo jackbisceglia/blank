@@ -5,16 +5,27 @@ import "sst"
 export {}
 declare module "sst" {
   export interface Resource {
-    "api": {
+    "API": {
       "name": string
       "type": "sst.aws.Function"
       "url": string
     }
-    "db": {
+    "DATABASE": {
       "database": string
+      "host": string
+      "password": string
       "type": "sst.sst.Linkable"
+      "user": string
     }
-    "web": {
+    "DatabaseHost": {
+      "type": "sst.sst.Secret"
+      "value": string
+    }
+    "DatabasePassword": {
+      "type": "sst.sst.Secret"
+      "value": string
+    }
+    "WEB": {
       "type": "sst.aws.SolidStart"
       "url": string
     }

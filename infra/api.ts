@@ -1,7 +1,7 @@
-import db from "./db";
+import database from "./database";
 
-export default new sst.aws.Function("api", {
+export default new sst.aws.Function("API", {
   url: true,
-  link: [db],
-  handler: "packages/api/src/index",
+  link: [database],
+  handler: "packages/api/src/index.default",
 });

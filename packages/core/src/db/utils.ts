@@ -5,6 +5,7 @@ import {
   TableConfig,
   text,
 } from "drizzle-orm/pg-core";
+import { Resource } from "sst";
 import { uuidv7 as genUUIDv7 } from "uuidv7";
 
 export const uuidv7 = (columnName?: string) =>
@@ -19,7 +20,9 @@ export type Show<T> = {
   [K in keyof T]: T[K];
 } & {};
 
-export const table = pgTableCreator((name) => `div_${name}`);
+export const createTable = pgTableCreator(
+  (name) => `${Resource.App.name}_${name}`
+);
 
 export const transformEnumToArray = (categories: string) =>
   categories.split(",");
