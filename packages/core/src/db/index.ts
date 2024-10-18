@@ -1,18 +1,12 @@
-import { Pool } from "pg";
 import { Resource } from "sst";
-import { drizzle } from "drizzle-orm/node-postgres";
+import { drizzle } from "drizzle-orm/neon-http";
+import { neon } from "@neondatabase/serverless";
 
-// TODO: rework to use neon probably
-// const client = new Pool({
-//   user: Resource.Postgres.username,
-//   password: Resource.Postgres.password,
-//   database: Resource.Postgres.database,
-//   host: Resource.Postgres.host,
-//   port: Resource.Postgres.port,
-// });
+const { host, user, password, database } = Resource.DATABASE;
 
-// export const db = drizzle(client);
+export const db = drizzle(
+  neon(`postgresql://${user}:${password}@${host}/${database}`)
+);
 
-export * as transactions from "./transactions";
-export * as transactionsSQL from "./transactions.schema";
-export * as utils from "./utils";
+export * from "./transaction.schema";
+export * from "./transaction";
