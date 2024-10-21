@@ -21,7 +21,7 @@ export type Show<T> = {
 } & {};
 
 export const createTable = pgTableCreator(
-  (name) => `${Resource.App.name}_${name}`
+  (name) => `${Resource.App.name}_${name}`,
 );
 
 export const transformEnumToArray = (categories: string) =>
@@ -30,7 +30,7 @@ export const transformArrayToEnum = (categories: string[]) =>
   categories.join(",");
 
 export function zodTransformSqliteEnumToArray<T>(
-  obj: { categories: string | null } & Omit<T, "categories">
+  obj: { categories: string | null } & Omit<T, "categories">,
 ) {
   if (!obj.categories)
     return {
