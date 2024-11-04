@@ -1,8 +1,8 @@
-import { defineConfig } from "@solidjs/start/config";
+import { defineConfig } from '@solidjs/start/config';
 
 export default defineConfig({
   ssr: false,
   server: {
-    preset: "aws-lambda",
+    preset: 'aws-lambda',
   },
 });

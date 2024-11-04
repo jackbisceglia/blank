@@ -1,7 +1,8 @@
-import { LLMOpts, llmToObject, providers } from "./core";
-import { PayeeInsert, TransactionInsert } from "../db/transaction.schema";
-import { prompts } from "./prompts";
-import { z } from "zod";
+import { PayeeInsert, TransactionInsert } from '../db/transaction.schema';
+import { LLMOptions, llmToObject, providers } from './core';
+import prompts from './prompts';
+
+import { z } from 'zod';
 
 /* 
   we need to transform the TransactionInsert schema a little
@@ -26,28 +27,28 @@ export const TransactionParseable = TransactionInsert.omit({
 export type TransactionParseable = z.infer<typeof TransactionParseable>;
 
 // module for parsing natural language queries into data entities
-export module nl {
-  export async function toTransaction(
-    input: string,
-    provider?: LLMOpts["provider"],
-  ): Promise<TransactionParseable | null> {
-    const opts = {
-      provider: provider ?? providers.default,
-    };
+export async function nlToParsedTransaction(
+  input: string,
+  provider?: LLMOptions['provider'],
+): Promise<TransactionParseable | null> {
+  const opts = {
+    provider: provider ?? providers.default,
+  };
 
-    try {
-      const transaction = await llmToObject(
-        prompts.nlToTransaction(),
-        input,
-        TransactionParseable,
-        opts,
-      );
+  try {
+    const transaction = await llmToObject(
+      prompts.nlToTransaction(),
+      input,
+      TransactionParseable,
+      opts,
+    );
 
-      return transaction;
-    } catch (e) {
-      e instanceof Error && console.log(e.message);
-      // TODO: need to handle this better, for now returning null signifies no object was generated
-      return null;
+    return transaction;
+  } catch (e) {
+    if (e instanceof Error) {
+      console.log(e.message);
     }
+    // TODO: need to handle this better, for now returning null signifies no object was generated
+    return null;
   }
 }

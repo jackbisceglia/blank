@@ -1,7 +1,8 @@
-import { describe, expect, test } from "bun:test";
-import { Transaction } from "../db";
-import { constants, LLMOptions, providers } from "./core";
-import { nl, TransactionParseable } from ".";
+import { nlToParsedTransaction, TransactionParseable } from '.';
+import { Transaction } from '../db';
+import { constants, LLMOptions, pad, providers, separated } from './core';
+
+import { describe, expect, test } from 'bun:test';
 
 type TestOptions = {
   log?: {
@@ -16,92 +17,88 @@ export type MockTransaction = {
 
 const newTransaction = (
   description: string,
-  amount: Transaction["amount"],
+  amount: Transaction['amount'],
   paidBy: string,
   paidFor: string[],
 ): TransactionParseable => ({
   description,
   amount,
-  payerName: paidBy, //
+  payerName: paidBy,
   payees: paidFor.map((payeeName) => ({ payeeName })),
 });
 
 // todo: update db to include multiple payees
-export const mockTransactions: MockTransaction[] = [
-  {
-    given: "Split coffee with Jane Doe, $18",
-    toMatch: newTransaction("Coffee", 18, constants.sender, ["Jane Doe"]),
-  },
-  {
-    given: "Between John and I, that dinner came to $85",
-    toMatch: newTransaction("Dinner", 85, constants.sender, ["John"]),
-  },
-  {
-    given: "Internet for January, $110. Me and Jane Doe.",
-    toMatch: newTransaction("Internet for January", 110, constants.sender, [
-      "Jane Doe",
-    ]),
-  },
-  {
-    given: "Grocery store this week cost 67.50. Split with John.",
-    toMatch: newTransaction("Grocery store", 67.5, constants.sender, ["John"]),
-  },
-  {
-    given: "Movie tickets on Saturday with Jane, $30",
-    toMatch: newTransaction("Movie tickets", 30, constants.sender, ["Jane"]),
-  },
-  {
-    given: "Cleaning supplies at Superstore with John. $22.99",
-    toMatch: newTransaction("Cleaning supplies", 22.99, constants.sender, [
-      "John",
-    ]),
-  },
-  {
-    given: "Utilities bill was 95.75, Jane and I.",
-    toMatch: newTransaction("Utilities bill", 95.75, constants.sender, [
-      "Jane",
-    ]),
-  },
-  {
-    given: "LocalMart w/ John Doe, $62",
-    toMatch: newTransaction("LocalMart", 62, constants.sender, ["John Doe"]),
-  },
+const suite: [string, TransactionParseable][] = [
+  [
+    'Split coffee with Jane Doe, $18',
+    newTransaction('Coffee', 18, constants.sender, ['Jane Doe']),
+  ],
+  [
+    'Between John and I, that dinner came to $85',
+    newTransaction('Dinner', 85, constants.sender, ['John']),
+  ],
+  [
+    'Internet for January, $110. Me and Jane Doe.',
+    newTransaction('Internet for January', 110, constants.sender, ['Jane Doe']),
+  ],
+  [
+    'Grocery store this week cost 67.50. Split with John.',
+    newTransaction('Grocery store', 67.5, constants.sender, ['John']),
+  ],
+  [
+    'Movie tickets on Saturday with Jane, $30',
+    newTransaction('Movie tickets', 30, constants.sender, ['Jane']),
+  ],
+  [
+    'Cleaning supplies at Superstore with John. $22.99',
+    newTransaction('Cleaning supplies', 22.99, constants.sender, ['John']),
+  ],
+  [
+    'Utilities bill was 95.75, Jane and I.',
+    newTransaction('Utilities bill', 95.75, constants.sender, ['Jane']),
+  ],
+  [
+    'LocalMart w/ John Doe, $62',
+    newTransaction('LocalMart', 62, constants.sender, ['John Doe']),
+  ],
 ];
 
-const suite = mockTransactions;
-
 function testTransactionParsingPerModel(
-  provider: LLMOptions["provider"],
+  provider: LLMOptions['provider'],
   opts?: TestOptions,
 ) {
-  describe.each(suite.map((s) => [s.given, s.toMatch]))(
+  describe.each(suite)(
     `${provider} should parse as expected`,
-    async (given, toMatch) => {
-      const parsed = await nl.toTransaction(given, provider);
+    //async (given, toMatch) => {
+    async (entry, shape) => {
+      const parsed = await nlToParsedTransaction(entry, provider);
 
       if (!parsed) {
-        throw new Error("Issue parsing returned object");
+        throw new Error('Issue parsing returned object');
       }
 
       if (opts?.log?.description) {
-        console.log("roughly: ", toMatch.description);
-        console.log("got: ", parsed.description);
-        console.log("\n");
+        const logs = [
+          `roughly: ${shape.description}`,
+          `got: ${parsed.description}`,
+        ];
+
+        console.log(pad(separated(logs), 2));
       }
 
-      test(`Parsed should match expected when input is "${given}"`, async () => {
+      test(`Parsed should match expected when input is "${entry}"`, () => {
         const expected = {
-          ...toMatch,
-          description: expect.stringContaining(toMatch.description),
+          ...shape,
+          description: expect.stringContaining(shape.description) as string,
         };
 
         expect(parsed).toEqual(expected);
       });
 
-      test(`Parsed should match expected when input is "${given}"`, async () => {
+      test(`Parsed should match expected when input is "${entry}"`, () => {
         const notExpected = {
-          ...toMatch,
-          description: expect.stringContaining(constants.unrelated),
+          ...shape,
+          description: expect.stringContaining(constants.unrelated) as string,
         };
 
         expect(parsed).not.toEqual(notExpected);

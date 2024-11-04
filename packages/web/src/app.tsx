@@ -1,20 +1,26 @@
-import "./app.css";
+import './app.css';
 
-import { FileRoutes } from "@solidjs/start/router";
-import Nav from "./components/Nav";
-import { Router } from "@solidjs/router";
-import { Suspense } from "solid-js";
+import Nav from './components/Nav';
 
-export default function App() {
+import { Router, RouteSectionProps } from '@solidjs/router';
+import { FileRoutes } from '@solidjs/start/router';
+import { ClerkProvider } from 'clerk-solidjs';
+import { Suspense } from 'solid-js';
+
+function Application(props: RouteSectionProps) {
   return (
-    <Router
-      root={(props) => (
-        <>
-          <Nav />
-          <Suspense>{props.children}</Suspense>
-        </>
-      )}
+    <ClerkProvider
+      publishableKey={import.meta.env.VITE_CLERK_PUBLISHABLE_KEY as string}
     >
+      <Nav />
+      <Suspense>{props.children}</Suspense>
+    </ClerkProvider>
+  );
+}
+
+export default function Root() {
+  return (
+    <Router root={Application}>
       <FileRoutes />
     </Router>
   );
