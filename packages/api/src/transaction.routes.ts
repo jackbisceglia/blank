@@ -1,75 +1,103 @@
-import * as z from "zod";
+import { requireAuthenticated } from './utils';
 
-import { TransactionInsert, transaction } from "@blank/core/db";
+import { nlToParsedTransaction, TransactionParseable } from '@blank/core/ai';
+import { transaction, TransactionInsertWithPayees } from '@blank/core/db';
 
-import { Hono } from "hono";
-import { nl } from "@blank/core/ai";
-// fix imports
-import { zValidator } from "@hono/zod-validator";
+import { zValidator } from '@hono/zod-validator';
+import { Hono } from 'hono';
+import * as z from 'zod';
+
+import { setTimeout } from 'timers/promises';
+
+const CreateBodySchema = z.union([
+  z.object({
+    type: z.literal('default'),
+    payload: TransactionInsertWithPayees,
+  }),
+  z.object({
+    type: z.literal('natural_language'),
+    payload: z.string(), // bring this into nl module/dir w/ more constraints
+  }),
+]);
 
 const api = new Hono()
-  .get("/", async (c) => {
+  .get('/', async (c) => {
+    requireAuthenticated(c);
+    console.log(c.req.header('Authorization'));
+
     const all = await transaction.getAll();
 
     return c.json(all);
   })
   .post(
-    "/",
-    zValidator(
-      "json",
-      z.object({
-        body: z.object({
-          // TODO: replace with new zod schema exported from core/ai
-          payload: TransactionInsert.or(z.string()),
-        }),
-      })
-    ),
+    '/',
+    zValidator('json', z.object({ body: CreateBodySchema })),
     async (c) => {
-      const { body } = c.req.valid("json");
+      const auth = requireAuthenticated(c);
+
+      const { body } = c.req.valid('json');
+
+      const getInsertableFromNl = async (input: string, userId: string) => {
+        const parsed = await nlToParsedTransaction(input);
+
+        const transformed = transaction.transformParsedToInsertable(
+          parsed ?? ({} as TransactionParseable),
+          userId,
+        );
+
+        return transformed;
+      };
 
       // here we either get the transaction, or generate it via ai depending on the shape of body
-      async function deriveTransactionInsertion() {
-        const toInsert =
-          typeof body.payload === "string"
-            ? await nl.toTransaction(body.payload)
-            : body.payload;
+      const insertableTransactionData =
+        body.type === 'default'
+          ? body.payload
+          : await getInsertableFromNl(body.payload, auth.userId);
 
-        return toInsert;
+      const rows = await transaction.create(insertableTransactionData);
+
+      if (!rows.length) {
+        throw new Error('Failed to create transaction');
       }
 
-      const newTransaction = await transaction.create(
-        await deriveTransactionInsertion()
+      const newTransaction = rows[0];
+
+      const newPayees = await transaction.createPayees(
+        insertableTransactionData.payees,
+        newTransaction.id,
       );
 
-      return c.json(newTransaction);
-    }
+      return c.json({
+        ...newTransaction,
+        payees: newPayees,
+      });
+    },
   )
   .delete(
-    "/",
+    '/:id',
     zValidator(
-      "json",
+      'param',
       z.object({
-        body: z.object({
-          action: z.literal(`all`),
-        }),
-      })
+        id: z.string(),
+      }),
     ),
     async (c) => {
-      console.log("hit?");
-      const { body } = c.req.valid("json");
-      switch (body.action) {
-        case "all":
-          const deleted = await transaction.deleteAll();
-          console.log(deleted.rowCount);
+      requireAuthenticated(c);
 
-          return c.json(deleted);
+      await setTimeout(3000);
+
+      const param = c.req.valid('param');
+
+      const rows = await transaction.deleteById(param.id);
+
+      if (!rows.length) {
+        throw new Error('Failed to create transaction');
       }
-    }
-  )
-  .post("/random", async (c) => {
-    const newTransaction = await transaction.createRandom();
 
-    return c.json(newTransaction);
-  });
+      const deletedTransaction = rows[0];
+
+      return c.json(deletedTransaction);
+    },
+  );
 
 export default api;

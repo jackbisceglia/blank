@@ -1,23 +1,23 @@
-import { mistral } from "@ai-sdk/mistral";
-import { openai } from "@ai-sdk/openai";
-import { generateObject } from "ai";
-import { z } from "zod";
+import { mistral } from '@ai-sdk/mistral';
+import { openai } from '@ai-sdk/openai';
+import { generateObject } from 'ai';
+import { z } from 'zod';
 
 export const constants = {
-  sender: "SENDER",
-  unrelated: "UNRELATED",
+  sender: 'SENDER',
+  unrelated: 'UNRELATED',
 };
 
 export const providers = {
-  openai: "openai",
-  mistral: "mistral",
-  default: "openai",
+  openai: 'openai',
+  mistral: 'mistral',
+  default: 'openai',
 } as const;
 
 const models = {
-  openai: openai("gpt-4o"),
-  mistral: mistral("mistral-large-latest"),
-  default: openai("gpt-4o"),
+  openai: openai('gpt-4o'),
+  mistral: mistral('mistral-large-latest'),
+  default: openai('gpt-4o'),
 };
 
 export type LLMOptions = {
@@ -38,8 +38,17 @@ export const llmToObject = async <T>(
   });
 
   if (!object) {
-    throw new Error("LLM did not return an object");
+    throw new Error('LLM did not return an object');
   }
 
   return object;
+};
+
+export const separated = (lines: string[]) => lines.join('\n');
+
+export const pad = (str: string, pad: number) => {
+  const front = Array.from({ length: pad });
+  const back = Array.from({ length: pad });
+
+  return [...front, str, ...back].join('\n');
 };
