@@ -44,11 +44,41 @@ export const llmToObject = async <T>(
   return object;
 };
 
-export const separated = (lines: string[]) => lines.join('\n');
+export class LoggerBuilder {
+  private content: string;
 
-export const pad = (str: string, pad: number) => {
-  const front = Array.from({ length: pad });
-  const back = Array.from({ length: pad });
+  constructor(initial: string | undefined) {
+    this.content = initial ?? '';
+  }
 
-  return [...front, str, ...back].join('\n');
-};
+  pad(size: number | { t?: number; b?: number }): this {
+    const top = size instanceof Object ? size.t : size;
+    const bottom = size instanceof Object ? size.b : size;
+
+    const topBuffer = Array.from({ length: top ?? 0 });
+    const bottomBuffer = Array.from({ length: bottom ?? 0 });
+
+    this.content = [...topBuffer, this.content, ...bottomBuffer].join('\n');
+
+    return this;
+  }
+
+  separate(lines: string[]): this {
+    this.content = lines.join('\n');
+
+    return this;
+  }
+
+  out(): void {
+    if (typeof this.content !== 'string') {
+      this.separate(this.content);
+    }
+
+    console.log(this.content);
+  }
+}
+
+// i have no idea why i/ai even wrote this but it looks cool
+export function logger(initial?: string) {
+  return new LoggerBuilder(initial);
+}

@@ -1,6 +1,6 @@
 import { nlToParsedTransaction, TransactionParseable } from '.';
 import { Transaction } from '../db';
-import { constants, LLMOptions, pad, providers, separated } from './core';
+import { constants, LLMOptions, logger, providers } from './core';
 
 import { describe, expect, test } from 'bun:test';
 
@@ -67,9 +67,12 @@ function testTransactionParsingPerModel(
   provider: LLMOptions['provider'],
   opts?: TestOptions,
 ) {
+  if (opts?.log?.description) {
+    console.log('testing with: ', provider);
+  }
+
   describe.each(suite)(
     `${provider} should parse as expected`,
-    //async (given, toMatch) => {
     async (entry, shape) => {
       const parsed = await nlToParsedTransaction(entry, provider);
 
@@ -78,12 +81,13 @@ function testTransactionParsingPerModel(
       }
 
       if (opts?.log?.description) {
-        const logs = [
-          `roughly: ${shape.description}`,
-          `got: ${parsed.description}`,
-        ];
-
-        console.log(pad(separated(logs), 2));
+        logger()
+          .separate([
+            `roughly: ${shape.description}`,
+            `got: ${parsed.description}`,
+          ])
+          .pad({ t: 1 })
+          .out();
       }
 
       test(`Parsed should match expected when input is "${entry}"`, () => {
