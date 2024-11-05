@@ -30,6 +30,7 @@ export default function NewPage() {
       form.reset();
 
       if (shouldRedirect()) {
+        console.log('redirecting');
         navigate('/');
       }
     }
@@ -94,7 +95,7 @@ export default function NewPage() {
       </h1>
       <form
         class="w-full max-w-xl mx-auto mt-4 rounded-lg p-6"
-        onSubmit={void handleCreateNaturalLangaugeTransaction}
+        onSubmit={(e) => void handleCreateNaturalLangaugeTransaction(e)}
       >
         <div class="mb-4 text-left">
           <label
