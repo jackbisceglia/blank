@@ -1,10 +1,14 @@
+import { buttonVariants } from '@/components/ui/button';
+import { A } from '@solidjs/router';
+
 export default function LandingPage() {
   return (
-    <main class="px-4 mx-auto max-w-5xl text-center min-h-screen flex font-mono">
+    <main class="px-4 mx-auto max-w-5xl text-center min-h-screen flex">
       {/* Update the text color to match your brand */}
       <section class="py-24 space-y-6 mt-24 mx-auto">
-        <h1 class="lowercase text-4xl font-bold text-brand-primary">
-          Split Expenses, Effortlessly
+        <h1 class="lowercase text-4xl text-brand-primary">
+          Split Expenses{' '}
+          <span class="text-ui-primary font-bold">Effortlessly</span>
         </h1>
         <div>
           <p class="lowercase font-light text-gray-300 px-12">
@@ -12,18 +16,24 @@ export default function LandingPage() {
           </p>
         </div>
         <div class="flex justify-center gap-4 mb-10 text-xs uppercase">
-          <a
+          <A
             href="/sign-up"
-            class="text-white py-3 px-6 rounded-md hover:bg-brand-secondary transition"
+            classList={{
+              [buttonVariants({ variant: 'outline' })]: true,
+              ['py-3 px-6']: true,
+            }}
           >
             Get Started
-          </a>
-          <a
+          </A>
+          <A
             href="/about"
-            class="border border-brand-primary py-3 px-6 rounded-md hover:bg-brand-primary hover:text-white transition"
+            classList={{
+              [buttonVariants({ variant: 'default' })]: true,
+              ['py-3 px-6']: true,
+            }}
           >
             Learn More
-          </a>
+          </A>
         </div>
       </section>
     </main>

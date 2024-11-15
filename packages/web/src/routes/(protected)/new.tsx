@@ -1,5 +1,4 @@
-import { api } from '~/lib/hono';
-
+import { api } from '@/lib/hono';
 import { revalidate, useNavigate } from '@solidjs/router';
 import { onMount } from 'solid-js';
 import { DOMElement } from 'solid-js/jsx-runtime';
@@ -30,7 +29,6 @@ export default function NewPage() {
       form.reset();
 
       if (shouldRedirect()) {
-        console.log('redirecting');
         navigate('/');
       }
     }
@@ -48,37 +46,50 @@ export default function NewPage() {
     const nl = formData.get(inputName) as string;
 
     // can prefix with "<number>x" to insert multiple transactions
-    const DEV_MODE_NUM_INSERTS = import.meta.env.DEV
-      ? parseInt(nl.split(' ').at(0)?.replace('x', '') ?? '1')
-      : 1;
+    const words = nl.split(' ');
+    const DEV_MODE_NUM_INSERTS =
+      words.at(0)?.includes('x') && import.meta.env.DEV
+        ? parseInt(words.at(0)?.replace('x', '') ?? '1')
+        : 1;
+
+    const payload = DEV_MODE_NUM_INSERTS > 1 ? words.slice(1).join(' ') : nl;
 
     const res = await api.transactions.$post({
       json: {
         body: {
           type: 'natural_language',
-          payload: nl,
+          payload: payload,
         },
       },
     });
 
     if (DEV_MODE_NUM_INSERTS && DEV_MODE_NUM_INSERTS > 1) {
+      const augmentNL = (suffix: string) =>
+        `${payload.split(' ').at(0) ?? ''}${suffix} ${payload.split(' ').slice(1).join(' ')}`;
+
       console.log('dev: ', DEV_MODE_NUM_INSERTS);
-      await Promise.all(
-        Array.from({ length: DEV_MODE_NUM_INSERTS - 1 }).map(() => {
-          return api.transactions.$post({
+
+      const promises: Promise<unknown>[] = [];
+      for (let i = 0; i < DEV_MODE_NUM_INSERTS; i++) {
+        const suffix = Math.random().toString(36).substring(3, 5);
+        const payload = augmentNL(suffix);
+
+        promises.push(
+          api.transactions.$post({
             json: {
               body: {
                 type: 'natural_language',
-                payload: nl,
+                payload: payload,
               },
             },
-          });
-        }),
-      );
+          }),
+        );
+      }
+
+      await Promise.allSettled(promises);
     }
 
     if (!res.ok) {
-      console.log('did we throw ?');
       throw new Error(`HTTP error! status: ${res.status.toString()}`);
     }
 
@@ -109,7 +120,7 @@ export default function NewPage() {
             type="text"
             name={inputName}
             id="transaction-name"
-            class="w-full px-3 py-2 border border-gray-500 rounded-md bg-neutral-900 focus:outline-none focus:ring-1 focus:ring-gray-400 transition duration-150 ease-in-out"
+            class="w-full px-3 py-2 border border-gray-500 rounded-md bg-ui-background focus:outline-none focus:ring-1 focus:ring-gray-400 transition duration-150 ease-in-out"
             placeholder="coffee, $18, split with..."
           />
         </div>
@@ -117,14 +128,14 @@ export default function NewPage() {
           <button
             type="submit"
             data-create-strategy={mutateStrategies.redirect}
-            class="uppercase w-full bg-neutral-600 text-white font-medium py-2 px-4 rounded-md hover:bg-neutral-700 focus:outline-none focus:ring-1 focus:ring-gray-400"
+            class="uppercase w-full bg-muted text-white font-medium py-2 px-4 rounded-md hover:bg-ui-background focus:outline-none focus:ring-1 focus:ring-gray-400"
           >
             Create
           </button>
           <button
             type="submit"
             data-create-strategy={mutateStrategies.stay}
-            class="uppercase w-full bg-neutral-600 text-white font-medium py-2 px-4 rounded-md hover:bg-neutral-700 focus:outline-none focus:ring-1 focus:ring-gray-400"
+            class="uppercase w-full bg-muted text-white font-medium py-2 px-4 rounded-md hover:bg-ui-background focus:outline-none focus:ring-1 focus:ring-gray-400"
           >
             Create & New
           </button>

@@ -1,13 +1,15 @@
 import { requireAuthenticated } from './utils';
 
-import { nlToParsedTransaction, TransactionParseable } from '@blank/core/ai';
+import {
+  nlToParsedTransaction,
+  providers,
+  TransactionParseable,
+} from '@blank/core/ai';
 import { transaction, TransactionInsertWithPayees } from '@blank/core/db';
 
 import { zValidator } from '@hono/zod-validator';
 import { Hono } from 'hono';
 import * as z from 'zod';
-
-import { setTimeout } from 'timers/promises';
 
 const CreateBodySchema = z.union([
   z.object({
@@ -16,16 +18,15 @@ const CreateBodySchema = z.union([
   }),
   z.object({
     type: z.literal('natural_language'),
-    payload: z.string(), // bring this into nl module/dir w/ more constraints
+    payload: z.string().refine((input) => input.split(' ').length >= 3),
   }),
 ]);
 
 const api = new Hono()
   .get('/', async (c) => {
-    requireAuthenticated(c);
-    console.log(c.req.header('Authorization'));
+    const auth = requireAuthenticated(c);
 
-    const all = await transaction.getAll();
+    const all = await transaction.getAllByUserId(auth.userId);
 
     return c.json(all);
   })
@@ -38,7 +39,7 @@ const api = new Hono()
       const { body } = c.req.valid('json');
 
       const getInsertableFromNl = async (input: string, userId: string) => {
-        const parsed = await nlToParsedTransaction(input);
+        const parsed = await nlToParsedTransaction(input, providers.openai);
 
         const transformed = transaction.transformParsedToInsertable(
           parsed ?? ({} as TransactionParseable),
@@ -84,8 +85,6 @@ const api = new Hono()
     async (c) => {
       requireAuthenticated(c);
 
-      await setTimeout(3000);
-
       const param = c.req.valid('param');
 
       const rows = await transaction.deleteById(param.id);
@@ -97,6 +96,32 @@ const api = new Hono()
       const deletedTransaction = rows[0];
 
       return c.json(deletedTransaction);
+    },
+  )
+  .delete(
+    '/',
+    zValidator(
+      'json',
+      z.object({
+        body: z.object({
+          ids: z.string().array(),
+        }),
+      }),
+    ),
+    async (c) => {
+      requireAuthenticated(c);
+
+      const payload = c.req.valid('json');
+
+      const rows = await transaction.deleteByIds(payload.body.ids);
+
+      if (!rows.length) {
+        throw new Error('Failed to create transaction');
+      }
+
+      const deletedTransactions = rows;
+
+      return c.json(deletedTransactions);
     },
   );
 

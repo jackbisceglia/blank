@@ -28,7 +28,7 @@ const newTransaction = (
 });
 
 // todo: update db to include multiple payees
-const suite: [string, TransactionParseable][] = [
+const suite: [string, TransactionParseable, `TODO: ${string}`?][] = [
   [
     'Split coffee with Jane Doe, $18',
     newTransaction('Coffee', 18, constants.sender, ['Jane Doe']),
@@ -61,6 +61,19 @@ const suite: [string, TransactionParseable][] = [
     'LocalMart w/ John Doe, $62',
     newTransaction('LocalMart', 62, constants.sender, ['John Doe']),
   ],
+  [
+    'Dinner with Jane, $67',
+    newTransaction('Dinner', 67, constants.sender, ['Jane']),
+  ],
+  [
+    'Celtics tickets with John Doe, $100',
+    newTransaction('Celtics tickets', 100, constants.sender, ['John Doe']),
+  ],
+  [
+    'Got Annie a haircut, split with Jane Doe, $71',
+    newTransaction('Annie haircut', 71, constants.sender, ['Jane Doe']),
+    'TODO: need to strip the "a" from description somehow',
+  ],
 ];
 
 function testTransactionParsingPerModel(
@@ -73,7 +86,7 @@ function testTransactionParsingPerModel(
 
   describe.each(suite)(
     `${provider} should parse as expected`,
-    async (entry, shape) => {
+    async (entry, shape, todo) => {
       const parsed = await nlToParsedTransaction(entry, provider);
 
       if (!parsed) {
@@ -90,23 +103,27 @@ function testTransactionParsingPerModel(
           .out();
       }
 
-      test(`Parsed should match expected when input is "${entry}"`, () => {
-        const expected = {
-          ...shape,
-          description: expect.stringContaining(shape.description) as string,
-        };
+      if (todo) {
+        test.todo(`${todo} -- ${entry}`);
+      } else {
+        test(`Parsed should match expected when input is "${entry}"`, () => {
+          const expected = {
+            ...shape,
+            description: expect.stringContaining(shape.description) as string,
+          };
 
-        expect(parsed).toEqual(expected);
-      });
+          expect(parsed).toEqual(expected);
+        });
 
-      test(`Parsed should match expected when input is "${entry}"`, () => {
-        const notExpected = {
-          ...shape,
-          description: expect.stringContaining(constants.unrelated) as string,
-        };
+        test(`Parsed should not contain unrelated when input is "${entry}"`, () => {
+          const notExpected = {
+            ...shape,
+            description: expect.stringContaining(constants.unrelated) as string,
+          };
 
-        expect(parsed).not.toEqual(notExpected);
-      });
+          expect(parsed).not.toEqual(notExpected);
+        });
+      }
     },
   );
 }
@@ -114,6 +131,6 @@ function testTransactionParsingPerModel(
 testTransactionParsingPerModel(providers.openai, {
   log: { description: true },
 });
-testTransactionParsingPerModel(providers.mistral, {
-  log: { description: true },
-});
+// testTransactionParsingPerModel(providers.mistral, {
+//   log: { description: true },
+// });

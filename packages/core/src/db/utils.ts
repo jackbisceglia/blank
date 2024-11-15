@@ -5,7 +5,7 @@ import { uuidv7 as genUUIDv7 } from 'uuidv7';
 
 export const uuidv7 = (columnName?: string) => text(columnName ?? 'id');
 
-export const uuidv7Defaults = (columnName?: string) =>
+export const uuidv7WithDefault = (columnName?: string) =>
   uuidv7(columnName ?? 'id').$defaultFn(genUUIDv7);
 
 export type DrizzleModelTypes<Model extends PgTable> = {
@@ -25,21 +25,6 @@ export const transformEnumToArray = (categories: string) =>
   categories.split(',');
 export const transformArrayToEnum = (categories: string[]) =>
   categories.join(',');
-
-export function zodTransformSqliteEnumToArray<T>(
-  obj: { categories: string | null } & Omit<T, 'categories'>,
-) {
-  if (!obj.categories)
-    return {
-      ...obj,
-      categories: null,
-    };
-
-  return {
-    ...obj,
-    categories: transformEnumToArray(obj.categories),
-  };
-}
 
 const clean = (input: string[]) =>
   input.map((item) => item.trim()).filter((item) => item);

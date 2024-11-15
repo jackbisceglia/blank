@@ -18,6 +18,6 @@ export default [
   { ...pluginJs.configs.recommended },
   ...tseslint.configs.strictTypeChecked,
   {
-    ignores: ['sst-env.d.ts', 'node_modules', '.sst', '.eslint.config.js'],
+    ignores: ['sst-env.d.ts', 'node_modules', '.sst', 'eslint.config.mjs'],
   },
 ];
