@@ -1,3 +1,4 @@
+import * as contacts from './contact.schema';
 import * as transactions from './transaction.schema';
 
 import { neon } from '@neondatabase/serverless';
@@ -8,6 +9,7 @@ const { host, user, password, database } = Resource.DATABASE;
 
 const schemas = {
   ...transactions,
+  ...contacts,
 };
 
 export const db = drizzle(
@@ -20,3 +22,6 @@ export const db = drizzle(
 // barrel exports
 export * from './transaction.schema';
 export * from './transaction';
+
+export * from './contact.schema';
+export * from './contact';

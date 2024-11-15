@@ -1,159 +1,153 @@
-import { api } from '~/lib/hono';
-
-import { type TransactionWithPayees } from '@blank/core/db';
-
-import { createAsync, query, revalidate } from '@solidjs/router';
-import { useAuth } from 'clerk-solidjs';
 import {
-  createEffect,
+  getTransactions,
+  useCreateTransaction,
+  useDeleteTransactions,
+} from './-transaction.data';
+import { useNewTransactionDialog } from './+transaction.dialog';
+import { columns, headers, TransactionTable } from './+transaction.table';
+
+import { TransactionWithPayeesWithContacts } from '@blank/core/db';
+
+import { Button, ButtonLoadable } from '@/components/ui/button';
+import { Skeleton } from '@/components/ui/skeleton';
+import { createAsync } from '@solidjs/router';
+import { ColumnDef } from '@tanstack/solid-table';
+import {
+  Accessor,
   createSignal,
-  ErrorBoundary,
-  For,
+  Match,
+  onMount,
   Show,
   Suspense,
+  Switch,
 } from 'solid-js';
 
-const SkeletonCard = () => (
-  <div class="border border-neutral-700 p-6 h-60 rounded-lg mx-auto w-full max-w-screen-md bg-neutral-800 shadow-md animate-pulse">
-    <div class="flex justify-between mb-2">
-      <span class="font-medium text-neutral-300 bg-neutral-700 rounded h-4 w-24" />
-      <span class="text-neutral-400 bg-neutral-700 rounded h-4 w-32" />
-    </div>
-    <div class="flex justify-between mb-2">
-      <span class="font-medium text-neutral-300 bg-neutral-700 rounded h-4 w-16" />
-      <span class="text-neutral-400 bg-neutral-700 rounded h-4 w-48" />
-    </div>
-    <div class="flex justify-between mb-2">
-      <span class="font-medium text-neutral-300 bg-neutral-700 rounded h-4 w-16" />
-      <span class="text-neutral-400 bg-neutral-700 rounded h-4 w-16" />
-    </div>
-    <div class="flex justify-between mb-2">
-      <span class="font-medium text-neutral-300 bg-neutral-700 rounded h-4 w-12" />
-      <span class="text-neutral-400 bg-neutral-700 rounded h-4 w-24" />
-    </div>
-    <div class="flex justify-between mb-2">
-      <span class="font-medium text-neutral-300 bg-neutral-700 rounded h-4 w-8" />
-      <span class="text-neutral-400 bg-neutral-700 rounded h-4 w-32" />
-    </div>
-    <div class="flex justify-between mb-2">
-      <span class="bg-neutral-700 rounded h-8 w-full" />
-    </div>
-  </div>
-);
+const useRows = (
+  data: Accessor<TransactionWithPayeesWithContacts[] | undefined>,
+) => {
+  const [rowSelection, setRowSelection] = createSignal<Record<string, boolean>>(
+    {},
+  );
 
-const HandleError = (props: { error: Error | null }) => {
-  const [error, setError] = createSignal<Error | null>(null);
+  const resetRows = () => setRowSelection({});
 
-  // Log the error
-  createEffect(() => {
-    if (props.error) {
-      console.error('Error caught in ErrorBoundary:', props.error);
-      setError(props.error);
-    }
-  });
+  const selectedIds = () =>
+    Object.keys(rowSelection())
+      .map((stringIndex) => data()?.at(parseInt(stringIndex))?.id ?? '')
+      .filter((id) => id !== '');
+
+  return {
+    reset: resetRows,
+    selected: selectedIds,
+    get: rowSelection,
+    set: setRowSelection,
+  };
+};
+
+const SkeletonTable = () => {
+  const columns: ColumnDef<string>[] = Object.values(headers).map(
+    (display) => ({
+      header: display,
+      cell: () => {
+        return (
+          <Switch fallback={<Skeleton class="w-5/6 h-5" />}>
+            <Match when={display === headers.description}>
+              <Skeleton class="w-20 h-5" />
+            </Match>
+            <Match when={display === headers.cost}>
+              <Skeleton class="w-12 h-5" />
+            </Match>
+          </Switch>
+        );
+      },
+    }),
+  );
+
+  const skeletonData = () => Array.from({ length: 10 }).map(() => '');
 
   return (
-    <div>
-      <p>An error occurred:</p>
-      <Show when={error()}>{(error) => <pre>{error().toString()}</pre>}</Show>
-    </div>
+    <TransactionTable
+      rows={{ get: () => ({}) as Record<string, boolean>, set: () => {} }}
+      columns={columns}
+      data={skeletonData}
+    />
   );
 };
 
-const getTransactions = query(async () => {
-  const res = await api.transactions.$get();
-
-  if (!res.ok) {
-    throw new Error(`HTTP error! status`);
-  }
-
-  const data = await res.json();
-  console.log('running');
-
-  return data;
-}, 'transactions');
-
 export default function HomePage() {
-  const auth = useAuth();
   const transactions = createAsync(() => getTransactions());
-  const mutate = (optimistic: TransactionWithPayees[]) => {
-    query.set('transactions', optimistic);
-    void revalidate();
-  };
 
-  async function deleteTransaction(id: string) {
-    try {
-      mutate((transactions() ?? []).filter((t) => t.id !== id));
+  const [createTransaction, deleteTransaction] = [
+    useCreateTransaction(),
+    useDeleteTransactions(),
+  ];
 
-      const res = await api.transactions[':id'].$delete({ param: { id } });
+  const dialog = useNewTransactionDialog();
+  const rows = useRows(transactions);
 
-      if (!res.ok) {
-        throw new Error(`HTTP error! status: ${res.status.toString()}`);
+  const someRowsSelected = () => rows.selected().length > 0;
+
+  const month = new Date().toLocaleString('default', { month: 'long' });
+
+  onMount(() => {
+    const handleKeyDown = async (e: KeyboardEvent) => {
+      if (e.ctrlKey && e.key === 'd' && rows.selected().length > 0) {
+        await deleteTransaction.use(rows.selected(), rows.reset);
       }
+    };
 
-      await res.json();
-
-      void revalidate();
-    } catch (error) {
-      console.log(error);
-    }
-  }
+    // TODO: solid-utils has a keyboard thing i should use here
+    window.addEventListener('keydown', (e) => void handleKeyDown(e));
+  });
 
   return (
-    <ErrorBoundary fallback={(e) => <HandleError error={e as Error} />}>
-      <div class="grid grid-cols-2 gap-4 mt-4">
-        <Suspense
-          fallback={<For each={[0, 1, 2, 3]}>{() => <SkeletonCard />}</For>}
-        >
-          <Show
-            when={!!transactions()?.length && auth.getToken()}
-            fallback={<p>No transactions yet . . . </p>}
+    <div class="w-full">
+      <div class="w-full flex justify-between items-center py-2">
+        <h1 class="text-left text-xl uppercase text-ui-primary">
+          Overview - {month}
+        </h1>
+        {/* Button Bar */}
+        <div class="flex items-center gap-2">
+          <ButtonLoadable
+            variant="destructive"
+            size="sm"
+            class="w-20"
+            disabled={!someRowsSelected() || deleteTransaction.ctx.pending}
+            loading={deleteTransaction.ctx.pending}
+            onClick={() =>
+              void deleteTransaction.use(rows.selected(), rows.reset)
+            }
           >
-            <For each={transactions()}>
-              {(transaction) => (
-                <div class="border border-neutral-700 p-6 rounded-lg mx-auto w-full max-w-screen-md bg-neutral-800 shadow-md">
-                  <div class="flex justify-between mb-2">
-                    <span class="font-medium text-neutral-300">
-                      Description:
-                    </span>
-                    <span class="text-neutral-400">
-                      {transaction.description}
-                    </span>
-                  </div>
-                  <div class="flex justify-between mb-2">
-                    <span class="font-medium text-neutral-300">With:</span>
-                    <span class="text-neutral-400">
-                      {transaction.payees.map((p) => p.payeeId).join(', ')}
-                    </span>
-                  </div>
-                  <div class="flex justify-between mb-2">
-                    <span class="font-medium text-neutral-300">Amount:</span>
-                    <span class="text-neutral-400">
-                      ${transaction.amount.toFixed(2)}
-                    </span>
-                  </div>
-                  <div class="flex justify-between mb-2">
-                    <span class="font-medium text-neutral-300">Date:</span>
-                    <span class="text-neutral-400">{transaction.date}</span>
-                  </div>
-                  <div class="flex justify-between mb-2">
-                    <span class="font-medium text-neutral-300">ID:</span>
-                    <span class="text-neutral-400">{transaction.id}</span>
-                  </div>
-                  <div class="flex justify-between mb-2">
-                    <button
-                      class="w-full bg-neutral-600 text-white font-medium py-2 px-4 text-xs rounded-md hover:bg-neutral-700 focus:outline-none focus:ring-1 focus:ring-gray-400"
-                      onClick={() => void deleteTransaction(transaction.id)}
-                    >
-                      Delete
-                    </button>
-                  </div>
-                </div>
-              )}
-            </For>
-          </Show>
-        </Suspense>
+            Delete
+          </ButtonLoadable>
+          <Button
+            class="w-20"
+            disabled={createTransaction.ctx.pending}
+            onClick={dialog.open}
+            variant="outline"
+            size="sm"
+          >
+            New
+          </Button>
+        </div>
       </div>
-    </ErrorBoundary>
+      <Suspense fallback={<SkeletonTable />}>
+        <Show
+          when={transactions()}
+          fallback={<p>No transactions yet . . . </p>}
+        >
+          {(transactions) => (
+            <TransactionTable
+              rows={{
+                get: rows.get,
+                set: rows.set,
+              }}
+              columns={columns}
+              data={transactions}
+            />
+          )}
+        </Show>
+      </Suspense>
+    </div>
   );
 }

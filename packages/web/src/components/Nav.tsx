@@ -1,4 +1,4 @@
-import { useLocation } from '@solidjs/router';
+import { A, useLocation } from '@solidjs/router';
 import { SignOutButton, useAuth } from 'clerk-solidjs';
 import { For, JSX, Match, Show, Switch } from 'solid-js';
 
@@ -25,7 +25,7 @@ export default function Nav() {
   const location = useLocation();
   const active = (paths: string[]) => {
     return paths.includes(location.pathname)
-      ? 'underline underline-offset-4 text-white'
+      ? 'text-white font-semibold'
       : 'text-gray-300';
   };
 
@@ -35,14 +35,14 @@ export default function Nav() {
     [
       '/',
       <>
-        <a href="/" class={linkClasses + ' flex items-center gap-2'}>
+        <A href="/" class={linkClasses + ' flex items-center gap-2'}>
           <img src="/logo.svg" alt="Logo" class="size-8" />
           Home
-        </a>
+        </A>
       </>,
     ],
-    ['/new', 'New'],
-    ['/settings', 'Settings'],
+    ['/contacts', 'Contacts'],
+    ['/actions', 'Actions'],
     ['/sign-out', <SignOutButton class={linkClasses} />],
   ];
 
@@ -50,18 +50,18 @@ export default function Nav() {
     [
       '/landing',
       <>
-        <a href="/landing" class={linkClasses + ' flex items-center gap-2'}>
+        <A href="/landing" class={linkClasses + ' flex items-center gap-2'}>
           <img src="/logo.svg" alt="Logo" class="size-8" />
           Welcome
-        </a>
+        </A>
       </>,
     ],
     ['/sign-in', 'Sign In'],
   ];
 
   return (
-    <nav class="bg-transparent w-full py-10 fixed bottom-0 z-50 text-xs uppercase">
-      <ul class="container flex items-center mx-auto bg-neutral-900 border border-neutral-700 rounded-lg w-fit px-4 space-x-4">
+    <nav class="bg-transparent my-6 py-4 fixed bottom-0 z-50 text-sm uppercase">
+      <ul class="container flex items-center mx-auto bg-ui-background border border-ui-accent rounded-lg w-fit px-4 space-x-4">
         <Show when={auth.isLoaded()} fallback={<CommandBarSkeleton />}>
           <Switch>
             <Match when={auth.userId()}>
@@ -73,9 +73,9 @@ export default function Nav() {
                     )}`}
                   >
                     <Show fallback={display} when={typeof display === 'string'}>
-                      <a href={path} class={linkClasses}>
+                      <A href={path} class={linkClasses}>
                         {display}
-                      </a>
+                      </A>
                     </Show>
                   </li>
                 )}
@@ -90,9 +90,9 @@ export default function Nav() {
                     )}`}
                   >
                     <Show fallback={display} when={typeof display === 'string'}>
-                      <a href={path} class={linkClasses}>
+                      <A href={path} class={linkClasses}>
                         {display}
-                      </a>
+                      </A>
                     </Show>
                   </li>
                 )}
