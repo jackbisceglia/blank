@@ -3,6 +3,22 @@ import { openai } from '@ai-sdk/openai';
 import { generateObject } from 'ai';
 import { z } from 'zod';
 
+type ValueOf<T> = T[keyof T];
+
+type LLMProvider<T extends keyof typeof providers> = {
+  provider: T;
+  model: ValueOf<(typeof models)[T]>;
+};
+
+type OpenAI = LLMProvider<typeof providers.openai>;
+type Mistral = LLMProvider<typeof providers.mistral>;
+
+type LLMProviders = OpenAI | Mistral;
+
+export type LLMOptions = {
+  llm: LLMProviders;
+};
+
 export const constants = {
   sender: 'SENDER',
   unrelated: 'UNRELATED',
@@ -14,14 +30,26 @@ export const providers = {
   default: 'openai',
 } as const;
 
-const models = {
-  openai: openai('gpt-4o'),
-  mistral: mistral('mistral-large-latest'),
-  default: openai('gpt-4o'),
-};
+export const models = {
+  [providers.openai]: {
+    ['3.5-turbo']: 'gpt-3.5-turbo',
+    ['4']: 'gpt-4',
+    ['4o']: 'gpt-4o',
+    default: 'gpt-4o',
+  },
+  [providers.mistral]: {
+    large: 'mistral-large-latest',
+    nemo: 'mistral-nemo-latest',
+    default: 'mistral-large-latest',
+  },
+  default: {
+    default: 'gpt-4o',
+  },
+} as const;
 
-export type LLMOptions = {
-  provider: keyof typeof providers;
+const vercelAIProviders = {
+  [providers.openai]: openai,
+  [providers.mistral]: mistral,
 };
 
 export const llmToObject = async <T>(
@@ -30,8 +58,15 @@ export const llmToObject = async <T>(
   schema: z.ZodType<T>,
   opts?: LLMOptions,
 ) => {
+  const llm = {
+    provider: opts?.llm.provider ?? providers.default,
+    model: opts?.llm.model ?? models[providers.default].default,
+  };
+
+  const host = vercelAIProviders[llm.provider];
+
   const { object } = await generateObject({
-    model: opts?.provider ? models[opts.provider] : models.openai,
+    model: host(llm.model),
     schema,
     system: grounding,
     prompt: input,

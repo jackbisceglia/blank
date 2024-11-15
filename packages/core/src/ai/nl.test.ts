@@ -1,6 +1,6 @@
 import { nlToParsedTransaction, TransactionParseable } from '.';
 import { Transaction } from '../db';
-import { constants, LLMOptions, logger, providers } from './core';
+import { constants, LLMOptions, logger, models, providers } from './core';
 
 import { describe, expect, test } from 'bun:test';
 
@@ -76,18 +76,15 @@ const suite: [string, TransactionParseable, `TODO: ${string}`?][] = [
   ],
 ];
 
-function testTransactionParsingPerModel(
-  provider: LLMOptions['provider'],
-  opts?: TestOptions,
-) {
+function testTransactionParsingPerModel(ai: LLMOptions, opts?: TestOptions) {
   if (opts?.log?.description) {
-    console.log('testing with: ', provider);
+    console.log('testing with: ', ai.llm.provider);
   }
 
   describe.each(suite)(
-    `${provider} should parse as expected`,
+    `${ai.llm.provider} should parse as expected`,
     async (entry, shape, todo) => {
-      const parsed = await nlToParsedTransaction(entry, provider);
+      const parsed = await nlToParsedTransaction(entry, ai);
 
       if (!parsed) {
         throw new Error('Issue parsing returned object');
@@ -128,9 +125,17 @@ function testTransactionParsingPerModel(
   );
 }
 
-testTransactionParsingPerModel(providers.openai, {
-  log: { description: true },
-});
+testTransactionParsingPerModel(
+  {
+    llm: {
+      provider: providers.openai,
+      model: models[providers.openai].default,
+    },
+  },
+  {
+    log: { description: true },
+  },
+);
 // testTransactionParsingPerModel(providers.mistral, {
 //   log: { description: true },
 // });
