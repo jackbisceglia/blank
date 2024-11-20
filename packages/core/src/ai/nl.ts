@@ -1,5 +1,5 @@
 import { PayeeInsert, TransactionInsert } from '../db/transaction.schema';
-import { LLMOptions, llmToObject, models, providers } from './core';
+import { LLMOptions, llmToObject } from './core';
 import prompts from './prompts';
 
 import { z } from 'zod';
@@ -29,7 +29,9 @@ export type TransactionParseable = z.infer<typeof TransactionParseable>;
 // module for parsing natural language queries into data entities
 export async function nlToParsedTransaction(
   input: string,
-  opts: LLMOptions,
+  opts?: {
+    llm?: LLMOptions;
+  },
 ): Promise<TransactionParseable | null> {
   try {
     const transaction = await llmToObject(
@@ -37,10 +39,7 @@ export async function nlToParsedTransaction(
       input,
       TransactionParseable,
       {
-        llm: {
-          provider: opts.llm.provider,
-          model: opts.llm.model,
-        },
+        llm: opts?.llm,
       },
     );
 
