@@ -1,2 +1,2 @@
 export * from './nl';
-export { providers } from './core';
+export { providers, models } from './core';

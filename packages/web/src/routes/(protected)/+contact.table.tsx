@@ -56,25 +56,26 @@ export const ContactTable = (props: ContactTableProps) => {
                 <TableCell class="mr-auto">
                   {formatPhoneNumber(contact.phone)}
                 </TableCell>
-                <TableCell class="font-medium space-x-2">
-                  {/* edit_1 */}
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    class="w-20 hover:bg-ui-input"
-                  >
-                    Edit
-                  </Button>
-                  <ButtonLoadable
-                    onClick={() => void deleteContact.use(contact.id)}
-                    loading={deleteContact.ctx.pending}
-                    disabled={deleteContact.ctx.pending}
-                    variant="destructive"
-                    size="sm"
-                    class="w-20"
-                  >
-                    Delete
-                  </ButtonLoadable>
+                <TableCell class="font-medium align-middle h-full">
+                  <div class="h-full flex items-center gap-2">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      class="w-20 hover:bg-ui-input"
+                    >
+                      Edit
+                    </Button>
+                    <ButtonLoadable
+                      onClick={() => void deleteContact.use(contact.id)}
+                      loading={deleteContact.ctx.pendingFor(contact.id)}
+                      disabled={deleteContact.ctx.pendingFor(contact.id)}
+                      variant="destructive"
+                      size="sm"
+                      class="w-20"
+                    >
+                      Delete
+                    </ButtonLoadable>
+                  </div>
                 </TableCell>
               </TableRow>
             )}

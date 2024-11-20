@@ -61,9 +61,14 @@ export const deleteContactAction = action(async function (deleteId: string) {
 }, 'delete-contact');
 
 export const useDeleteContact = () => {
+  const submission = useSubmission(deleteContactAction);
   return {
     raw: deleteContactAction,
-    ctx: useSubmission(deleteContactAction),
+    ctx: {
+      ...submission,
+      pendingFor: (input: string) =>
+        submission.input?.[0] === input && submission.pending,
+    },
     use: useAction(deleteContactAction),
   };
 };

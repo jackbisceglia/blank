@@ -2,8 +2,8 @@ export const Loading = () => {
   return (
     <svg
       xmlns="http://www.w3.org/2000/svg"
-      width="1.75em"
-      height="1.75em"
+      width="1.5em"
+      height="1.5em"
       viewBox="0 0 24 24"
     >
       <circle cx={4} cy={12} r={3} fill="currentColor">

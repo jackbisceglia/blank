@@ -39,7 +39,7 @@ export const createTransactionAction = action(
         variant: 'destructive' as const,
       });
     } else {
-      // await revalidate('transactions');
+      await revalidate('transactions'); // get rid of this when we can have time to add optimistic updates
       close?.();
       toast({
         title: 'Transaction created!',

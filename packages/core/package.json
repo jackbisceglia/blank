@@ -21,10 +21,12 @@
     "drizzle-kit": "^0.25.0"
   },
   "dependencies": {
+    "@ai-sdk/anthropic": "^1.0.0",
     "@ai-sdk/mistral": "^0.0.44",
     "@ai-sdk/openai": "^0.0.68",
     "@neondatabase/serverless": "^0.10.1",
     "ai": "^3.4.16",
+    "autoevals": "^0.0.105",
     "drizzle-orm": "^0.33.0",
     "drizzle-zod": "^0.5.1",
     "pg": "^8.13.0",
