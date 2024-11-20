@@ -58,7 +58,7 @@ export const TableRow = (props: ComponentProps<'tr'>) => {
   return (
     <tr
       class={cn(
-        'border-b-2 border-ui-background transition-colors hover:bg-ui-secondary/40 data-[state=selected]:bg-ui-secondary duration-0 space-x-10',
+        'border-b-2 border-ui-background transition-colors hover:bg-ui-secondary/40 data-[state=selected]:bg-ui-secondary duration-75 space-x-10',
         local.class,
       )}
       {...rest}
@@ -86,7 +86,7 @@ export const TableCell = (props: ComponentProps<'td'>) => {
   return (
     <td
       class={cn(
-        'align-middle py-4 px-2 [&:has([role=checkbox])]:pr-0 [&>[role=checkbox]]:translate-y-[2px]',
+        'py-4 px-2 [&:has([role=checkbox])]:pr-0 [&>[role=checkbox]]:translate-y-[2px]',
         local.class,
       )}
       {...rest}

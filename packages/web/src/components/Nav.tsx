@@ -1,3 +1,4 @@
+import { Skeleton } from '@/components/ui/skeleton';
 import { A, useLocation } from '@solidjs/router';
 import { SignOutButton, useAuth } from 'clerk-solidjs';
 import { For, JSX, Match, Show, Switch } from 'solid-js';
@@ -6,17 +7,26 @@ const linkClasses = 'px-3 py-2 rounded-md uppercase';
 
 function CommandBarSkeleton() {
   return (
-    <>
-      <li class="flex justify-center text-gray-400 animate-pulse">
-        <span class={linkClasses}>Loading...</span>
-      </li>
-      <li class="flex justify-center text-gray-400 animate-pulse">
-        <span class={linkClasses}>Loading...</span>
-      </li>
-      <li class="flex justify-center text-gray-400 animate-pulse">
-        <span class={linkClasses}>Loading...</span>
-      </li>
-    </>
+    <For each={Array.from({ length: 4 }).fill(0)}>
+      {(_, index) => (
+        <li class={'flex items-center'}>
+          <Show
+            when={index() !== 0}
+            fallback={
+              <span class={linkClasses + ' flex items-center gap-2'}>
+                <img src="/logo.svg" alt="Logo" class="size-8" />
+                <Skeleton class="bg-transparent w-12 h-5" />
+              </span>
+            }
+          >
+            <span class={linkClasses}>
+              {/* this is hacky, but good enough for now. can store locally if last visit was auth'd */}
+              <Skeleton class="bg-transparent w-[59.75px] h-5" />
+            </span>
+          </Show>
+        </li>
+      )}
+    </For>
   );
 }
 
@@ -63,6 +73,7 @@ export default function Nav() {
     <nav class="bg-transparent my-6 py-4 fixed bottom-0 z-50 text-sm uppercase">
       <ul class="container flex items-center mx-auto bg-ui-background border border-ui-accent rounded-lg w-fit px-4 space-x-4">
         <Show when={auth.isLoaded()} fallback={<CommandBarSkeleton />}>
+          {/* <Show when={false} fallback={<CommandBarSkeleton />}> */}
           <Switch>
             <Match when={auth.userId()}>
               <For each={authenticated}>

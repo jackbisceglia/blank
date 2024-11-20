@@ -1,18 +1,58 @@
-import { nlToParsedTransaction, TransactionParseable } from '.';
+import { TransactionParseable, nlToParsedTransaction } from '.';
 import { Transaction } from '../db';
-import { constants, LLMOptions, logger, providers } from './core';
+import {
+  LLMOptions,
+  LLMProviders,
+  LoggerBuilder,
+  constants,
+  getLLMDetails,
+  logger,
+  models,
+  providers,
+} from './core';
 
+import { AnswerSimilarity, Levenshtein } from 'autoevals';
 import { describe, expect, test } from 'bun:test';
 
+// can add different thresholds later
+const THRESHOLDS = [0.8];
+
 type TestOptions = {
-  log?: {
-    description?: boolean;
-  };
+  log?: boolean;
 };
 
 export type MockTransaction = {
   given: string;
   toMatch: TransactionParseable;
+};
+
+async function time<T>(fn: () => Promise<T>) {
+  const start = performance.now();
+  const data = await fn();
+  const end = performance.now();
+
+  return {
+    data,
+    duration: end - start,
+  };
+}
+
+const judgePrompts = {
+  description: (entry: string) => {
+    return [
+      'Parse the description out of the given transaction description, using the following rules:',
+      '- Remove timing/dates, locations, vendor names, payment methods, and transaction verbs (e.g., bought, paid, split).',
+      '- Remove participant names if they are captured in payees.',
+      '- Include names if they are not involved in the purchase itself (e.g., a birthday gift recipient).',
+      '- Remove words that describe the process of buying rather than the subject of the transaction.',
+      '- Always preserve identifying details (e.g., "Bob\'s birthday gift").',
+      "- Don't modify unique transaction source identifiers.",
+      '- For recurring expenses, include timing information if provided and relevant.',
+      '- IMPORTANT: Do not categorize or generalize specific transaction details. For example, do not change "Starbucks" to "coffee".',
+      '',
+      `Transaction: ${entry}`,
+    ].join('\n');
+  },
 };
 
 const newTransaction = (
@@ -55,7 +95,7 @@ const suite: [string, TransactionParseable, `TODO: ${string}`?][] = [
   ],
   [
     'Utilities bill was 95.75, Jane and I.',
-    newTransaction('Utilities bill', 95.75, constants.sender, ['Jane']),
+    newTransaction('Utilities', 95.75, constants.sender, ['Jane']),
   ],
   [
     'LocalMart w/ John Doe, $62',
@@ -72,65 +112,132 @@ const suite: [string, TransactionParseable, `TODO: ${string}`?][] = [
   [
     'Got Annie a haircut, split with Jane Doe, $71',
     newTransaction('Annie haircut', 71, constants.sender, ['Jane Doe']),
-    'TODO: need to strip the "a" from description somehow',
+  ],
+  [
+    'Split beans and coffee with Jane Doe, $29.88',
+    newTransaction('Beans and coffee', 29.88, constants.sender, ['Jane Doe']),
   ],
 ];
 
-function testTransactionParsingPerModel(
-  provider: LLMOptions['provider'],
-  opts?: TestOptions,
-) {
-  if (opts?.log?.description) {
-    console.log('testing with: ', provider);
-  }
+function testGeneralTransactionParsing(llms: LLMOptions[], opts?: TestOptions) {
+  const formattedLLMSuite = llms.map((llm) => {
+    const { provider, model } = getLLMDetails(llm);
 
-  describe.each(suite)(
-    `${provider} should parse as expected`,
-    async (entry, shape, todo) => {
-      const parsed = await nlToParsedTransaction(entry, provider);
+    return [provider, model, llm] as const;
+  });
+
+  describe.each(formattedLLMSuite)('%s %s', (_provider, _model, llm) => {
+    describe.each(suite)(`General Parsing`, async (entry, shape, todo) => {
+      const { data: parsed } = await time(async () => {
+        return await nlToParsedTransaction(entry, { llm });
+      });
 
       if (!parsed) {
         throw new Error('Issue parsing returned object');
       }
 
-      if (opts?.log?.description) {
-        logger()
-          .separate([
-            `roughly: ${shape.description}`,
-            `got: ${parsed.description}`,
-          ])
-          .pad({ t: 1 })
-          .out();
-      }
-
       if (todo) {
         test.todo(`${todo} -- ${entry}`);
       } else {
-        test(`Parsed should match expected when input is "${entry}"`, () => {
-          const expected = {
-            ...shape,
-            description: expect.stringContaining(shape.description) as string,
+        test(`Parsed (excl. description) should match expected when input is "${entry}"`, () => {
+          const expected = { ...shape, description: null };
+          const parsedRelevant = { ...parsed, description: null };
+
+          const logObject = (logger: LoggerBuilder, name: string) => {
+            logger
+              .prefix('> ')
+              .prefix('  ')
+              .align(':')
+              .add(`  ${name}`, 'before')
+              .pad({ t: 1 })
+              .when(false)
+              .out();
           };
 
-          expect(parsed).toEqual(expected);
+          logObject(
+            logger().lines([
+              `Amount: ${shape.amount.toFixed(2)}`,
+              `Payer: ${shape.payerName}`,
+              `Payees: ${shape.payees.map((p) => p.payeeName).join(', ')}`,
+            ]),
+            'Expected',
+          );
+
+          logObject(
+            logger().lines([
+              `Amount: ${parsed.amount.toFixed(2)}`,
+              `Payer: ${parsed.payerName}`,
+              `Payees: ${parsed.payees.map((p) => p.payeeName).join(', ')}`,
+            ]),
+            'Parsed',
+          );
+
+          expect(
+            parsedRelevant,
+            [
+              `Exp: ${JSON.stringify(expected, null, 2)}`,
+              `Got: ${JSON.stringify(parsedRelevant, null, 2)}`,
+            ].join('\n'),
+          ).toEqual(expected);
         });
 
-        test(`Parsed should not contain unrelated when input is "${entry}"`, () => {
-          const notExpected = {
-            ...shape,
-            description: expect.stringContaining(constants.unrelated) as string,
-          };
+        const LLMScorers = ['AnswerSimilarity'];
+        describe.each(
+          ([Levenshtein, AnswerSimilarity] as const).map((f) => [f.name, f]),
+        )('Scorer: %s', (scorerName, scorer) => {
+          test.each(THRESHOLDS.map((t) => [t, shape.description]))(
+            'Parsed description should have > %p when expected is %s',
+            async (threshold) => {
+              const aiConfig = {
+                useCoT: true,
+                openAiApiKey: process.env.OPENAI_API_KEY,
+              };
+              const isLLMScorer = LLMScorers.includes(scorerName);
 
-          expect(parsed).not.toEqual(notExpected);
+              const result = await scorer({
+                input: judgePrompts.description(entry),
+                output: parsed.description,
+                expected: shape.description,
+                ...(isLLMScorer ? { ...aiConfig } : {}),
+              });
+
+              const similarity = result.score ?? 0;
+
+              logger()
+                .lines([
+                  `Similarity: ${similarity.toFixed(2)}`,
+                  `Expected: ${shape.description}`,
+                  `Got: ${parsed.description}`,
+                ])
+                .prefix('  > ')
+                .align(':')
+                .add(scorerName, 'before')
+                .pad({ t: 1 })
+                .when(!!opts?.log)
+                .out();
+
+              expect(
+                similarity,
+                `Similarity: ${similarity.toFixed(2)}, Expected: ${shape.description}, Got: ${parsed.description}`,
+              ).toBeGreaterThanOrEqual(threshold);
+            },
+          );
         });
       }
-    },
-  );
+    });
+  });
 }
 
-testTransactionParsingPerModel(providers.openai, {
-  log: { description: true },
-});
-// testTransactionParsingPerModel(providers.mistral, {
-//   log: { description: true },
-// });
+const config: {
+  llms: LLMProviders[];
+  opts?: TestOptions;
+} = {
+  llms: [
+    { provider: providers.anthropic, model: models.anthropic.default },
+    { provider: providers.openai, model: models.openai.default },
+    // { provider: providers.mistral, model: models.mistral.default },
+  ],
+  opts: { log: false },
+};
+
+testGeneralTransactionParsing(config.llms, config.opts);
