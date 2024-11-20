@@ -1,6 +1,6 @@
 import contacts from './contacts.routes';
 import transactions from './transaction.routes';
-import { dev, DevConfig } from './utils';
+import { DevConfig, dev } from './utils';
 
 import { clerkMiddleware } from '@hono/clerk-auth';
 import { Hono } from 'hono';

@@ -91,8 +91,12 @@ export default function HomePage() {
 
   onMount(() => {
     const handleKeyDown = async (e: KeyboardEvent) => {
-      if (e.ctrlKey && e.key === 'd' && rows.selected().length > 0) {
-        await deleteTransaction.use(rows.selected(), rows.reset);
+      if (someRowsSelected()) {
+        if (e.ctrlKey && e.key === 'd') {
+          await deleteTransaction.use(rows.selected(), rows.reset);
+        } else if (e.key === 'Escape') {
+          rows.reset();
+        }
       }
     };
 

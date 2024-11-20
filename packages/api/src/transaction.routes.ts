@@ -1,6 +1,7 @@
 import { requireAuthenticated } from './utils';
 
 import {
+  models,
   nlToParsedTransaction,
   providers,
   TransactionParseable,
@@ -39,7 +40,12 @@ const api = new Hono()
       const { body } = c.req.valid('json');
 
       const getInsertableFromNl = async (input: string, userId: string) => {
-        const parsed = await nlToParsedTransaction(input, providers.openai);
+        const parsed = await nlToParsedTransaction(input, {
+          llm: {
+            provider: providers.default,
+            model: models.default.default,
+          },
+        });
 
         const transformed = transaction.transformParsedToInsertable(
           parsed ?? ({} as TransactionParseable),
