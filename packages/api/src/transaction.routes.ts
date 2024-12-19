@@ -1,12 +1,16 @@
 import { requireAuthenticated } from './utils';
 
 import {
+  TransactionParseable,
   models,
   nlToParsedTransaction,
   providers,
-  TransactionParseable,
 } from '@blank/core/ai';
-import { transaction, TransactionInsertWithPayees } from '@blank/core/db';
+import {
+  TransactionInsertWithPayees,
+  preference,
+  transaction,
+} from '@blank/core/db';
 
 import { zValidator } from '@hono/zod-validator';
 import { Hono } from 'hono';
@@ -19,7 +23,10 @@ const CreateBodySchema = z.union([
   }),
   z.object({
     type: z.literal('natural_language'),
-    payload: z.string().refine((input) => input.split(' ').length >= 3),
+    payload: z.object({
+      nl: z.string().refine((input) => input.split(' ').length >= 3),
+      groupId: z.string().optional(),
+    }),
   }),
 ]);
 
@@ -38,6 +45,9 @@ const api = new Hono()
       const auth = requireAuthenticated(c);
 
       const { body } = c.req.valid('json');
+
+      const groupId =
+        body.payload.groupId ?? (await preference.getDefaultGroupId('abc'));
 
       const getInsertableFromNl = async (input: string, userId: string) => {
         const parsed = await nlToParsedTransaction(input, {
@@ -59,7 +69,7 @@ const api = new Hono()
       const insertableTransactionData =
         body.type === 'default'
           ? body.payload
-          : await getInsertableFromNl(body.payload, auth.userId);
+          : await getInsertableFromNl(body.payload.nl, auth.userId);
 
       const rows = await transaction.create(insertableTransactionData);
 
@@ -70,7 +80,7 @@ const api = new Hono()
       const newTransaction = rows[0];
 
       const newPayees = await transaction.createPayees(
-        insertableTransactionData.payees,
+        insertableTransactionData.payees.map((p) => p.memberId),
         newTransaction.id,
       );
 
@@ -89,14 +99,14 @@ const api = new Hono()
       }),
     ),
     async (c) => {
-      requireAuthenticated(c);
+      const auth = requireAuthenticated(c);
 
       const param = c.req.valid('param');
 
-      const rows = await transaction.deleteById(param.id);
+      const rows = await transaction.deleteById(param.id, auth.userId);
 
       if (!rows.length) {
-        throw new Error('Failed to create transaction');
+        throw new Error('Failed to delete transaction');
       }
 
       const deletedTransaction = rows[0];
@@ -115,14 +125,14 @@ const api = new Hono()
       }),
     ),
     async (c) => {
-      requireAuthenticated(c);
+      const auth = requireAuthenticated(c);
 
       const payload = c.req.valid('json');
 
-      const rows = await transaction.deleteByIds(payload.body.ids);
+      const rows = await transaction.deleteByIds(payload.body.ids, auth.userId);
 
       if (!rows.length) {
-        throw new Error('Failed to create transaction');
+        throw new Error('Failed to delete transaction');
       }
 
       const deletedTransactions = rows;

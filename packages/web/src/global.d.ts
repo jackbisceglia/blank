@@ -8,7 +8,7 @@ declare module '@tanstack/table-core' {
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   interface TableMeta<TData extends RowData> {
     disableGlobalActions?: () => boolean;
-    setLastTouched?: Setter<[number, boolean] | null>;
+    setAnchors?: Setter<number[]>;
   }
 }
 
@@ -17,8 +17,8 @@ export {};
 // need to figure out a better solution for this
 declare global {
   interface Window {
-    Clerk: {
-      session: {
+    Clerk?: {
+      session?: {
         getToken: () => Promise<string | null>;
       };
     };

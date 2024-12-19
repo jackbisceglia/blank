@@ -4,7 +4,7 @@ import Nav from './components/Nav';
 import { WithChildren } from './lib/util.client';
 
 import { ColorModeProvider, ColorModeScript } from '@kobalte/core';
-import { Router, RouteSectionProps } from '@solidjs/router';
+import { RouteSectionProps, Router } from '@solidjs/router';
 import { FileRoutes } from '@solidjs/start/router';
 import { ClerkProvider } from 'clerk-solidjs';
 import { Suspense } from 'solid-js';

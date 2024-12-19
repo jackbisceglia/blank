@@ -4,15 +4,15 @@ import { splitProps, type ComponentProps } from 'solid-js';
 export const Table = (
   props: ComponentProps<'table'> & {
     divClass?: string;
+    kb?: boolean;
   },
 ) => {
-  const [local, rest] = splitProps(props, ['class', 'divClass']);
-
+  const [local, rest] = splitProps(props, ['class', 'divClass', 'kb']);
   return (
-    <div class={cn('w-full bg-ui-muted/75', local.divClass)}>
+    <div class={cn('w-full bg-ui-muted/75 overflow-x-auto', local.divClass)}>
       <table
         class={cn(
-          'w-full caption-bottom text-sm border-ui-background overflow-x-scroll',
+          'w-full caption-bottom text-sm border-ui-background  ',
           local.class,
         )}
         {...rest}
@@ -57,8 +57,9 @@ export const TableRow = (props: ComponentProps<'tr'>) => {
 
   return (
     <tr
+      tabIndex={0}
       class={cn(
-        'border-b-2 border-ui-background transition-colors hover:bg-ui-secondary/40 data-[state=selected]:bg-ui-secondary duration-75 space-x-10',
+        'border-b-2 border-ui-background transition-none hover:bg-ui-secondary/40 data-[state=selected]:bg-ui-secondary duration-0 space-x-10',
         local.class,
       )}
       {...rest}

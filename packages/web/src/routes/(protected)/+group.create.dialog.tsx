@@ -1,5 +1,4 @@
-import { useCreateContact } from './-contact.data';
-import { formatPhoneNumber } from './contacts';
+import { useCreateGroup } from './index.data';
 
 import { Button, ButtonLoadable } from '@/components/ui/button';
 import {
@@ -9,15 +8,9 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
-import {
-  TextField,
-  TextFieldLabel,
-  TextFieldRoot,
-} from '@/components/ui/textfield';
+import { TextFieldLabel, TextFieldRoot } from '@/components/ui/textfield';
+import { createSignalBoundTextField } from '@/lib/util.client';
 import { useSearchParams } from '@solidjs/router';
-import { createSignal } from 'solid-js';
-
-const FORMATTED_PHONE_LENGTH = '(XXX) XXX-XXXX'.length;
 
 export type DialogState = 'open' | 'closed';
 
@@ -58,65 +51,55 @@ function useDialogState() {
   return actions;
 }
 
-export function useNewContactDialog() {
+export function useNewGroupDialog() {
   const state = useDialogState();
 
   return {
     ...state,
-    Component: ContactDialog,
+    Component: GroupDialog,
   };
 }
 
-export const ContactDialog = () => {
-  const { state, close, toggle } = useNewContactDialog();
-  const [contactNumber, setContactNumber] = createSignal('');
-  const [contactName, setContactName] = createSignal('');
+type GroupDialogProps = {
+  numGroupsUserIsAMemberOf: number;
+};
 
-  const contactNumberFormatted = () => formatPhoneNumber(contactNumber());
+export const GroupDialog = (props: GroupDialogProps) => {
+  const { state, close, toggle } = useNewGroupDialog();
+  const [[title, setTitle], TitleInput] =
+    createSignalBoundTextField<string>('');
 
-  const createContact = useCreateContact();
+  const createGroup = useCreateGroup();
 
   return (
     <Dialog
       open={state() === 'open'}
       onOpenChange={() => {
-        setContactNumber('');
+        setTitle('');
         toggle();
       }}
     >
       <DialogContent>
         <DialogHeader>
-          <DialogTitle class="uppercase">New Contact</DialogTitle>
+          <DialogTitle class="uppercase">New Group</DialogTitle>
         </DialogHeader>
         <form
-          action={createContact.raw.with(contactName(), contactNumber(), close)}
+          action={createGroup.raw.with(
+            title(),
+            props.numGroupsUserIsAMemberOf,
+            close,
+          )}
           method="post"
         >
           <div class="mb-6 text-left space-y-2">
             <TextFieldRoot class="lowercase w-full">
-              <TextFieldLabel>name</TextFieldLabel>
-              <TextField
+              <TextFieldLabel>title</TextFieldLabel>
+              <TitleInput
                 type="name"
-                name="contact-name"
-                id="contact-name"
+                name="title"
+                id="group-title"
                 class="w-full px-3 py-2 border  rounded-md bg-ui-muted focus:outline-none focus:ring-1 focus:ring-gray-400 transition duration-150 ease-in-out"
-                placeholder="jane doe"
-                value={contactName()}
-                onInput={(e) => setContactName(e.currentTarget.value)}
-              />
-            </TextFieldRoot>
-
-            <TextFieldRoot class="lowercase w-full">
-              <TextFieldLabel>Phone</TextFieldLabel>
-              <TextField
-                type="tel"
-                name="contact-number"
-                id="contact-number"
-                class="w-full px-3 py-2 border  rounded-md bg-ui-muted focus:outline-none focus:ring-1 focus:ring-gray-400 transition duration-150 ease-in-out"
-                placeholder="888-888-8888"
-                maxLength={FORMATTED_PHONE_LENGTH}
-                value={contactNumberFormatted()}
-                onInput={(e) => setContactNumber(e.currentTarget.value)}
+                placeholder="jane doe's cool group"
               />
             </TextFieldRoot>
           </div>
@@ -125,8 +108,8 @@ export const ContactDialog = () => {
               class="w-full uppercase"
               type="submit"
               size="sm"
-              disabled={createContact.ctx.pending}
-              loading={createContact.ctx.pending}
+              disabled={createGroup.ctx.pending}
+              loading={createGroup.ctx.pending}
             >
               Create
             </ButtonLoadable>
@@ -135,7 +118,7 @@ export const ContactDialog = () => {
               variant="outline"
               size="sm"
               onClick={close}
-              disabled={createContact.ctx.pending}
+              disabled={createGroup.ctx.pending}
             >
               Cancel
             </Button>

@@ -21,13 +21,5 @@ export const createTable = pgTableCreator(
   (name) => `${Resource.App.name}_${name}`,
 );
 
-export const transformEnumToArray = (categories: string) =>
-  categories.split(',');
-export const transformArrayToEnum = (categories: string[]) =>
-  categories.join(',');
-
-const clean = (input: string[]) =>
+export const clean = (input: string[]) =>
   input.map((item) => item.trim()).filter((item) => item);
-
-export const toArray = (input: string) => clean(input.split(','));
-export const toEnum = (input: string[]) => clean(input).join(',');

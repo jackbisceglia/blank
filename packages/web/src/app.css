@@ -12,12 +12,18 @@
   * {
     @apply border-ui-border;
   }
+  html {
+    @apply h-full;
+  }
   body {
-    @apply bg-ui-background text-ui-foreground;
+    @apply bg-ui-background text-ui-foreground h-full;
     font-family: 'IBM Plex Mono', monospace;
     /* font-family: 'JetBrains Mono', monospace; */
     /* font-family: 'Work Sans', sans-serif; */
     /* @apply rounded-radius; */
+  }
+  #app {
+    @apply h-full;
   }
 }
 

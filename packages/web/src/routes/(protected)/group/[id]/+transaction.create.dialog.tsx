@@ -1,8 +1,9 @@
-import { useCreateTransaction } from './-transaction.data';
+import { useCreateTransaction } from './index.data';
 
 import { Button, ButtonLoadable } from '@/components/ui/button';
 import {
   Dialog,
+  DialogClose,
   DialogContent,
   DialogFooter,
   DialogHeader,
@@ -13,11 +14,12 @@ import {
   TextFieldLabel,
   TextFieldRoot,
 } from '@/components/ui/textfield';
-import { useSearchParams } from '@solidjs/router';
+import { action, useAction, useSearchParams } from '@solidjs/router';
 import {
-  createContext,
-  createSignal,
   ParentComponent,
+  createContext,
+  createMemo,
+  createSignal,
   useContext,
 } from 'solid-js';
 
@@ -29,35 +31,31 @@ function useDialogState() {
     action?: 'new-transaction';
   }>();
 
-  const state = () => {
-    if (searchParams.action === 'new-transaction') {
-      return 'open';
-    }
-
-    return 'closed';
-  };
+  const state = createMemo<DialogState>(() =>
+    searchParams.action === 'new-transaction' ? 'open' : 'closed',
+  );
 
   const open = () => {
     setSearchParams({ action: 'new-transaction' });
   };
-  const close = () => {
+
+  const close = (onClose?: () => void) => {
+    onClose?.();
     setSearchParams({ ...searchParams, action: undefined });
   };
 
-  const actions = {
+  const toggle = () => {
+    (state() === 'open' ? close : open)();
+  };
+
+  const context = {
     state,
     open,
     close,
-    toggle: () => {
-      if (state() === 'open') {
-        close();
-      } else {
-        open();
-      }
-    },
+    toggle,
   };
 
-  return actions;
+  return context;
 }
 
 const DialogContext = createContext<ReturnType<typeof useDialogState>>();
@@ -79,24 +77,43 @@ export function useNewTransactionDialog() {
   return context;
 }
 
-export const TransactionDialog = () => {
+export const NewTransactionDialog = () => {
+  const { state, close, open } = useNewTransactionDialog();
+
   const create = useCreateTransaction();
-  const { state, close, toggle } = useNewTransactionDialog();
   const [transactionDescription, setTransactionDescription] = createSignal('');
 
+  const cleanupForm = () => {
+    setTransactionDescription('');
+  };
+
+  const onOpenChange = () => {
+    if (state() === 'open') {
+      close(cleanupForm);
+    } else {
+      open();
+    }
+  };
+
+  const createAndNew = useAction(
+    action(async () => {
+      await create.use(transactionDescription, undefined, cleanupForm);
+      await Promise.resolve();
+
+      return;
+    }, 'create-transaction-and-new'),
+  );
+
   return (
-    <Dialog
-      open={state() === 'open'}
-      onOpenChange={() => {
-        toggle();
-      }}
-    >
+    <Dialog open={state() === 'open'} onOpenChange={onOpenChange}>
       <DialogContent>
         <DialogHeader>
           <DialogTitle class="uppercase">New Transaction</DialogTitle>
         </DialogHeader>
         <form
-          action={create.raw.with(transactionDescription, close)}
+          action={create.raw.with(transactionDescription, undefined, () => {
+            close(cleanupForm);
+          })}
           method="post"
         >
           <div class="mb-6 text-left">
@@ -116,20 +133,35 @@ export const TransactionDialog = () => {
             </TextFieldRoot>
           </div>
           <DialogFooter>
-            <ButtonLoadable
-              class="w-full"
-              type="submit"
-              size="sm"
-              disabled={create.ctx.pending}
-              loading={create.ctx.pending}
-            >
-              create
-            </ButtonLoadable>
+            <div class="flex gap-2">
+              <ButtonLoadable
+                type="submit"
+                class="w-full"
+                size="sm"
+                disabled={create.ctx.pending}
+                loading={create.ctx.pending}
+              >
+                create
+              </ButtonLoadable>
+              <ButtonLoadable
+                onclick={() => void createAndNew()}
+                class="w-full"
+                size="sm"
+                variant="secondary"
+                disabled={create.ctx.pending}
+                loading={create.ctx.pending}
+              >
+                create & new
+              </ButtonLoadable>
+            </div>
             <Button
+              as={DialogClose}
               class="w-full"
               variant="outline"
               size="sm"
-              onClick={close}
+              onClick={() => {
+                close();
+              }}
               disabled={create.ctx.pending}
             >
               cancel

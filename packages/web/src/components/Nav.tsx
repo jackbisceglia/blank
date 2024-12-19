@@ -70,10 +70,9 @@ export default function Nav() {
   ];
 
   return (
-    <nav class="bg-transparent my-6 py-4 fixed bottom-0 z-50 text-sm uppercase">
+    <nav class="bg-transparent my-3 py-6 fixed bottom-0 z-50 text-sm uppercase">
       <ul class="container flex items-center mx-auto bg-ui-background border border-ui-accent rounded-lg w-fit px-4 space-x-4">
         <Show when={auth.isLoaded()} fallback={<CommandBarSkeleton />}>
-          {/* <Show when={false} fallback={<CommandBarSkeleton />}> */}
           <Switch>
             <Match when={auth.userId()}>
               <For each={authenticated}>
