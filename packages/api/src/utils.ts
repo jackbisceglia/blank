@@ -16,6 +16,30 @@ export const requireAuthenticated = (c: Context<BlankEnv, '/', BlankInput>) => {
   return auth;
 };
 
+const returnedRows = <T>(rows: T[], entity: string) => {
+  if (!rows.length) {
+    throw new Error(`Failed to return ${entity}`);
+  }
+
+  return rows;
+};
+
+const returnedRow = <T>(rows: T[], entity: string) => {
+  const all = returnedRows(rows, entity);
+
+  return all[0];
+};
+
+export const makeRequireReturnedRows =
+  (entity: string) =>
+  <T>(rows: T[]) =>
+    returnedRows(rows, entity);
+
+export const makeRequireReturnedRow =
+  (entity: string) =>
+  <T>(rows: T[]) =>
+    returnedRow(rows, entity);
+
 export type DevConfig = {
   delay:
     | false

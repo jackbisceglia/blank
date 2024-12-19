@@ -12,7 +12,7 @@ export default createHandler(() => (
           {assets}
         </head>
         <body>
-          <div id="app" class="h-full w-full flex justify-center">
+          <div id="app" class="w-full flex justify-center">
             {children}
           </div>
           {scripts}

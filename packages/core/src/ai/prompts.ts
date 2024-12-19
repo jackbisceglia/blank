@@ -1,4 +1,9 @@
 export default {
+  randomUsername() {
+    return `
+Generate a random 'nickname' for a user. This should be things like colors, animals, adjectives, and a short number. Make them super unique so many users aren't seeing the same username.
+`;
+  },
   nlToTransaction() {
     return `
 You are an advanced transaction parser. Your task is to analyze the provided transaction description and convert it into a standardized JSON format.

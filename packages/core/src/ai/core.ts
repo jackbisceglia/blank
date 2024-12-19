@@ -68,7 +68,7 @@ const vercelAIProviders = {
 };
 
 export const llmToObject = async <T>(
-  grounding: string,
+  grounding: string | undefined,
   input: string,
   schema: z.ZodType<T>,
   opts?: {

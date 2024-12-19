@@ -1,157 +1,201 @@
+import { useNewGroupDialog } from './+group.create.dialog';
+import { getGroups, useCreateGroup } from './index.data';
+
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
 import {
-  getTransactions,
-  useCreateTransaction,
-  useDeleteTransactions,
-} from './-transaction.data';
-import { useNewTransactionDialog } from './+transaction.dialog';
-import { columns, headers, TransactionTable } from './+transaction.table';
-
-import { TransactionWithPayeesWithContacts } from '@blank/core/db';
-
-import { Button, ButtonLoadable } from '@/components/ui/button';
-import { Skeleton } from '@/components/ui/skeleton';
+  CardContent,
+  CardHeader,
+  CardTitle,
+  LinkCard,
+} from '@/components/ui/card';
+import { navigation } from '@/lib/signals';
 import { createAsync } from '@solidjs/router';
-import { ColumnDef } from '@tanstack/solid-table';
-import {
-  Accessor,
-  createSignal,
-  Match,
-  onMount,
-  Show,
-  Suspense,
-  Switch,
-} from 'solid-js';
+import { useUser } from 'clerk-solidjs';
+import { For, Show, Suspense } from 'solid-js';
 
-const useRows = (
-  data: Accessor<TransactionWithPayeesWithContacts[] | undefined>,
-) => {
-  const [rowSelection, setRowSelection] = createSignal<Record<string, boolean>>(
-    {},
-  );
+const C = '\\';
+const blank = `
+________    ___         ________    ________     ___  __
+|.   __  .  |.  .       |.   __  .  |.   ___  .  |.  .|.  .
+. .  .|. /. . .  .      . .  .|.  . . .  .. .  . . .  ./  /|_
+ . .   __  . . .  .      . .   __  . . .  .. .  . . .   ___  .
+  . .  .|.  . . .  ._____ . .  . .  . . .  .. .  . . .  .. .  .
+   . ._______. . ._______. . .__. .__. . .__.. .__. . .__.. .__.
+    .|_______|  .|_______|  .|__|.|__|  .|__| .|__|  .|__| .|__|`;
 
-  const resetRows = () => setRowSelection({});
-
-  const selectedIds = () =>
-    Object.keys(rowSelection())
-      .map((stringIndex) => data()?.at(parseInt(stringIndex))?.id ?? '')
-      .filter((id) => id !== '');
-
-  return {
-    reset: resetRows,
-    selected: selectedIds,
-    get: rowSelection,
-    set: setRowSelection,
-  };
-};
-
-const SkeletonTable = () => {
-  const columns: ColumnDef<string>[] = Object.values(headers).map(
-    (display) => ({
-      header: display,
-      cell: () => {
-        return (
-          <Switch fallback={<Skeleton class="w-5/6 h-5" />}>
-            <Match when={display === headers.description}>
-              <Skeleton class="w-20 h-5" />
-            </Match>
-            <Match when={display === headers.cost}>
-              <Skeleton class="w-12 h-5" />
-            </Match>
-          </Switch>
-        );
-      },
-    }),
-  );
-
-  const skeletonData = () => Array.from({ length: 10 }).map(() => '');
-
+const SkeletonGroupGrid = () => {
   return (
-    <TransactionTable
-      rows={{ get: () => ({}) as Record<string, boolean>, set: () => {} }}
-      columns={columns}
-      data={skeletonData}
-    />
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+      {/* TODO: can read from local storage to check last time we loaded  */}
+      <For each={Array(3)}>
+        {() => (
+          <GroupCard
+            id="loading"
+            name="Loading"
+            lastSettledAt={'__/__/____'}
+            memberCount={-1}
+            isOwner={false}
+          />
+        )}
+      </For>
+    </div>
   );
 };
 
-export default function HomePage() {
-  const transactions = createAsync(() => getTransactions());
+type NoGroupsViewProps = {
+  open: () => void;
+};
 
-  const [createTransaction, deleteTransaction] = [
-    useCreateTransaction(),
-    useDeleteTransactions(),
-  ];
-
-  const dialog = useNewTransactionDialog();
-  const rows = useRows(transactions);
-
-  const someRowsSelected = () => rows.selected().length > 0;
-
-  const month = new Date().toLocaleString('default', { month: 'long' });
-
-  onMount(() => {
-    const handleKeyDown = async (e: KeyboardEvent) => {
-      if (someRowsSelected()) {
-        if (e.ctrlKey && e.key === 'd') {
-          await deleteTransaction.use(rows.selected(), rows.reset);
-        } else if (e.key === 'Escape') {
-          rows.reset();
-        }
-      }
-    };
-
-    // TODO: solid-utils has a keyboard thing i should use here
-    window.addEventListener('keydown', (e) => void handleKeyDown(e));
-  });
-
+const NoGroupsView = (props: NoGroupsViewProps) => {
   return (
-    <div class="w-full">
-      <div class="w-full flex justify-between items-center py-2">
-        <h1 class="text-left text-xl uppercase text-ui-primary">
-          Overview - {month}
-        </h1>
-        {/* Button Bar */}
-        <div class="flex items-center gap-2">
-          <ButtonLoadable
-            variant="destructive"
-            size="sm"
-            class="w-20"
-            disabled={!someRowsSelected() || deleteTransaction.ctx.pending}
-            loading={deleteTransaction.ctx.pending}
-            onClick={() =>
-              void deleteTransaction.use(rows.selected(), rows.reset)
-            }
-          >
-            Delete
-          </ButtonLoadable>
-          <Button
-            class="w-20"
-            disabled={createTransaction.ctx.pending}
-            onClick={dialog.open}
-            variant="outline"
-            size="sm"
-          >
-            New
-          </Button>
-        </div>
+    <div class="relative flex flex-col items-center justify-center gap-4 h-full mb-16">
+      <div class="overflow-clip absolute -z-10 flex flex-col items-center justify-center text-3xl select-none">
+        <pre class="text-center opacity-100 text-ui-muted">
+          {blank.replaceAll('.', C)}
+        </pre>
       </div>
-      <Suspense fallback={<SkeletonTable />}>
-        <Show
-          when={transactions()}
-          fallback={<p>No transactions yet . . . </p>}
-        >
-          {(transactions) => (
-            <TransactionTable
-              rows={{
-                get: rows.get,
-                set: rows.set,
-              }}
-              columns={columns}
-              data={transactions}
+
+      {/* Content */}
+      <div class="flex flex-col items-center justify-center gap-4">
+        <div class="space-y-2 text-center">
+          <h3 class="text-2xl font-semibold uppercase">No Groups Yet</h3>
+          <p class="text-muted-foreground lowercase">
+            Create your first group to start collaborating with others
+          </p>
+        </div>
+        <Button onClick={props.open} class="uppercase text-sm">
+          Create New Group
+        </Button>
+      </div>
+    </div>
+  );
+};
+
+// currently pretty hacky way to handle loading states inside of this guy
+type GroupCardProps = {
+  id: string;
+  name: string;
+  lastSettledAt: string;
+  memberCount: number;
+  isOwner: boolean;
+};
+
+const GroupCard = (props: GroupCardProps) => {
+  const dolla = `   ___         
+ _|/  /__      
+|/   ____/     
+/ /  /___|_    
+ / /_____  /   
+  /|____|/  /  
+    ____/_/  / 
+   |/___    __/
+   /|___|/__/_|
+        /|__|`;
+
+  return (
+    <LinkCard
+      aria-busy={props.id === 'loading'}
+      onPointerDown={() => (navigation.groupClicked = props.name)}
+      href={props.id === 'loading' ? '/' : `/group/${props.id}`}
+      class="group relative w-full overflow-hidden px-6 py-4 border border-ui-input bg-ui-background hover:bg-ui-accent hover:text-ui-accent-foreground transition-all duration-100 rounded-sm"
+    >
+      <CardHeader class="w-full space-y-0 flex-row items-center flex p-0 gap-2">
+        <CardTitle>
+          <h2 class="text-lg uppercase font-medium">{props.name}</h2>
+        </CardTitle>
+        <Show when={props.isOwner}>
+          <Badge
+            variant="default"
+            class="hover:bg-ui-primary border-0 flex h-min py-1 text-xs px-2 text-[0.7rem] uppercase leading-none"
+          >
+            You
+          </Badge>
+        </Show>
+      </CardHeader>
+      <CardContent class="px-0 py-3 flex flex-col items-start justify-between gap-1.5">
+        {/* start background */}
+        <div class="overflow-clip top-0 right-0 absolute z-0 flex flex-col items-center justify-center text-xs select-none">
+          <pre class="transition-all duration-100 text-center opacity-100 text-ui-muted group-hover:text-ui-primary/75">
+            {dolla.replaceAll('\n\n', '').replaceAll('/', C)}
+          </pre>
+        </div>
+        {/* end background */}
+        <p class="text-sm text-ui-muted-foreground lowercase">
+          {props.memberCount !== -1 ? props.memberCount : '_'} member
+          {props.memberCount > 1 ? 's' : ''}
+        </p>
+        <p class="text-sm text-ui-muted-foreground lowercase">
+          settled {props.lastSettledAt}
+        </p>
+      </CardContent>
+    </LinkCard>
+  );
+};
+
+export default function DashboardPage() {
+  const session = useUser();
+  const groups = createAsync(() => getGroups());
+
+  const createGroup = useCreateGroup();
+  const createGroupDialog = useNewGroupDialog();
+
+  return (
+    <>
+      <Suspense>
+        <Show when={groups()}>
+          {(groups) => (
+            <createGroupDialog.Component
+              numGroupsUserIsAMemberOf={groups().length}
             />
           )}
         </Show>
       </Suspense>
-    </div>
+
+      <div class="flex gap-2 py-1 w-full justify-between sm:items-center">
+        <h1 class="text-left text-xl uppercase text-ui-foreground">
+          Welcome back,{' '}
+          <Suspense fallback={'...'}>{session.user()?.username}</Suspense>
+        </h1>
+      </div>
+      <Show when={session.user()}>
+        <div class="flex gap-2 py-1 w-full justify-between sm:items-center">
+          {/* Button Bar */}
+          <div class="flex items-center gap-2 sm:w-fit">
+            <Button
+              class="w-full"
+              disabled={createGroup.ctx.pending}
+              onClick={createGroupDialog.open}
+              variant="outline"
+              size="sm"
+            >
+              New Group
+            </Button>
+          </div>
+        </div>
+        <Suspense fallback={<SkeletonGroupGrid />}>
+          <Show
+            when={!!groups()?.length && groups()}
+            fallback={<NoGroupsView open={createGroupDialog.open} />}
+          >
+            {(groups) => (
+              <ul class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                <For each={groups()}>
+                  {(group) => (
+                    <GroupCard
+                      id={group.id}
+                      name={group.title}
+                      lastSettledAt={new Date().toLocaleDateString('default')}
+                      memberCount={group.members.length}
+                      isOwner={group.ownerId === session.user()?.id}
+                    />
+                  )}
+                </For>
+              </ul>
+            )}
+          </Show>
+        </Suspense>
+      </Show>
+    </>
   );
 }

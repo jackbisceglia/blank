@@ -22,8 +22,10 @@ export const buttonVariants = cva(
           'border border-ui-input bg-ui-background shadow-sm hover:bg-ui-accent hover:text-ui-accent-foreground',
         secondary:
           'bg-ui-secondary text-ui-secondary-foreground shadow-sm hover:bg-ui-secondary/80',
+        tertiary:
+          'border-transparent bg-ui-background text-ui-secondary-foreground hover:bg-ui-background/50',
         ghost: 'hover:bg-ui-accent hover:text-ui-accent-foreground',
-        link: 'text-ui-primary underline-offset-4 hover:underline',
+        link: 'underline-offset-4 hover:underline',
       },
       size: {
         default: 'h-9 px-4 py-2',

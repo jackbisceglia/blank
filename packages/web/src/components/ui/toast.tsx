@@ -7,7 +7,7 @@ import type {
   ToastRootProps,
   ToastTitleProps,
 } from '@kobalte/core/toast';
-import { toaster, Toast as ToastPrimitive } from '@kobalte/core/toast';
+import { Toast as ToastPrimitive, toaster } from '@kobalte/core/toast';
 import type { VariantProps } from 'class-variance-authority';
 import { cva } from 'class-variance-authority';
 import type {
@@ -17,7 +17,7 @@ import type {
   VoidComponent,
   VoidProps,
 } from 'solid-js';
-import { mergeProps, Show, splitProps } from 'solid-js';
+import { Show, mergeProps, splitProps } from 'solid-js';
 import { Portal } from 'solid-js/web';
 
 type ToastVariant = NonNullable<VariantProps<typeof toastVariants>['variant']>;
@@ -58,6 +58,8 @@ export const toastVariants = cva(
         default: 'border bg-ui-background',
         destructive:
           'destructive group border-ui-destructive bg-ui-destructive text-ui-destructive-foreground',
+        neutral:
+          'neutral group border-ui-neutral bg-ui-muted text-ui-neutral-foreground',
       },
     },
     defaultVariants: {

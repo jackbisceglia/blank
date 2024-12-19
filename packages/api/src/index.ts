@@ -1,5 +1,6 @@
-import contacts from './contacts.routes';
+import groups from './group.routes';
 import transactions from './transaction.routes';
+import users from './user.routes';
 import { DevConfig, dev } from './utils';
 
 import { clerkMiddleware } from '@hono/clerk-auth';
@@ -22,7 +23,8 @@ const app = new Hono({})
     return c.text('welcome to the blank api');
   })
   .route('/transactions', transactions)
-  .route('/contacts', contacts);
+  .route('/groups', groups)
+  .route('/users', users);
 
 export type AppType = typeof app;
 export default handle(app);
