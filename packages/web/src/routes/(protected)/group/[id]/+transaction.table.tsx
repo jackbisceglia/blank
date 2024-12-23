@@ -1,13 +1,10 @@
 /* eslint-disable solid/reactivity */ // not sure if this rule is accurate, but code is straight from shadcn-solid docs
 
-// import { useRows } from '.';
 import { DialogState } from './+transaction.create.dialog';
 import { useRows } from './-useRows';
 import { useDeleteTransactions } from './index.data';
 
-// import { useDeleteTransactions } from './-transaction.data';
-
-import { TransactionWithPayeesWithMembers } from '@blank/core/db';
+import { Transaction } from '@blank/core/zero';
 
 import { Badge, badgeVariants } from '@/components/ui/badge';
 import {
@@ -166,7 +163,6 @@ function createRowSelect<TData>(
 }
 
 export const headers = {
-  // select: 'SELECTS',
   cost: 'COST',
   description: 'DESCRIPTION',
   payees: 'WITH',
@@ -174,7 +170,7 @@ export const headers = {
   date: 'DATE',
 };
 
-export const columns: ColumnDef<TransactionWithPayeesWithMembers>[] = [
+export const columns: ColumnDef<Transaction>[] = [
   {
     id: 'amount',
     accessorKey: 'amount',
@@ -209,14 +205,8 @@ export const columns: ColumnDef<TransactionWithPayeesWithMembers>[] = [
         <div class="flex flex-wrap gap-2 w-full h-full">
           <For each={props.row.original.payees}>
             {(payee) => (
-              // <A
-              //   href={`/contacts/${payee.contact.id}`}
-              //   class={badgeVariants({ variant: 'tertiary' })}
-              // >
-              //   {payee.contact.name}
-              // </A>
               <p class={badgeVariants({ variant: 'tertiary' })}>
-                {payee.member.nickname}
+                {payee.nickname}
               </p>
             )}
           </For>
@@ -240,8 +230,7 @@ export const columns: ColumnDef<TransactionWithPayeesWithMembers>[] = [
     id: 'date',
     accessorKey: 'date',
     header: headers.date,
-    cell: (props) =>
-      new Date(props.row.original.date ?? '').toLocaleDateString(),
+    cell: (props) => new Date(props.row.original.date).toLocaleDateString(),
     size: 10,
   },
 ];

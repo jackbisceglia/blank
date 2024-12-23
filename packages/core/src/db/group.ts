@@ -14,6 +14,8 @@ export const group = {
       .values({ title, ownerId: userId })
       .returning();
 
+    const groupRow = groupRowsCreated[0];
+
     // insert self as member (and owner)
     const memberRowsCreated = await db
       .insert(memberTable)
@@ -24,16 +26,18 @@ export const group = {
       })
       .returning();
 
+    console.log('should be inserting?: ', numGroupsUserIsAMemberOf);
     if (numGroupsUserIsAMemberOf === 0) {
-      db.insert(preferenceTable).values({
+      console.log('entered?');
+      await db.insert(preferenceTable).values({
         userId,
-        defaultGroupId: groupRowsCreated[0].id,
+        defaultGroupId: groupRow.id,
       });
     }
 
     return [
       {
-        ...groupRowsCreated[0],
+        ...groupRow,
         members: memberRowsCreated,
       },
     ];

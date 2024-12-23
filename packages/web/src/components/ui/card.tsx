@@ -23,7 +23,7 @@ export const Card = (props: ComponentProps<'div'>) => {
   return (
     <div
       class={cn(
-        'border bg-ui-accent border-ui-border text-ui-card-foreground shadow',
+        'border bg-ui-muted border-ui-border text-ui-card-foreground shadow',
         local.class,
       )}
       {...rest}

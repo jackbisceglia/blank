@@ -4,7 +4,6 @@ import { memberTable } from './member.schema';
 import {
   Transaction,
   TransactionInsert,
-  TransactionInsertWithPayees,
   payeeTable,
   transactionTable,
 } from './transaction.schema';
@@ -12,17 +11,20 @@ import {
 import { and, desc, eq, inArray } from 'drizzle-orm';
 
 // temp: replace with relation/join/query when users are set up
-const findPayeeIdByName = async (name: string, userId: string) => {
-  const contacts = await db.query.memberTable.findMany({
+const findMemberIdByName = async (name: string, groupId: string) => {
+  console.log('FINDING: ', name);
+  const members = await db.query.memberTable.findMany({
     columns: { nickname: true, id: true },
-    where: eq(memberTable.userId, userId),
+    where: eq(memberTable.groupId, groupId),
   });
 
+  console.log('MEMBERS: ', members);
+
   // more complex matching logic, otherwise delegate this to the db
-  const match = contacts.find(
-    ({ nickname: contactName }) =>
-      contactName.toLowerCase().includes(name.toLowerCase()) ||
-      name.toLowerCase().includes(contactName.toLowerCase()),
+  const match = members.find(
+    ({ nickname }) =>
+      nickname.toLowerCase().includes(name.toLowerCase()) ||
+      name.toLowerCase().includes(nickname.toLowerCase()),
   );
 
   return match?.id ?? null;
@@ -112,28 +114,39 @@ export const transaction = {
   async transformParsedToInsertable(
     parsed: TransactionParseable,
     userId: string,
-  ): Promise<TransactionInsertWithPayees> {
-    const payeeId = userId;
+    groupId: string,
+  ) {
+    const payerId = userId;
     // get user ids from name using core module
     // we can do like getIdNearestToName(name) to get the closest match
     // could potentially use an llm to try and find the closest match
-    const payeeIds = (
+    const memberIds = (
       await Promise.all(
         parsed.payees.map(
-          async (payee) => await findPayeeIdByName(payee.payeeName, userId),
+          async (payee) => await findMemberIdByName(payee.payeeName, groupId),
         ),
       )
     ).filter((id) => id !== null);
 
-    if (!payeeId || payeeIds.length !== parsed.payees.length) {
+    console.log('payees', parsed.payees);
+    console.log('memberIds', memberIds);
+
+    if (!payerId || memberIds.length !== parsed.payees.length) {
       throw new Error(
         `Could not find payeeId for payer or payee, payees: ${JSON.stringify(parsed.payees)}`,
       );
     }
-    return {
-      ...parsed,
-      payerId: payeeId,
-      payees: payeeIds.map((id) => ({ memberId: id })),
+
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    const { payerName: _, ...rest } = parsed;
+
+    const insertable = {
+      ...rest,
+      payerId,
+      groupId,
+      payees: memberIds.map((id) => ({ memberId: id })),
     };
+
+    return insertable;
   },
 };

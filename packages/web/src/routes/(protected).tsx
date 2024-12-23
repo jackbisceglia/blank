@@ -60,7 +60,7 @@ export default function ProtectedLayout(props: RouteSectionProps) {
       <ClerkLoaded>
         <SignedIn>
           <DialogProvider>
-            <main class="min-h-full flex flex-col px-4 pb-12 pt-6 text-center gap-4 sm:min-w-96 w-full max-w-screen-xl">
+            <main class="min-h-full flex flex-col px-8 pb-12 pt-6 text-center gap-4 sm:min-w-96 w-full max-w-screen-xl">
               {props.children}
             </main>
             <ProtectedGlobalComponents />

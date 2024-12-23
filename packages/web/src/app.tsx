@@ -2,6 +2,7 @@ import './app.css';
 
 import Nav from './components/Nav';
 import { WithChildren } from './lib/util.client';
+import { ZeroProvider } from './lib/zero';
 
 import { ColorModeProvider, ColorModeScript } from '@kobalte/core';
 import { RouteSectionProps, Router } from '@solidjs/router';
@@ -15,7 +16,7 @@ function Providers(props: WithChildren) {
       <ClerkProvider
         publishableKey={import.meta.env.VITE_CLERK_PUBLISHABLE_KEY as string}
       >
-        {props.children}
+        <ZeroProvider>{props.children}</ZeroProvider>
       </ClerkProvider>
     </ColorModeProvider>
   );

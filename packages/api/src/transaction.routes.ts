@@ -1,11 +1,6 @@
 import { requireAuthenticated } from './utils';
 
-import {
-  TransactionParseable,
-  models,
-  nlToParsedTransaction,
-  providers,
-} from '@blank/core/ai';
+import { models, nlToParsedTransaction, providers } from '@blank/core/ai';
 import {
   TransactionInsertWithPayees,
   preference,
@@ -16,10 +11,16 @@ import { zValidator } from '@hono/zod-validator';
 import { Hono } from 'hono';
 import * as z from 'zod';
 
+const TransactionInsertSchema = TransactionInsertWithPayees.omit({
+  date: true,
+  id: true,
+});
+type TransactionInsertSchema = z.infer<typeof TransactionInsertSchema>;
+
 const CreateBodySchema = z.union([
   z.object({
     type: z.literal('default'),
-    payload: TransactionInsertWithPayees,
+    payload: TransactionInsertSchema,
   }),
   z.object({
     type: z.literal('natural_language'),
@@ -47,9 +48,18 @@ const api = new Hono()
       const { body } = c.req.valid('json');
 
       const groupId =
-        body.payload.groupId ?? (await preference.getDefaultGroupId('abc'));
+        body.payload.groupId ??
+        (await preference.getDefaultGroupId(auth.userId))?.defaultGroupId;
 
-      const getInsertableFromNl = async (input: string, userId: string) => {
+      if (!groupId) {
+        throw new Error('No default group found');
+      }
+
+      const getInsertableFromNl = async (
+        input: string,
+        userId: string,
+        groupId: string,
+      ): Promise<TransactionInsertSchema> => {
         const parsed = await nlToParsedTransaction(input, {
           llm: {
             provider: providers.default,
@@ -57,9 +67,14 @@ const api = new Hono()
           },
         });
 
-        const transformed = transaction.transformParsedToInsertable(
-          parsed ?? ({} as TransactionParseable),
+        if (!parsed) {
+          throw new Error('Failed to parse transaction');
+        }
+
+        const transformed = await transaction.transformParsedToInsertable(
+          parsed,
           userId,
+          groupId,
         );
 
         return transformed;
@@ -69,9 +84,11 @@ const api = new Hono()
       const insertableTransactionData =
         body.type === 'default'
           ? body.payload
-          : await getInsertableFromNl(body.payload.nl, auth.userId);
+          : await getInsertableFromNl(body.payload.nl, auth.userId, groupId);
 
-      const rows = await transaction.create(insertableTransactionData);
+      const rows = await transaction.create({
+        ...insertableTransactionData,
+      });
 
       if (!rows.length) {
         throw new Error('Failed to create transaction');

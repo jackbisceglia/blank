@@ -96,8 +96,8 @@ export const NewTransactionDialog = () => {
   };
 
   const createAndNew = useAction(
-    action(async () => {
-      await create.use(transactionDescription, undefined, cleanupForm);
+    action(async (description: string) => {
+      await create.use(description, undefined, cleanupForm);
       await Promise.resolve();
 
       return;
@@ -111,7 +111,7 @@ export const NewTransactionDialog = () => {
           <DialogTitle class="uppercase">New Transaction</DialogTitle>
         </DialogHeader>
         <form
-          action={create.raw.with(transactionDescription, undefined, () => {
+          action={create.raw.with(transactionDescription(), undefined, () => {
             close(cleanupForm);
           })}
           method="post"
@@ -144,7 +144,7 @@ export const NewTransactionDialog = () => {
                 create
               </ButtonLoadable>
               <ButtonLoadable
-                onclick={() => void createAndNew()}
+                onclick={() => void createAndNew(transactionDescription())}
                 class="w-full"
                 size="sm"
                 variant="secondary"

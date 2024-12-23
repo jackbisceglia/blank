@@ -1,5 +1,5 @@
 import { useNewGroupDialog } from './+group.create.dialog';
-import { getGroups, useCreateGroup } from './index.data';
+import { getGroupsUserBelongsTo } from './index.data';
 
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -10,19 +10,20 @@ import {
   LinkCard,
 } from '@/components/ui/card';
 import { navigation } from '@/lib/signals';
-import { createAsync } from '@solidjs/router';
+import { useZero } from '@/lib/zero';
+import { useQuery } from '@rocicorp/zero/solid';
 import { useUser } from 'clerk-solidjs';
 import { For, Show, Suspense } from 'solid-js';
 
 const C = '\\';
 const blank = `
 ________    ___         ________    ________     ___  __
-|.   __  .  |.  .       |.   __  .  |.   ___  .  |.  .|.  .
-. .  .|. /. . .  .      . .  .|.  . . .  .. .  . . .  ./  /|_
- . .   __  . . .  .      . .   __  . . .  .. .  . . .   ___  .
-  . .  .|.  . . .  ._____ . .  . .  . . .  .. .  . . .  .. .  .
-   . ._______. . ._______. . .__. .__. . .__.. .__. . .__.. .__.
-    .|_______|  .|_______|  .|__|.|__|  .|__| .|__|  .|__| .|__|`;
+ |.   __  .  |.  .       |.   __  .  |.   ___  .  |.  .|.  .
+   . .  .|. /. . .  .      . .  .|.  . . .  .. .  . . .  ./  /|_
+     . .   __  . . .  .      . .   __  . . .  .. .  . . .   ___  .
+       . .  .|.  . . .  ._____ . .  . .  . . .  .. .  . . .  .. .  .
+         . ._______. . ._______. . .__. .__. . .__.. .__. . .__.. .__.
+          .|_______|  .|_______|  .|__|.|__|  .|__| .|__|  .|__| .|__|`;
 
 const SkeletonGroupGrid = () => {
   return (
@@ -135,47 +136,53 @@ const GroupCard = (props: GroupCardProps) => {
 
 export default function DashboardPage() {
   const session = useUser();
-  const groups = createAsync(() => getGroups());
+  const z = useZero();
 
-  const createGroup = useCreateGroup();
+  const groups = useQuery(() =>
+    getGroupsUserBelongsTo(z, session.user()?.id ?? ''),
+  );
+
   const createGroupDialog = useNewGroupDialog();
 
   return (
     <>
       <Suspense>
         <Show when={groups()}>
-          {(groups) => (
-            <createGroupDialog.Component
-              numGroupsUserIsAMemberOf={groups().length}
-            />
-          )}
+          <createGroupDialog.Component />
         </Show>
       </Suspense>
 
       <div class="flex gap-2 py-1 w-full justify-between sm:items-center">
-        <h1 class="text-left text-xl uppercase text-ui-foreground">
+        <h1
+          onClick={(e) => {
+            const rect = e.target.getBoundingClientRect();
+            const top = rect.top; // Distance from viewport top
+            const bottom = rect.bottom;
+
+            console.log(top, bottom);
+          }}
+          class="text-left text-xl uppercase text-ui-foreground"
+        >
           Welcome back,{' '}
           <Suspense fallback={'...'}>{session.user()?.username}</Suspense>
         </h1>
+        {/* Button Bar */}
+        <div class="flex items-center gap-2 sm:w-fit">
+          <Button
+            class="w-full"
+            onClick={createGroupDialog.open}
+            // disabled={createGroup.ctx.pending} // TODO: user maxes out group count
+            variant="default"
+            size="sm"
+          >
+            New Group
+          </Button>
+        </div>
       </div>
       <Show when={session.user()}>
-        <div class="flex gap-2 py-1 w-full justify-between sm:items-center">
-          {/* Button Bar */}
-          <div class="flex items-center gap-2 sm:w-fit">
-            <Button
-              class="w-full"
-              disabled={createGroup.ctx.pending}
-              onClick={createGroupDialog.open}
-              variant="outline"
-              size="sm"
-            >
-              New Group
-            </Button>
-          </div>
-        </div>
         <Suspense fallback={<SkeletonGroupGrid />}>
           <Show
-            when={!!groups()?.length && groups()}
+            when={!!groups().length && groups()}
             fallback={<NoGroupsView open={createGroupDialog.open} />}
           >
             {(groups) => (

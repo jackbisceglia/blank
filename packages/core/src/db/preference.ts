@@ -8,4 +8,13 @@ export const preference = {
       where: eq(preferenceTable.userId, userId),
     });
   },
+  setDefaultGroupId: (userId: string, groupId: string) => {
+    return db
+      .insert(preferenceTable)
+      .values({
+        userId,
+        defaultGroupId: groupId,
+      })
+      .returning();
+  },
 };

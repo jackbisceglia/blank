@@ -1,64 +1,80 @@
-import { toast } from '@/components/ui/toast';
-import { api } from '@/lib/hono';
-import {
-  action,
-  query,
-  revalidate,
-  useAction,
-  useSubmission,
-} from '@solidjs/router';
+import { Zero } from '@/lib/zero';
+import { uuidv7 as genUUIDv7 } from 'uuidv7';
 
-function sleep(ms: number) {
-  return new Promise((resolve) => setTimeout(resolve, ms));
+function checkIsGroupOwner(ownerId: string, userId: string) {
+  if (ownerId !== userId) {
+    throw Error('not permitted to delete this group');
+  }
 }
 
-export const getGroups = query(async () => {
-  const res = await api.users.$get();
-  await sleep(2000);
+export function getGroupsUserBelongsTo(z: Zero, userId: string) {
+  return z.query.group
+    .whereExists('members', (m) => m.where('userId', userId))
+    .related('members');
+}
 
-  if (!res.ok) {
-    throw new Error(`HTTP error! status`);
-  }
+export async function createGroup(
+  z: Zero,
+  title: string,
+  username: string,
+  userId: string,
+) {
+  const groupId = genUUIDv7();
+  const memberId = genUUIDv7();
+  const numGroupsUserIsAMemberOf = getGroupsUserBelongsTo(
+    z,
+    userId,
+  ).materialize().data.length;
 
-  const data = await res.json();
+  await z.mutate.group.insert({
+    id: groupId,
+    ownerId: userId,
+    title: title,
+  });
 
-  return data;
-}, 'groups');
+  await z.mutate.member.insert({
+    id: memberId,
+    groupId,
+    userId,
+    nickname: username,
+  });
 
-export const createGroupAction = action(
-  async (
-    title: string,
-    numGroupsUserIsAMemberOf: number,
-    close?: () => void,
-  ) => {
-    const res = await api.groups.$post({
-      json: { body: { title: title, numGroupsUserIsAMemberOf } },
+  if (numGroupsUserIsAMemberOf === 0) {
+    await z.mutate.preference.insert({
+      userId,
+      defaultGroupId: groupId,
     });
+  }
+}
 
-    if (!res.ok) {
-      toast({
-        title: 'Uh oh! Something went wrong.',
-        description: 'There was a problem with your request.',
-        variant: 'destructive' as const,
-      });
-    } else {
-      await revalidate('groups'); // get rid of this when we can have time to add optimistic updates
-      close?.();
-      toast({
-        title: 'Group Created!',
-        description: `New group ${title} has been created.`,
-        variant: 'default' as const,
-      });
-    }
-  },
-  'create-group',
-);
+export async function updateGroup(
+  z: Zero,
+  groupId: string,
+  groupOwnerId: string,
+  userId: string,
+  title: string,
+) {
+  checkIsGroupOwner(groupOwnerId, userId);
 
-export const useCreateGroup = () => {
-  const submission = useSubmission(createGroupAction);
-  return {
-    raw: createGroupAction,
-    ctx: submission,
-    use: useAction(createGroupAction),
-  };
-};
+  // cascades ?
+  await z.mutate.group.update({
+    id: groupId,
+    title: title,
+  });
+}
+
+export async function deleteGroup(
+  z: Zero,
+  groupId: string,
+  groupOwnerId: string,
+  userId: string,
+) {
+  checkIsGroupOwner(groupOwnerId, userId);
+
+  // cascades ?
+  await z.mutateBatch(async (tx) => {
+    await tx.group.delete({
+      id: groupId,
+    });
+  });
+}

@@ -10,12 +10,12 @@ import { z } from 'zod';
 */
 export const TransactionParseable = TransactionInsert.omit({
   id: true,
+  groupId: true,
   date: true,
   payerId: true,
 }).extend({
   payerName: z.string(), // TODO: add some validation boundaries
   payees: PayeeInsert.omit({
-    payeeId: true,
     transactionId: true,
   })
     .extend({
@@ -32,7 +32,7 @@ export async function nlToParsedTransaction(
   opts?: {
     llm?: LLMOptions;
   },
-): Promise<TransactionParseable | null> {
+) {
   try {
     const transaction = await llmToObject(
       prompts.nlToTransaction(),

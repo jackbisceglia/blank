@@ -1,10 +1,8 @@
-import { TransactionWithPayeesWithMembers } from '@blank/core/db';
+import { Transaction } from '@blank/core/zero';
 
 import { Accessor, createSignal } from 'solid-js';
 
-export const useRows = (
-  data: Accessor<TransactionWithPayeesWithMembers[] | undefined>,
-) => {
+export const useRows = (data: Accessor<readonly Transaction[] | undefined>) => {
   const [rowSelection, setRowSelection] = createSignal<Record<string, boolean>>(
     {},
   );

@@ -1,13 +1,14 @@
-import { Resource } from "sst";
-import { defineConfig } from "drizzle-kit";
+import { defineConfig } from 'drizzle-kit';
+import { Resource } from 'sst';
 
 const { host, user, password, database } = Resource.DATABASE;
 
 export default defineConfig({
   strict: true,
   verbose: true,
-  schema: "./src/db/*.schema.ts",
-  dialect: "postgresql",
+  out: './src/db/generated',
+  schema: './src/db/*.schema.ts',
+  dialect: 'postgresql',
   dbCredentials: {
     database,
     host,

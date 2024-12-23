@@ -1,12 +1,21 @@
 import { TransactionTable, headers } from './[id]/+transaction.table';
-import { getGroup } from './[id]/index.data';
+import { getGroupDetails } from './[id]/index.data';
 
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import { navigation } from '@/lib/signals';
-import { A, RouteSectionProps, createAsync, useParams } from '@solidjs/router';
+import { useZero } from '@/lib/zero';
+import { useQuery } from '@rocicorp/zero/solid';
+import {
+  A,
+  RouteSectionProps,
+  useLocation,
+  useNavigate,
+  useParams,
+} from '@solidjs/router';
 import { ColumnDef } from '@tanstack/solid-table';
-import { Match, Suspense, Switch, onMount } from 'solid-js';
+import { useUser } from 'clerk-solidjs';
+import { For, Match, Show, Suspense, Switch, createEffect } from 'solid-js';
 
 type Params = { id: string };
 
@@ -76,23 +85,160 @@ function PageSkeleton() {
   );
 }
 
+interface BreadcrumbPartProps {
+  title: string;
+  to: string;
+}
+
+function BreadcrumbPart(props: BreadcrumbPartProps) {
+  return (
+    <A
+      class="hover:text-ui-foreground h-full"
+      activeClass="text-ui-foreground"
+      inactiveClass="text-ui-foreground/50 "
+      end
+      href={props.to}
+    >
+      {props.title}
+    </A>
+  );
+}
+
+function BreadcrumbSeparator() {
+  const SEPARATOR = ' / ';
+
+  return <span class="text-ui-foreground/50 ">{SEPARATOR}</span>;
+}
+
 export default function GroupLayout(props: RouteSectionProps) {
+  const session = useUser();
+  const z = useZero();
+
+  const subpages = ['members', 'settings'];
+
+  const navigate = useNavigate();
   const params = useParams<Params>();
-  const group = createAsync(() => getGroup(params.id));
-  const DIVIDER = ' / ';
+  const path = useLocation();
+
+  const group = useQuery(() => getGroupDetails(z, params.id));
+
+  function getSubpage() {
+    const fromPath = path.pathname.split('/').at(-1) ?? 'dashboard';
+    const subpage = subpages.includes(fromPath) ? fromPath : null;
+
+    return subpage ?? 'group';
+  }
+
+  const breadcrumbs = {
+    home: {
+      text: 'Home',
+      to: '/',
+    },
+    group: {
+      text: () => group()?.title ?? '',
+      to: '', // relative to [id]
+    },
+    subpage: {
+      text: getSubpage,
+      to: getSubpage, // this doesn't need to be used, at least for now, as the Show will give us the same thing for text() and to()
+    },
+  };
+
+  function userHasAuthorization(subpage: string) {
+    const checks: Record<string, () => boolean> = {
+      settings: function checkUserOwnsPage() {
+        const g = group();
+        return g?.ownerId === session.user()?.id;
+      },
+      group: function checkUserOwnsPage() {
+        const g = group();
+        return (
+          (g && g.members.find((m) => m.userId === session.user()?.id)) !==
+          undefined
+        );
+      },
+    };
+
+    const authorizationFn = checks[subpage] ?? (() => true);
+
+    return authorizationFn();
+  }
+
+  // TODO: test this for blocking pages
+  createEffect(() => {
+    if (!userHasAuthorization(getSubpage())) {
+      navigate('/');
+    }
+  });
 
   return (
     <>
       <div class="flex flex-col gap-2 py-1 w-full sm:flex-row sm:justify-between sm:items-center">
-        <h1 class="text-left text-xl uppercase text-ui-foreground ">
-          <A class="text-ui-foreground/50 hover:text-ui-foreground" href={'/'}>
-            Home
-          </A>
-          <span class="text-ui-foreground/50 ">{DIVIDER}</span>
-          <Suspense fallback={navigation.groupClicked ?? ''}>
-            {group()?.title}
+        <h1 class="text-left text-xl uppercase text-ui-foreground">
+          <BreadcrumbPart
+            title={breadcrumbs.home.text}
+            to={breadcrumbs.home.to}
+          />
+          <BreadcrumbSeparator />
+          <Suspense
+            fallback={
+              <BreadcrumbPart
+                title={navigation.groupClicked ?? ''}
+                to={breadcrumbs.group.to}
+              />
+            }
+          >
+            <BreadcrumbPart
+              title={breadcrumbs.group.text()}
+              to={breadcrumbs.group.to}
+            />
+            <Show
+              when={
+                userHasAuthorization(breadcrumbs.subpage.text()) &&
+                breadcrumbs.subpage.text() !== 'group' &&
+                breadcrumbs.subpage.text()
+              }
+            >
+              {(part) => (
+                <>
+                  <BreadcrumbSeparator />
+                  <BreadcrumbPart title={part()} to={part()} />
+                </>
+              )}
+            </Show>
           </Suspense>
         </h1>
+        <div class="flex flex-col gap-1 sm:flex-row sm:justify-start">
+          <For
+            each={
+              [
+                ['Dashboard', '', () => true],
+                ['Members', 'members', () => true],
+                [
+                  'Settings',
+                  'settings',
+                  () => userHasAuthorization(breadcrumbs.subpage.text()),
+                ],
+              ] as const
+            }
+          >
+            {([display, to, check]) => (
+              <Show when={check()}>
+                <Button
+                  as={A}
+                  variant={'link'}
+                  size="sm"
+                  class="px-2"
+                  activeClass="underline"
+                  href={to}
+                  end
+                >
+                  {display}
+                </Button>
+              </Show>
+            )}
+          </For>
+        </div>
       </div>
       <Suspense fallback={<PageSkeleton />}>{props.children}</Suspense>
     </>

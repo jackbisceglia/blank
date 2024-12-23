@@ -39,6 +39,11 @@ export const clipboard = {
   copy,
 };
 
+export const formPrevent = (fn: () => void) => (e: Event) => {
+  e.preventDefault();
+  fn();
+};
+
 /* 
 - use<CRUD><ACTION>
 - can't figure out types on making this an abstraction, will just copy/paste this for now

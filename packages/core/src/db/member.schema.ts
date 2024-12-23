@@ -11,10 +11,10 @@ import { text } from 'drizzle-orm/pg-core';
 import { createInsertSchema, createSelectSchema } from 'drizzle-zod';
 
 export const memberTable = createTable('member', {
-  id: uuidv7WithDefault('id').primaryKey(),
-  groupId: uuidv7('group_id').notNull(),
-  userId: uuidv7('user_id').notNull(),
-  nickname: text('name').notNull(),
+  id: uuidv7WithDefault().primaryKey(),
+  groupId: uuidv7().notNull(),
+  userId: uuidv7().notNull(),
+  nickname: text().notNull(),
 });
 
 export const memberRelation = relations(memberTable, ({ one }) => ({

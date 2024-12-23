@@ -13,12 +13,12 @@ import { createInsertSchema, createSelectSchema } from 'drizzle-zod';
 
 // sql
 export const transactionTable = createTable('transaction', {
-  id: uuidv7WithDefault('id').primaryKey(),
-  groupId: uuidv7('group_id').notNull(),
-  payerId: uuidv7('payer_id').notNull(),
-  amount: integer('amount').notNull(),
-  date: text('date').default(sql`(CURRENT_TIMESTAMP)`),
-  description: text('description').notNull(),
+  id: uuidv7WithDefault().primaryKey(),
+  groupId: uuidv7().notNull(),
+  payerId: uuidv7().notNull(),
+  amount: integer().notNull(),
+  date: text().default(sql`(CURRENT_TIMESTAMP)`),
+  description: text().notNull(),
 });
 
 export const transactionRelation = relations(
@@ -32,10 +32,10 @@ export const transactionRelation = relations(
   }),
 );
 
-export const payeeTable = createTable('transaction_payee', {
-  id: uuidv7WithDefault('id').primaryKey(),
-  transactionId: uuidv7('transaction_id').notNull(),
-  memberId: uuidv7('payee_id').notNull(),
+export const payeeTable = createTable('payee', {
+  id: uuidv7WithDefault().primaryKey(),
+  transactionId: uuidv7().notNull(),
+  memberId: uuidv7(),
 });
 
 export const payeeRelation = relations(payeeTable, ({ one }) => ({
@@ -74,6 +74,10 @@ export type TransactionInsertWithPayeesWithMembers = TransactionInsert & {
 };
 export type TransactionWithPayeesWithMembers = Transaction & {
   payees: PayeeWithMember[];
+};
+
+export type TransactionWithMembersAsPayees = Transaction & {
+  payees: Member[];
 };
 
 // runtime schemas

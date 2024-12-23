@@ -1,6 +1,6 @@
-import { useCreateGroup } from './index.data';
+import { createGroup } from './index.data';
 
-import { Button, ButtonLoadable } from '@/components/ui/button';
+import { Button } from '@/components/ui/button';
 import {
   Dialog,
   DialogContent,
@@ -9,8 +9,11 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog';
 import { TextFieldLabel, TextFieldRoot } from '@/components/ui/textfield';
-import { createSignalBoundTextField } from '@/lib/util.client';
+import { toast } from '@/components/ui/toast';
+import { createSignalBoundTextField, formPrevent } from '@/lib/util.client';
+import { useZero } from '@/lib/zero';
 import { useSearchParams } from '@solidjs/router';
+import { useUser } from 'clerk-solidjs';
 
 export type DialogState = 'open' | 'closed';
 
@@ -60,16 +63,30 @@ export function useNewGroupDialog() {
   };
 }
 
-type GroupDialogProps = {
-  numGroupsUserIsAMemberOf: number;
-};
+export const GroupDialog = () => {
+  const zero = useZero();
+  const session = useUser();
 
-export const GroupDialog = (props: GroupDialogProps) => {
   const { state, close, toggle } = useNewGroupDialog();
+
   const [[title, setTitle], TitleInput] =
     createSignalBoundTextField<string>('');
 
-  const createGroup = useCreateGroup();
+  const create = formPrevent(() => {
+    const groupTitle = title();
+
+    const user = session.user();
+    if (!user?.username || !user.id) return;
+
+    void createGroup(zero, groupTitle, user.username, user.id);
+
+    toast({
+      title: 'Group Created!',
+      description: `New group ${groupTitle} has been created.`,
+      variant: 'default' as const,
+    });
+    close();
+  });
 
   return (
     <Dialog
@@ -83,14 +100,7 @@ export const GroupDialog = (props: GroupDialogProps) => {
         <DialogHeader>
           <DialogTitle class="uppercase">New Group</DialogTitle>
         </DialogHeader>
-        <form
-          action={createGroup.raw.with(
-            title(),
-            props.numGroupsUserIsAMemberOf,
-            close,
-          )}
-          method="post"
-        >
+        <form onSubmit={create}>
           <div class="mb-6 text-left space-y-2">
             <TextFieldRoot class="lowercase w-full">
               <TextFieldLabel>title</TextFieldLabel>
@@ -104,21 +114,21 @@ export const GroupDialog = (props: GroupDialogProps) => {
             </TextFieldRoot>
           </div>
           <DialogFooter>
-            <ButtonLoadable
+            <Button
               class="w-full uppercase"
               type="submit"
               size="sm"
-              disabled={createGroup.ctx.pending}
-              loading={createGroup.ctx.pending}
+              // disabled={createGroup.ctx.pending}
+              // loading={createGroup.ctx.pending}
             >
               Create
-            </ButtonLoadable>
+            </Button>
             <Button
               class="w-full uppercase"
               variant="outline"
               size="sm"
               onClick={close}
-              disabled={createGroup.ctx.pending}
+              // disabled={createGroup.ctx.pending}
             >
               Cancel
             </Button>

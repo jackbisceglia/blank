@@ -11,9 +11,9 @@ import { text } from 'drizzle-orm/pg-core';
 import { createInsertSchema, createSelectSchema } from 'drizzle-zod';
 
 export const groupTable = createTable('group', {
-  id: uuidv7WithDefault('id').primaryKey(),
-  title: text('title').notNull(),
-  ownerId: uuidv7('owner_id').notNull(),
+  id: uuidv7WithDefault().primaryKey(),
+  title: text().notNull(),
+  ownerId: uuidv7().notNull(),
 });
 
 export const groupRelation = relations(groupTable, ({ many, one }) => ({
