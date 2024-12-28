@@ -1,45 +1,28 @@
 import { GroupParams } from '.';
-import { deleteGroup, updateGroup } from '../../index.data';
+import {
+  deleteGroup,
+  generateGroupInviteLink,
+  updateGroup,
+} from '../../index.data';
+import {
+  StyledCard,
+  StyledCardContent,
+  StyledCardDescription,
+  StyledCardFooter,
+  StyledCardHeader,
+  StyledCardTitle,
+} from './+styled-card';
 import { getGroupDetails } from './index.data';
 
 import { Button } from '@/components/ui/button';
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardFooter,
-  CardHeader,
-  CardTitle,
-} from '@/components/ui/card';
 import { TextFieldLabel, TextFieldRoot } from '@/components/ui/textfield';
-import { cn } from '@/lib/cn';
+import { toast } from '@/components/ui/toast';
 import { createSignalBoundTextField, formPrevent } from '@/lib/util.client';
 import { useZero } from '@/lib/zero';
 import { useQuery } from '@rocicorp/zero/solid';
-import { useNavigate, useParams } from '@solidjs/router';
+import { useLocation, useNavigate, useParams } from '@solidjs/router';
 import { useUser } from 'clerk-solidjs';
-import { ParentComponent, Show } from 'solid-js';
-import { DOMElement } from 'solid-js/jsx-runtime';
-
-const StyledCard: ParentComponent<{ class?: string }> = (props) => (
-  <Card
-    class={cn('text-left flex h-full flex-col justify-start', props.class)}
-    {...props}
-  />
-);
-const StyledCardHeader: ParentComponent = (props) => <CardHeader {...props} />;
-const StyledCardTitle: ParentComponent = (props) => (
-  <CardTitle class="uppercase text-lg" {...props} />
-);
-const StyledCardDescription: ParentComponent = (props) => (
-  <CardDescription class="lowercase" {...props} />
-);
-const StyledCardContent: ParentComponent<{ class?: string }> = (props) => (
-  <CardContent class={cn(props.class, 'p-0 px-6 mb-auto')} {...props} />
-);
-const StyledCardFooter: ParentComponent = (props) => (
-  <CardFooter class="p-6 px-6" {...props} />
-);
+import { Show } from 'solid-js';
 
 interface DetailsSectionProps {
   groupName: string;
@@ -93,32 +76,45 @@ function DetailsSection(props: DetailsSectionProps) {
   );
 }
 
-function AddMembersSection() {
-  const [[inviteEmail, setInviteEmail], InviteEmailInput] =
-    createSignalBoundTextField<string>('');
+interface AddMembersSectionProps {
+  groupId: string;
+  inviteLink: string | null;
+  generateLink: () => void;
+}
 
-  const [[inviteLink, setInviteLink], InviteLinkInput] =
-    createSignalBoundTextField<string>('');
+function AddMembersSection(props: AddMembersSectionProps) {
+  // const [, InviteEmailInput] = createSignalBoundTextField<string>('');
 
-  const handleGenerateInviteLink = () => {
-    // Implement invite link generation logic here
-    const newLink = `https://yourapp.com/invite/${Math.random().toString(36).substring(2, 9)}`;
-    setInviteLink(newLink);
-  };
-  const handleInviteByEmail = (
-    e: SubmitEvent & {
-      currentTarget: HTMLFormElement;
-      target: DOMElement;
-    },
-  ) => {
-    e.preventDefault();
-    // Implement email invitation logic here
-    console.log(`Invitation sent to ${inviteEmail()}`);
-    setInviteEmail('');
+  const [[inviteLink], InviteLinkInput] = createSignalBoundTextField<
+    string | null
+  >(props.inviteLink);
+
+  // const handleInviteByEmail = (
+  //   e: SubmitEvent & {
+  //     currentTarget: HTMLFormElement;
+  //     target: DOMElement;
+  //   },
+  // ) => {
+  //   e.preventDefault();
+  //   // Implement email invitation logic here
+  //   console.log(`Invitation sent to ${inviteEmail()}`);
+  //   setInviteEmail('');
+  // };
+
+  const handleCopyInvitationLink = async () => {
+    const link = inviteLink();
+    if (!link) return;
+
+    await navigator.clipboard.writeText(link);
+    toast({
+      title: 'Invitation Link Copied',
+      description: 'The invitation link has been copied to your clipboard.',
+      variant: 'default' as const,
+    });
   };
 
   return (
-    <StyledCard>
+    <StyledCard class="flex flex-col justify-between text-left">
       <StyledCardHeader>
         <StyledCardTitle>Invite Members</StyledCardTitle>
         <StyledCardDescription>
@@ -127,7 +123,7 @@ function AddMembersSection() {
         </StyledCardDescription>
       </StyledCardHeader>
       <StyledCardContent class="pb-6 space-y-6">
-        <form class="space-y-3">
+        {/* <form class="space-y-3">
           <TextFieldRoot class="w-full text-left space-x-0">
             <TextFieldLabel for="groupName" class="lowercase">
               Invite By Email
@@ -141,9 +137,15 @@ function AddMembersSection() {
           <Button class="uppercase w-full" size="sm">
             Send Invitation
           </Button>
-        </form>
+        </form> */}
 
-        <form class="space-y-3">
+        <form
+          onSubmit={formPrevent(() => {
+            console.log('clicked?');
+            props.generateLink();
+          })}
+          class="space-y-6"
+        >
           <TextFieldRoot class="w-full text-left space-x-0">
             <TextFieldLabel for="groupName" class="lowercase">
               Generate Invite Link
@@ -159,13 +161,17 @@ function AddMembersSection() {
                 class="uppercase w-fit hover:bg-ui-secondary"
                 variant="ghost"
                 size="sm"
+                onClick={() => void handleCopyInvitationLink()}
+                disabled={!inviteLink()}
               >
                 Copy
               </Button>
             </div>
           </TextFieldRoot>
-          <Button class="uppercase w-full" size="sm">
-            Generate
+          <Button type="submit" class="uppercase w-full" size="sm">
+            <Show when={inviteLink()} fallback="Generate Link">
+              Generate New Link
+            </Show>
           </Button>
         </form>
       </StyledCardContent>
@@ -223,44 +229,86 @@ function DangerZoneSection(props: DangerZoneSectionProps) {
 export default function GroupSettingsPage() {
   const z = useZero();
   const navigate = useNavigate();
+  const location = useLocation();
   const params = useParams<GroupParams>();
-  const group = useQuery(() => getGroupDetails(z, params.id));
   const session = useUser();
+  const group = useQuery(() =>
+    getGroupDetails(z, params.id, session.user()?.id ?? ''),
+  );
 
   function handleDeleteSubmission(confirmation: string) {
     const g = group();
     const user = session.user();
 
     if (!g || !user) return;
+
     if (confirmation !== group()?.title) {
       // TODO: toast
-      window.alert("these don't match");
-      return;
+      toast({
+        title: 'Incorrect confirmation',
+        description:
+          'The group names did not match. Try again, this can not be undone.',
+        variant: 'destructive' as const,
+      });
+    } else {
+      toast({
+        title: 'Group Deleted',
+        description: `Group ${confirmation} successfully deleted`,
+        variant: 'default' as const,
+      });
+      void deleteGroup(z, g.id, g.ownerId, user.id);
+      navigate('/');
     }
-
-    void deleteGroup(z, g.id, g.ownerId, user.id);
-    navigate('/');
   }
 
   function handleUpdateGroupDetails(newGroupName: string) {
+    const property = 'name'; // TODO: we can update this when more details are update-able
     const g = group();
     const user = session.user();
 
     if (!g || !user) return;
 
     void updateGroup(z, g.id, g.ownerId, user.id, newGroupName);
+    toast({
+      title: `Group ${property} Updated`,
+      description: `Group successfully renamed to "${newGroupName}".`,
+      variant: 'default' as const,
+    });
   }
+
+  function handleGenerateInviteLink() {
+    const g = group();
+    const user = session.user();
+
+    if (!g || !user) return;
+
+    void generateGroupInviteLink(z, g.id);
+  }
+
+  const inviteLink = () => {
+    const g = group();
+    const user = session.user();
+
+    if (!g || !user || !g.invitationId) return null;
+
+    console.log(location);
+    return `http://localhost:3000/group/join/${g.invitationId}`; // TODO: fix this
+  };
 
   return (
     <Show when={session.user() && group()}>
       {(group) => (
-        <div class="grid grid-cols-2 gap-4 py-1">
+        <div class="grid grid-cols-2 gap-4">
           <DetailsSection
             update={handleUpdateGroupDetails}
             groupName={group().title}
           />
+          <AddMembersSection
+            groupId={group().id}
+            inviteLink={inviteLink()}
+            generateLink={handleGenerateInviteLink}
+          />
           <DangerZoneSection delete={handleDeleteSubmission} />
-          <AddMembersSection />
         </div>
       )}
     </Show>

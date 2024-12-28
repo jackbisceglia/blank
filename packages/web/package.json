@@ -5,7 +5,7 @@
   "scripts": {
     "build": "vinxi build",
     "start": "vinxi start",
-    "dev": "vinxi dev",
+    "dev": "vinxi dev --host",
     "lint": "npx eslint"
   },
   "dependencies": {

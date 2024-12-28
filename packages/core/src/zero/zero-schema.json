@@ -19,6 +19,10 @@
             "type": "string",
             "optional": false
           },
+          "invitationId": {
+            "type": "string",
+            "optional": true
+          },
           "ownerId": {
             "type": "string",
             "optional": false

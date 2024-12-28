@@ -120,6 +120,7 @@ export const NewTransactionDialog = () => {
             <TextFieldRoot class="lowercase w-full">
               <TextFieldLabel>description</TextFieldLabel>
               <TextField
+                autocomplete="off"
                 type="text"
                 name="transaction-description"
                 id="transaction-description"

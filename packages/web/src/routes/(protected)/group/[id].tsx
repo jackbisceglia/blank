@@ -1,8 +1,6 @@
-import { TransactionTable, headers } from './[id]/+transaction.table';
 import { getGroupDetails } from './[id]/index.data';
 
 import { Button } from '@/components/ui/button';
-import { Skeleton } from '@/components/ui/skeleton';
 import { navigation } from '@/lib/signals';
 import { useZero } from '@/lib/zero';
 import { useQuery } from '@rocicorp/zero/solid';
@@ -13,77 +11,76 @@ import {
   useNavigate,
   useParams,
 } from '@solidjs/router';
-import { ColumnDef } from '@tanstack/solid-table';
 import { useUser } from 'clerk-solidjs';
-import { For, Match, Show, Suspense, Switch, createEffect } from 'solid-js';
+import { For, ParentProps, Show, createEffect } from 'solid-js';
 
 type Params = { id: string };
 
-const SkeletonTable = () => {
-  const columns: ColumnDef<string>[] = Object.values(headers).map(
-    (display) => ({
-      header: display,
-      cell: () => {
-        return (
-          <Switch fallback={<Skeleton class="w-5/6 h-5" />}>
-            <Match when={display === headers.description}>
-              <Skeleton class="w-20 h-5" />
-            </Match>
-            <Match when={display === headers.cost}>
-              <Skeleton class="w-12 h-5" />
-            </Match>
-          </Switch>
-        );
-      },
-    }),
-  );
+// const SkeletonTable = () => {
+//   const columns: ColumnDef<string>[] = Object.values(headers).map(
+//     (display) => ({
+//       header: display,
+//       cell: () => {
+//         return (
+//           <Switch fallback={<Skeleton class="w-5/6 h-5" />}>
+//             <Match when={display === headers.description}>
+//               <Skeleton class="w-20 h-5" />
+//             </Match>
+//             <Match when={display === headers.cost}>
+//               <Skeleton class="w-12 h-5" />
+//             </Match>
+//           </Switch>
+//         );
+//       },
+//     }),
+//   );
 
-  const skeletonData = () => Array.from({ length: 12 }).map(() => '');
+//   const skeletonData = () => Array.from({ length: 12 }).map(() => '');
 
-  return (
-    <TransactionTable
-      dialogs={{
-        create: { open: () => {}, state: () => 'closed' },
-        edit: { open: () => {}, state: () => 'closed' },
-      }}
-      rows={null}
-      columns={columns}
-      data={skeletonData}
-    />
-  );
-};
+//   return (
+//     <TransactionTable
+//       dialogs={{
+//         create: { open: () => {}, state: () => 'closed' },
+//         edit: { open: () => {}, state: () => 'closed' },
+//       }}
+//       rows={null}
+//       columns={columns}
+//       data={skeletonData}
+//     />
+//   );
+// };
 
-function PageSkeleton() {
-  return (
-    <>
-      <div class="flex flex-col gap-2 py-1 w-full sm:flex-row sm:justify-between sm:items-center">
-        {/* Button Bar */}
-        <div class="flex items-center gap-2 w-full sm:w-fit">
-          <Button
-            class="w-1/3 sm:w-20"
-            disabled={true}
-            variant="outline"
-            size="sm"
-          >
-            New
-          </Button>
-          <Button
-            variant="destructive"
-            size="sm"
-            class="w-1/3 sm:w-20"
-            disabled={true}
-          >
-            Delete
-          </Button>
-          <Button variant="ghost" size="sm" disabled={true}>
-            *
-          </Button>
-        </div>
-      </div>
-      <SkeletonTable />
-    </>
-  );
-}
+// function PageSkeleton() {
+//   return (
+//     <>
+//       <div class="flex flex-col gap-2 py-1 w-full sm:flex-row sm:justify-between sm:items-center">
+//         {/* Button Bar */}
+//         <div class="flex items-center gap-2 w-full sm:w-fit">
+//           <Button
+//             class="w-1/3 sm:w-20"
+//             disabled={true}
+//             variant="outline"
+//             size="sm"
+//           >
+//             New
+//           </Button>
+//           <Button
+//             variant="destructive"
+//             size="sm"
+//             class="w-1/3 sm:w-20"
+//             disabled={true}
+//           >
+//             Delete
+//           </Button>
+//           <Button variant="ghost" size="sm" disabled={true}>
+//             *
+//           </Button>
+//         </div>
+//       </div>
+//       <SkeletonTable />
+//     </>
+//   );
+// }
 
 interface BreadcrumbPartProps {
   title: string;
@@ -110,17 +107,46 @@ function BreadcrumbSeparator() {
   return <span class="text-ui-foreground/50 ">{SEPARATOR}</span>;
 }
 
+interface UserBelongsToGroupViewProps extends ParentProps {
+  userId: string;
+  groupId?: string;
+}
+
+function UserBelongsToGroupView(props: UserBelongsToGroupViewProps) {
+  const z = useZero();
+  const navigate = useNavigate();
+
+  const member = useQuery(() =>
+    z.query.member
+      .where('userId', props.userId)
+      .where('groupId', props.groupId ?? '')
+      .one(),
+  );
+
+  // TODO: this breaks on page reload because if the member hasn't finished yet, it will immediately redirect
+  createEffect(() => {
+    if (!member()) {
+      navigate('/');
+    }
+  });
+
+  return <Show when={member()}>{props.children}</Show>;
+}
+
 export default function GroupLayout(props: RouteSectionProps) {
   const session = useUser();
   const z = useZero();
 
   const subpages = ['members', 'settings'];
 
-  const navigate = useNavigate();
   const params = useParams<Params>();
   const path = useLocation();
 
-  const group = useQuery(() => getGroupDetails(z, params.id));
+  const group = useQuery(() =>
+    getGroupDetails(z, params.id, session.user()?.id ?? ''),
+  );
+
+  const userOwnsGroup = () => group()?.ownerId === session.user()?.id;
 
   function getSubpage() {
     const fromPath = path.pathname.split('/').at(-1) ?? 'dashboard';
@@ -128,6 +154,10 @@ export default function GroupLayout(props: RouteSectionProps) {
 
     return subpage ?? 'group';
   }
+
+  createEffect(() => {
+    console.log(getSubpage());
+  });
 
   const breadcrumbs = {
     home: {
@@ -144,33 +174,6 @@ export default function GroupLayout(props: RouteSectionProps) {
     },
   };
 
-  function userHasAuthorization(subpage: string) {
-    const checks: Record<string, () => boolean> = {
-      settings: function checkUserOwnsPage() {
-        const g = group();
-        return g?.ownerId === session.user()?.id;
-      },
-      group: function checkUserOwnsPage() {
-        const g = group();
-        return (
-          (g && g.members.find((m) => m.userId === session.user()?.id)) !==
-          undefined
-        );
-      },
-    };
-
-    const authorizationFn = checks[subpage] ?? (() => true);
-
-    return authorizationFn();
-  }
-
-  // TODO: test this for blocking pages
-  createEffect(() => {
-    if (!userHasAuthorization(getSubpage())) {
-      navigate('/');
-    }
-  });
-
   return (
     <>
       <div class="flex flex-col gap-2 py-1 w-full sm:flex-row sm:justify-between sm:items-center">
@@ -180,7 +183,8 @@ export default function GroupLayout(props: RouteSectionProps) {
             to={breadcrumbs.home.to}
           />
           <BreadcrumbSeparator />
-          <Suspense
+          <Show
+            when={group()}
             fallback={
               <BreadcrumbPart
                 title={navigation.groupClicked ?? ''}
@@ -192,21 +196,20 @@ export default function GroupLayout(props: RouteSectionProps) {
               title={breadcrumbs.group.text()}
               to={breadcrumbs.group.to}
             />
-            <Show
-              when={
-                userHasAuthorization(breadcrumbs.subpage.text()) &&
-                breadcrumbs.subpage.text() !== 'group' &&
-                breadcrumbs.subpage.text()
-              }
-            >
-              {(part) => (
-                <>
-                  <BreadcrumbSeparator />
-                  <BreadcrumbPart title={part()} to={part()} />
-                </>
-              )}
+            <Show when={breadcrumbs.subpage.text() !== 'group'}>
+              <Show
+                when={
+                  breadcrumbs.subpage.text() !== 'settings' || userOwnsGroup()
+                }
+              >
+                <BreadcrumbSeparator />
+                <BreadcrumbPart
+                  title={breadcrumbs.subpage.text()}
+                  to={breadcrumbs.subpage.to()}
+                />
+              </Show>
             </Show>
-          </Suspense>
+          </Show>
         </h1>
         <div class="flex flex-col gap-1 sm:flex-row sm:justify-start">
           <For
@@ -214,11 +217,7 @@ export default function GroupLayout(props: RouteSectionProps) {
               [
                 ['Dashboard', '', () => true],
                 ['Members', 'members', () => true],
-                [
-                  'Settings',
-                  'settings',
-                  () => userHasAuthorization(breadcrumbs.subpage.text()),
-                ],
+                ['Settings', 'settings', () => userOwnsGroup()],
               ] as const
             }
           >
@@ -240,7 +239,12 @@ export default function GroupLayout(props: RouteSectionProps) {
           </For>
         </div>
       </div>
-      <Suspense fallback={<PageSkeleton />}>{props.children}</Suspense>
+      <UserBelongsToGroupView
+        userId={session.user()?.id ?? ''}
+        groupId={group()?.id}
+      >
+        {props.children}
+      </UserBelongsToGroupView>
     </>
   );
 }

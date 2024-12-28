@@ -12,17 +12,14 @@ import {
 } from '@solidjs/router';
 import { startTransition } from 'solid-js';
 
-export function getGroupDetails(z: Zero, groupId: string) {
+export function getGroupDetails(z: Zero, groupId: string, userId: string) {
   return z.query.group
     .where('id', '=', groupId)
+    .whereExists('members', (m) => m.where('userId', userId))
     .related('members')
     .related('transactions', (q) => q.related('payees'))
     .one();
 }
-
-// export function getGroupTransactions(z: Zero, groupId: string) {
-//   return z.query.transaction.where('id', '=', groupId).related('payees');
-// }
 
 export const createTransactionAction = action(
   async (description: string, groupId?: string, close?: () => void) => {

@@ -14,6 +14,7 @@ export const groupTable = createTable('group', {
   id: uuidv7WithDefault().primaryKey(),
   title: text().notNull(),
   ownerId: uuidv7().notNull(),
+  invitationId: uuidv7(),
 });
 
 export const groupRelation = relations(groupTable, ({ many, one }) => ({

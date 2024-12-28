@@ -142,6 +142,8 @@ export default function DashboardPage() {
     getGroupsUserBelongsTo(z, session.user()?.id ?? ''),
   );
 
+  // groups().forEach((group) => getGroupDetails(z, group.id).preload());
+
   const createGroupDialog = useNewGroupDialog();
 
   return (

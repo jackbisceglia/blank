@@ -10,60 +10,25 @@ import {
 
 import { Transaction } from '@blank/core/zero';
 
-import { badgeVariants } from '@/components/ui/badge';
 import { Button, ButtonLoadable } from '@/components/ui/button';
-import { cn } from '@/lib/cn';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from '@/components/ui/tooltip';
+import { UserBadge } from '@/components/user-badge';
 import { useZero } from '@/lib/zero';
 import { useQuery } from '@rocicorp/zero/solid';
-import { A, useNavigate, useParams } from '@solidjs/router';
+import { useNavigate, useParams } from '@solidjs/router';
 import { useUser } from 'clerk-solidjs';
 import { For, Show, createEffect, createMemo } from 'solid-js';
-
-// we can't do this on mount because transactions hasn't loaded yet
-// const useSyncUrlToRows = (
-//   idFromURL: () => string | undefined,
-//   transactions: Accessor<TransactionWithPayeesWithMembers[] | undefined>,
-//   setSelected: Setter<Record<string, boolean>>,
-//   singleRowSelected: () => boolean,
-// ) => {
-
-//   createEffect(() => {
-//     if (!transactions()) return;
-
-//     const id = idFromURL();
-//     if (!singleRowSelected() && id) {
-//       const index =
-//         transactions()?.findIndex((t) => {
-//           console.log('iteration', t.id);
-//           return t.id === id;
-//         }) ?? 0;
-
-//       setSelected((prev) => ({ ...prev, [index.toString()]: true }));
-//     }
-//   });
-// };
-//
-const badgeGradientClasslist = (id: string, nickname: string) => {
-  const value = [id, nickname]
-    .map((value) =>
-      value.split('').reduce((sum, char) => sum + char.charCodeAt(0), 0),
-    )
-    .reduce((sum, value) => sum + value, 0);
-
-  const gradientPart = `bg-gradient-to-br from-ui-primary`;
-
-  // i can't make this dynamic, so hardcoded it is, for now
-  return {
-    [`${gradientPart} to-orange-400`]: value % 8 === 0,
-    [`${gradientPart} to-red-400`]: value % 8 === 1,
-    [`${gradientPart} to-violet-400`]: value % 8 === 2,
-    [`${gradientPart} to-fuschia-400`]: value % 8 === 3,
-    [`${gradientPart} to-rose-400`]: value % 8 === 4,
-    [`${gradientPart} to-teal-400`]: value % 8 === 5,
-    [`${gradientPart} to-yellow-400`]: value % 8 === 6,
-    [`${gradientPart} to-sky-400`]: value % 8 === 7,
-  };
-};
 
 export type GroupParams = { id: string };
 
@@ -73,9 +38,12 @@ export default function GroupPage() {
   const session = useUser();
   const z = useZero();
 
-  const group = useQuery(() => getGroupDetails(z, params.id));
+  const group = useQuery(() =>
+    getGroupDetails(z, params.id, session.user()?.id ?? ''),
+  );
   const transactionsMutable = createMemo(
-    () => JSON.parse(JSON.stringify(group()?.transactions)) as Transaction[],
+    () =>
+      JSON.parse(JSON.stringify(group()?.transactions ?? {})) as Transaction[],
   ); // TODO: i should find a better deep clone solution that also strips readonly modifier, this is temp
 
   createEffect(() => {
@@ -90,10 +58,6 @@ export default function GroupPage() {
 
   // derived state
   const someRowsSelected = () => rows.selected.size() > 0;
-
-  // const singleRowSelected = () => rows.selected.size() === 1;
-  // const singleRowSelectedTransaction = () =>
-  //   transactions()?.[rows.selected.indices()[0]];
 
   // crud
   const [createTransaction, deleteTransaction] = [
@@ -117,6 +81,7 @@ export default function GroupPage() {
           >
             New
           </Button>
+
           <ButtonLoadable
             variant="destructive"
             size="sm"
@@ -130,22 +95,46 @@ export default function GroupPage() {
             Delete
           </ButtonLoadable>
         </div>
-        <div class="flex gap-2 px-2">
+        <div class="flex gap-1.5 px-2">
           <For each={group()?.members}>
             {(member) => (
-              <A
-                href="members"
-                class={cn(
-                  badgeVariants({ variant: 'default' }),
-                  'border-primary bg-transparent rounded-full h-min aspect-square p-1.5 text-xs leading-none',
-                )}
-                classList={badgeGradientClasslist(member.id, member.nickname)}
-              >
-                {member.nickname.slice(0, 2)}
-              </A>
+              <Tooltip>
+                <TooltipTrigger>
+                  <UserBadge
+                    gradientHash={[member.id, member.nickname]
+                      .join('')
+                      .split('')
+                      .reduce((sum, char) => sum + char.charCodeAt(0), 0)}
+                    href="members"
+                    variant="link"
+                  >
+                    {member.nickname.slice(0, 2)}
+                  </UserBadge>
+                </TooltipTrigger>
+                <TooltipContent>
+                  <p>{member.nickname}</p>
+                </TooltipContent>
+              </Tooltip>
             )}
           </For>
         </div>
+
+        <Select
+          class="h-full"
+          options={['Current', 'Past']}
+          value={'Current'}
+          placeholder="Select a fruit…"
+          itemComponent={(props) => (
+            <SelectItem item={props.item}>{props.item.rawValue}</SelectItem>
+          )}
+        >
+          <SelectTrigger class="text-xs px-0 pl-3.5 pr-2.5 w-1/3 py-0 h-full sm:w-28 uppercase justify-between gap-0">
+            <SelectValue<string>>
+              {(state) => state.selectedOption()}
+            </SelectValue>
+          </SelectTrigger>
+          <SelectContent />
+        </Select>
       </div>
       <Show
         when={transactionsMutable()}
@@ -172,14 +161,3 @@ export default function GroupPage() {
     </>
   );
 }
-
-/*
- The type 
- '''
-   'readonly { readonly id: string; readonly groupId: string; readonly payerId: string; readonly amount: number; readonly date: number; readonly description: string; readonly payees: readonly { readonly id: string; readonly groupId: string; readonly userId: string; readonly nickname: string; }[]; }[]'
- '''
-  is 'readonly' and cannot be assigned to the mutable type 
- '''
-   '{ readonly id: string; readonly groupId: string; readonly payerId: string; readonly amount: number; readonly date: number; readonly description: string; readonly payees: readonly { readonly id: string; readonly groupId: string; readonly userId: string; readonly nickname: string; }[]; }[]'
- '''
-*/

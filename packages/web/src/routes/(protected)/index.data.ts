@@ -47,6 +47,15 @@ export async function createGroup(
   }
 }
 
+export async function generateGroupInviteLink(z: Zero, groupId: string) {
+  const inviteId = genUUIDv7();
+
+  await z.mutate.group.update({
+    id: groupId,
+    invitationId: inviteId,
+  });
+}
+
 export async function updateGroup(
   z: Zero,
   groupId: string,

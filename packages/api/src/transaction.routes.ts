@@ -43,6 +43,9 @@ const api = new Hono()
     '/',
     zValidator('json', z.object({ body: CreateBodySchema })),
     async (c) => {
+      const isTruthy = (value: string | null | undefined) =>
+        value !== null && value !== undefined;
+
       const auth = requireAuthenticated(c);
 
       const { body } = c.req.valid('json');
@@ -97,7 +100,9 @@ const api = new Hono()
       const newTransaction = rows[0];
 
       const newPayees = await transaction.createPayees(
-        insertableTransactionData.payees.map((p) => p.memberId),
+        insertableTransactionData.payees
+          .map((p) => p.memberId)
+          .filter(isTruthy),
         newTransaction.id,
       );
 

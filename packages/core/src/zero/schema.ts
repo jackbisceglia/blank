@@ -21,6 +21,7 @@ const groupSchema = createTableSchema({
     id: { type: 'string' },
     title: { type: 'string' },
     ownerId: { type: 'string' },
+    invitationId: { type: 'string', optional: true },
   },
   primaryKey: ['id'],
   relationships: {
