@@ -10,13 +10,16 @@ import { FileRoutes } from '@solidjs/start/router';
 import { ClerkProvider } from 'clerk-solidjs';
 import { Suspense } from 'solid-js';
 
+//   {props.children}
+// </ZeroProvider>
+
 function Providers(props: WithChildren) {
   return (
     <ColorModeProvider>
       <ClerkProvider
         publishableKey={import.meta.env.VITE_CLERK_PUBLISHABLE_KEY as string}
       >
-        <ZeroProvider>{props.children}</ZeroProvider>
+        {props.children}
       </ClerkProvider>
     </ColorModeProvider>
   );

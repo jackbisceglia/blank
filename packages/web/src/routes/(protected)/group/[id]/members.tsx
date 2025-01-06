@@ -1,39 +1,109 @@
 import { GroupParams } from '.';
 import {
-  StyledCard,
-  StyledCardContent,
   StyledCardDescription,
   StyledCardHeader,
+  StyledCardListItem,
   StyledCardTitle,
 } from './+styled-card';
 import { getGroupDetails } from './index.data';
 
-import { Badge } from '@/components/ui/badge';
+import { Member } from '@blank/core/zero';
+
+import { Badge, badgeVariants } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-// ... existing imports ...
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from '@/components/ui/card';
 import {
   Dialog,
   DialogContent,
   DialogDescription,
+  DialogFooter,
   DialogHeader,
   DialogTitle,
   DialogTrigger,
 } from '@/components/ui/dialog';
-import { TextFieldLabel, TextFieldRoot } from '@/components/ui/textfield';
+import { TextFieldRoot } from '@/components/ui/textfield';
 import { UserBadge } from '@/components/user-badge';
+import { cn } from '@/lib/cn';
 import { createSignalBoundTextField } from '@/lib/util.client';
 import { useZero } from '@/lib/zero';
 import { useQuery } from '@rocicorp/zero/solid';
 import { useParams } from '@solidjs/router';
 import { useUser } from 'clerk-solidjs';
-import { For, Show, createMemo } from 'solid-js';
+import {
+  For,
+  Match,
+  ParentProps,
+  Show,
+  Switch,
+  createMemo,
+  createSignal,
+  onMount,
+} from 'solid-js';
+
+interface EditableTextProps extends ParentProps {
+  save?: (newState: string) => void;
+  value: string;
+}
+
+function EditableText(props: EditableTextProps) {
+  const [state, setState] = createSignal<'read' | 'write'>('read');
+  const [[edited], EditableTextInput] = createSignalBoundTextField<string>(
+    props.value,
+  );
+
+  function AutofocusingEditableTextInput() {
+    let inputRef: HTMLInputElement | undefined;
+
+    onMount(() => {
+      inputRef?.focus();
+    });
+
+    return (
+      <TextFieldRoot>
+        <EditableTextInput ref={inputRef} />
+      </TextFieldRoot>
+    )
+  }
+
+  return (
+    <Switch>
+      <Match when={state() === 'read'}>
+        <p class="uppercase text-ui-foreground">{props.value}</p>
+        <Button
+          variant="ghost"
+          class="flex text-xs uppercase px-2 text-ui-foreground/75 py-1 h-min mb-auto"
+          onClick={() => setState('write')}
+        >
+          edit
+        </Button>
+      </Match>
+      <Match when={state() === 'write'}>
+        <div class="flex gap-1 space-y-0 items-center">
+          <AutofocusingEditableTextInput />
+          <Button
+            variant="ghost"
+            class="flex text-xs uppercase px-2 text-ui-foreground/75 py-1 h-min mb-auto hover:text-ui-primary"
+            onClick={() => {
+              props.save?.(edited());
+              setState('read');
+            }}
+          >
+            save
+          </Button>
+          <Button
+            variant="ghost"
+            class="flex text-xs uppercase px-2 text-ui-foreground/75 py-1 h-min mb-auto hover:text-ui-destructive"
+            onClick={() => {
+              props.save?.(edited());
+              setState('read');
+            }}
+          >
+            cancel
+          </Button>
+        </div>
+      </Match>
+    </Switch>
+  );
+}
 
 export default function MembersPage() {
   const params = useParams<GroupParams>();
@@ -43,129 +113,163 @@ export default function MembersPage() {
   const group = useQuery(() =>
     getGroupDetails(z, params.id, session.user()?.id ?? ''),
   );
-  const members = createMemo(() => group()?.members ?? []);
-  const currentUserMember = () =>
-    members().find((m) => m.userId === session.user()?.id);
 
-  async function updateNickname(memberId: string, nickname: string) {
-    if (!currentUserMember()) return;
+  const orderedMembers = createMemo(() => {
+    const g = group();
+    if (!g) return [];
+
+    const members = [...g.members];
+
+    const currentUserMember = members.find(
+      (m) => m.userId === session.user()?.id,
+    );
+
+    return members.sort((a, b) => {
+      if (a.userId === currentUserMember?.userId) return -1;
+      if (b.userId === currentUserMember?.userId) return 1;
+      return 0;
+    });
+  });
+
+  const currentUserMember = (): Member | undefined => orderedMembers()[0];
+
+  const requireCurrentUserIsMember = () => {
+    if (!currentUserMember())
+      throw Error('User is not authorized to edit group details');
+  };
+
+  async function updateNickname(
+    nickname: string,
+    groupId: string,
+    userId: string,
+  ) {
+    requireCurrentUserIsMember();
 
     await z.mutate.member.update({
       nickname: nickname,
-      id: memberId,
+      groupId: groupId,
+      userId: userId,
     });
   }
 
-  async function leaveGroup() {
-    const current = currentUserMember();
-    if (!current) return;
+  async function leaveGroup(groupId: string, userId: string) {
+    requireCurrentUserIsMember();
 
     await z.mutate.member.delete({
-      id: current.id,
+      groupId: groupId,
+      userId: userId,
     });
   }
 
-  const [[nickname], NicknameInput] = createSignalBoundTextField<string>(
-    currentUserMember()?.nickname ?? '',
-  );
-
   return (
-    <StyledCard>
-      <StyledCardHeader>
+    <>
+      <div class="flex flex-col space-y-1.5 text-left pb-2">
         <StyledCardTitle>group members</StyledCardTitle>
-        <Show when={currentUserMember()}>
-          <Dialog>
-            <DialogTrigger
-              class="h-full"
-              as={Button}
-              variant="outline"
-              size="sm"
-            >
-              Leave Group
-            </DialogTrigger>
-            <DialogContent>
-              <DialogHeader>
-                <DialogTitle>Are you sure you want to leave?</DialogTitle>
-              </DialogHeader>
-              <div class="flex justify-end gap-2">
-                <Button variant="ghost" onClick={() => void leaveGroup()}>
-                  Leave
-                </Button>
-              </div>
-            </DialogContent>
-          </Dialog>
-        </Show>
         <StyledCardDescription>
           manage your group's members
         </StyledCardDescription>
-      </StyledCardHeader>
-      <StyledCardContent>
-        <div class="space-y-4">
-          <For each={members()}>
-            {(member) => (
-              <div class="flex items-center justify-between p-4 bg-secondary rounded-lg">
-                <div class="flex items-center space-x-4">
-                  <UserBadge
-                    gradientHash={[member.id, member.nickname]
-                      .join('')
-                      .split('')
-                      .reduce((sum, char) => sum + char.charCodeAt(0), 0)}
-                    variant="static"
-                    class="size-10"
-                  >
-                    {member.nickname.slice(0, 2)}
-                  </UserBadge>
-                  <p class="uppercase">{member.nickname}</p>
-                </div>
-                <div class="flex items-center space-x-2">
-                  <Show when={member.userId === session.user()?.id}>
-                    <Dialog>
-                      <DialogTrigger as={Button} variant="secondary" size="sm">
-                        Edit
-                      </DialogTrigger>
-                      <DialogContent>
-                        <DialogHeader>
-                          <DialogTitle class="uppercase">
-                            Update Nickname
-                          </DialogTitle>
-                          <DialogDescription class="lowercase">
-                            this is how group members mention you
-                          </DialogDescription>
-                        </DialogHeader>
-                        <div class="flex flex-col gap-4">
-                          <TextFieldRoot>
-                            <TextFieldLabel>nickname</TextFieldLabel>
-                            <NicknameInput
-                              class="w-full px-3 py-2 border bg-ui-muted focus:outline-none focus:ring-1 focus:ring-gray-400 transition duration-150 ease-in-out"
-                              placeholder="Enter nickname"
-                            />
-                          </TextFieldRoot>
+      </div>
+      <ul class="gap-4 grid-cols-1 grid md:grid-cols-2">
+        <For each={orderedMembers()}>
+          {(member) => (
+            <StyledCardListItem class="h-full p-2 gap-2">
+              <StyledCardHeader class="flex flex-row gap-4 items-center h-full space-y-0 p-2">
+                <UserBadge
+                  gradientHash={member.userId
+                    .split('')
+                    .reduce((sum, char) => sum + char.charCodeAt(0), 0)}
+                  variant="static"
+                  class="size-10 select-none"
+                >
+                  {member.nickname.slice(0, 2)}
+                </UserBadge>
+                <Switch>
+                  <Match when={member.userId === session.user()?.id}>
+                    <EditableText
+                      value={member.nickname}
+                      save={(newNickname: string) => {
+                        if (newNickname === member.nickname) return;
 
-                          <Button
-                            onClick={() =>
-                              void updateNickname(member.id, nickname())
-                            }
-                            class="uppercase w-full"
-                            size="sm"
-                          >
-                            Update
-                          </Button>
-                        </div>
-                      </DialogContent>
-                    </Dialog>
-                  </Show>
+                        void updateNickname(
+                          newNickname,
+                          group()?.id ?? '',
+                          session.user()?.id ?? '',
+                        );
+                      }}
+                    />
+                  </Match>
+                  <Match when={member.userId !== session.user()?.id}>
+                    <p class="uppercase text-ui-foreground">
+                      {member.nickname}
+                    </p>
+                  </Match>
+                </Switch>
 
-                  <Show when={member.userId === group()?.ownerId}>
-                    <Badge variant="default">
-                      <span class="uppercase">owner</span>
-                    </Badge>
-                  </Show>
-                </div>
-              </div>
-            )}
-          </For>
-        </div>
-      </StyledCardContent>
-    </StyledCard>
+                <Show
+                  when={
+                    member.userId === group()?.ownerId ||
+                    member.userId === session.user()?.id
+                  }
+                >
+                  <div class="ml-auto flex gap-4">
+                    <Show when={member.userId === group()?.ownerId}>
+                      <Badge class="text-xs h-fit" variant="default">
+                        admin
+                      </Badge>
+                    </Show>
+                    <Show when={member.userId === session.user()?.id}>
+                      <Dialog>
+                        <DialogTrigger
+                          as={Button}
+                          class={cn(
+                            'text-xs py-1 h-fit',
+                            badgeVariants({ variant: 'destructive' }),
+                          )}
+                        >
+                          Leave
+                        </DialogTrigger>
+                        <DialogContent>
+                          <DialogHeader>
+                            <DialogTitle class="uppercase">
+                              Leave Group
+                            </DialogTitle>
+                            <DialogDescription class="lowercase">
+                              Are you sure you want to leave this group? This
+                              action cannot be undone.
+                            </DialogDescription>
+                          </DialogHeader>
+                          <DialogFooter>
+                            <Button
+                              class="w-full uppercase"
+                              variant="destructive"
+                              size="sm"
+                              onClick={() =>
+                                void leaveGroup(
+                                  group()?.id ?? '',
+                                  session.user()?.id ?? '',
+                                )
+                              }
+                            >
+                              Leave Group
+                            </Button>
+                            <Button
+                              class="w-full uppercase"
+                              variant="outline"
+                              size="sm"
+                            >
+                              Cancel
+                            </Button>
+                          </DialogFooter>
+                        </DialogContent>
+                      </Dialog>
+                    </Show>
+                  </div>
+                </Show>
+              </StyledCardHeader>
+            </StyledCardListItem>
+          )}
+        </For>
+      </ul>
+    </>
   );
 }

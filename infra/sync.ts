@@ -15,7 +15,7 @@ export default new sst.x.DevCommand('SYNC', {
     ZERO_SCHEMA_OUTPUT: process.env.ZERO_SCHEMA_OUTPUT ?? '',
 
     // other
-    ZERO_JWT_SECRET: process.env.ZERO_JWT_SECRET ?? '',
+    ZERO_AUTH_JWKS_URL: process.env.ZERO_AUTH_JWKS_URL ?? '',
     ZERO_REPLICA_FILE: process.env.ZERO_REPLICA_FILE ?? '',
     ZERO_AUTO_RESET: process.env.ZERO_AUTO_RESET ?? '',
   },

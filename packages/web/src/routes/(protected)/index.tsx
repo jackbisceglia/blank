@@ -13,7 +13,7 @@ import { navigation } from '@/lib/signals';
 import { useZero } from '@/lib/zero';
 import { useQuery } from '@rocicorp/zero/solid';
 import { useUser } from 'clerk-solidjs';
-import { For, Show, Suspense } from 'solid-js';
+import { For, Show } from 'solid-js';
 
 const C = '\\';
 const blank = `
@@ -24,25 +24,6 @@ ________    ___         ________    ________     ___  __
        . .  .|.  . . .  ._____ . .  . .  . . .  .. .  . . .  .. .  .
          . ._______. . ._______. . .__. .__. . .__.. .__. . .__.. .__.
           .|_______|  .|_______|  .|__|.|__|  .|__| .|__|  .|__| .|__|`;
-
-const SkeletonGroupGrid = () => {
-  return (
-    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-      {/* TODO: can read from local storage to check last time we loaded  */}
-      <For each={Array(3)}>
-        {() => (
-          <GroupCard
-            id="loading"
-            name="Loading"
-            lastSettledAt={'__/__/____'}
-            memberCount={-1}
-            isOwner={false}
-          />
-        )}
-      </For>
-    </div>
-  );
-};
 
 type NoGroupsViewProps = {
   open: () => void;
@@ -142,31 +123,20 @@ export default function DashboardPage() {
     getGroupsUserBelongsTo(z, session.user()?.id ?? ''),
   );
 
-  // groups().forEach((group) => getGroupDetails(z, group.id).preload());
-
   const createGroupDialog = useNewGroupDialog();
 
   return (
     <>
-      <Suspense>
-        <Show when={groups()}>
-          <createGroupDialog.Component />
-        </Show>
-      </Suspense>
+      <Show when={groups()}>
+        <createGroupDialog.Component />
+      </Show>
 
       <div class="flex gap-2 py-1 w-full justify-between sm:items-center">
-        <h1
-          onClick={(e) => {
-            const rect = e.target.getBoundingClientRect();
-            const top = rect.top; // Distance from viewport top
-            const bottom = rect.bottom;
-
-            console.log(top, bottom);
-          }}
-          class="text-left text-xl uppercase text-ui-foreground"
-        >
+        <h1 class="text-left text-xl uppercase text-ui-foreground">
           Welcome back,{' '}
-          <Suspense fallback={'...'}>{session.user()?.username}</Suspense>
+          <Show when={session.user()} fallback={'...'}>
+            {session.user()?.username}
+          </Show>
         </h1>
         {/* Button Bar */}
         <div class="flex items-center gap-2 sm:w-fit">
@@ -182,12 +152,12 @@ export default function DashboardPage() {
         </div>
       </div>
       <Show when={session.user()}>
-        <Suspense fallback={<SkeletonGroupGrid />}>
-          <Show
-            when={!!groups().length && groups()}
-            fallback={<NoGroupsView open={createGroupDialog.open} />}
-          >
-            {(groups) => (
+        <Show when={groups()}>
+          {(groups) => (
+            <Show
+              when={!!groups().length}
+              fallback={<NoGroupsView open={createGroupDialog.open} />}
+            >
               <ul class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                 <For each={groups()}>
                   {(group) => (
@@ -201,9 +171,9 @@ export default function DashboardPage() {
                   )}
                 </For>
               </ul>
-            )}
-          </Show>
-        </Suspense>
+            </Show>
+          )}
+        </Show>
       </Show>
     </>
   );

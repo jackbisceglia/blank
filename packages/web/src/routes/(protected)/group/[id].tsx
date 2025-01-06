@@ -4,15 +4,9 @@ import { Button } from '@/components/ui/button';
 import { navigation } from '@/lib/signals';
 import { useZero } from '@/lib/zero';
 import { useQuery } from '@rocicorp/zero/solid';
-import {
-  A,
-  RouteSectionProps,
-  useLocation,
-  useNavigate,
-  useParams,
-} from '@solidjs/router';
+import { A, RouteSectionProps, useLocation, useParams } from '@solidjs/router';
 import { useUser } from 'clerk-solidjs';
-import { For, ParentProps, Show, createEffect } from 'solid-js';
+import { For, Show } from 'solid-js';
 
 type Params = { id: string };
 
@@ -90,7 +84,7 @@ interface BreadcrumbPartProps {
 function BreadcrumbPart(props: BreadcrumbPartProps) {
   return (
     <A
-      class="hover:text-ui-foreground h-full"
+      class="hover:text-ui-foreground h-full px-2"
       activeClass="text-ui-foreground"
       inactiveClass="text-ui-foreground/50 "
       end
@@ -102,36 +96,37 @@ function BreadcrumbPart(props: BreadcrumbPartProps) {
 }
 
 function BreadcrumbSeparator() {
-  const SEPARATOR = ' / ';
+  const SEPARATOR = ' > ';
 
   return <span class="text-ui-foreground/50 ">{SEPARATOR}</span>;
 }
 
-interface UserBelongsToGroupViewProps extends ParentProps {
-  userId: string;
-  groupId?: string;
-}
+// interface UserBelongsToGroupViewProps extends ParentProps {
+//   userId: string;
+//   groupId?: string;
+// }
 
-function UserBelongsToGroupView(props: UserBelongsToGroupViewProps) {
-  const z = useZero();
-  const navigate = useNavigate();
+// TODO: reimplement at a later date, causing infinite render loop as of now
+// function UserBelongsToGroupView(props: UserBelongsToGroupViewProps) {
+//   const z = useZero();
+//   const navigate = useNavigate();
 
-  const member = useQuery(() =>
-    z.query.member
-      .where('userId', props.userId)
-      .where('groupId', props.groupId ?? '')
-      .one(),
-  );
+//   const member = useQuery(() =>
+//     z.query.member
+//       .where('userId', props.userId)
+//       .where('groupId', props.groupId ?? '')
+//       .one(),
+//   );
 
-  // TODO: this breaks on page reload because if the member hasn't finished yet, it will immediately redirect
-  createEffect(() => {
-    if (!member()) {
-      navigate('/');
-    }
-  });
+//   // TODO: fix when cache read status gets added
+//   // createEffect(() => {
+//   //   if (!member()) {
+//   //     navigate('/');
+//   //   }
+//   // });
 
-  return <Show when={member()}>{props.children}</Show>;
-}
+//   return <Show when={member()}>{props.children}</Show>;
+// }
 
 export default function GroupLayout(props: RouteSectionProps) {
   const session = useUser();
@@ -154,11 +149,6 @@ export default function GroupLayout(props: RouteSectionProps) {
 
     return subpage ?? 'group';
   }
-
-  createEffect(() => {
-    console.log(getSubpage());
-  });
-
   const breadcrumbs = {
     home: {
       text: 'Home',
@@ -176,7 +166,7 @@ export default function GroupLayout(props: RouteSectionProps) {
 
   return (
     <>
-      <div class="flex flex-col gap-2 py-1 w-full sm:flex-row sm:justify-between sm:items-center">
+      <div class="flex flex-col gap-2 py-1 w-full sm:flex-row sm:justify-between sm:items-center flex-wrap">
         <h1 class="text-left text-xl uppercase text-ui-foreground">
           <BreadcrumbPart
             title={breadcrumbs.home.text}
@@ -211,7 +201,7 @@ export default function GroupLayout(props: RouteSectionProps) {
             </Show>
           </Show>
         </h1>
-        <div class="flex flex-col gap-1 sm:flex-row sm:justify-start">
+        <div class="flex gap-1 sm:flex-row sm:justify-end">
           <For
             each={
               [
@@ -239,12 +229,14 @@ export default function GroupLayout(props: RouteSectionProps) {
           </For>
         </div>
       </div>
-      <UserBelongsToGroupView
+      {/* <UserBelongsToGroupView
         userId={session.user()?.id ?? ''}
         groupId={group()?.id}
-      >
+      > */}
+      <div class="flex flex-col px-2 text-center gap-4 w-full">
         {props.children}
-      </UserBelongsToGroupView>
+      </div>
+      {/* </UserBelongsToGroupView> */}
     </>
   );
 }

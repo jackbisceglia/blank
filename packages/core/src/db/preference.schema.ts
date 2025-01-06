@@ -16,7 +16,7 @@ import { primaryKey } from 'drizzle-orm/pg-core';
 export const preferenceTable = createTable(
   'preference',
   {
-    userId: uuidv7().notNull(),
+    userId: uuidv7().notNull().unique(),
     defaultGroupId: uuidv7().notNull(),
   },
   (table) => [primaryKey({ columns: [table.userId, table.defaultGroupId] })],

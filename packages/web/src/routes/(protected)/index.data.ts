@@ -20,7 +20,6 @@ export async function createGroup(
   userId: string,
 ) {
   const groupId = genUUIDv7();
-  const memberId = genUUIDv7();
   const numGroupsUserIsAMemberOf = getGroupsUserBelongsTo(
     z,
     userId,
@@ -33,7 +32,6 @@ export async function createGroup(
   });
 
   await z.mutate.member.insert({
-    id: memberId,
     groupId,
     userId,
     nickname: username,

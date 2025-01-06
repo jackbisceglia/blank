@@ -6,55 +6,59 @@ import {
   StyledCardTitle,
 } from '../[id]/+styled-card';
 import {
-  getGroupMembersWhereUserIsAMember,
-  getTopLevelGroupDetailsByInviteLink,
+  getGroupByInvitationId,
+  getUserIsMemberByInvitationId,
   joinGroup,
 } from './[invitationId].data';
 
 import { Button } from '@/components/ui/button';
 import { formPrevent } from '@/lib/util.client';
-import { useZero } from '@/lib/zero';
+import { Zero, useZero } from '@/lib/zero';
 import { useQuery } from '@rocicorp/zero/solid';
-import { A, useBeforeLeave, useNavigate, useParams } from '@solidjs/router';
+import { A, useNavigate, useParams } from '@solidjs/router';
 import { useUser } from 'clerk-solidjs';
-import { Show, Suspense, createEffect, startTransition } from 'solid-js';
+import { Show, batch, createEffect, createMemo } from 'solid-js';
 
 type Params = { invitationId: string };
+
+const useIsMember = (z: Zero, invitationId: string, userId: string) => {
+  const isMember = useQuery(() =>
+    getUserIsMemberByInvitationId(z, invitationId, userId),
+  );
+
+  return () => isMember().length !== 0;
+};
 
 export default function JoinGroupPage() {
   const session = useUser();
   const z = useZero();
   const navigate = useNavigate();
   const params = useParams<Params>();
-  const group = useQuery(() =>
-    getTopLevelGroupDetailsByInviteLink(z, params.invitationId),
-  );
-  const guardedGroupWithMembers = useQuery(() =>
-    getGroupMembersWhereUserIsAMember(
-      z,
-      group()?.id ?? '',
-      session.user()?.id ?? '',
-    ),
+
+  const isMember = useIsMember(
+    z,
+    params.invitationId,
+    session.user()?.id ?? '',
   );
 
-  const isMember = () => guardedGroupWithMembers() !== undefined;
+  const groups = useQuery(() => getGroupByInvitationId(z, params.invitationId));
+
+  const group = createMemo(() => groups()[0]);
 
   const handleJoinGroup = () => {
-    const g = group();
     const user = session.user();
-    if (!g || !user || !user.username || isMember()) return;
 
-    // TODO: fix new state flash
-    void startTransition(() => {
-      joinGroup(z, group()?.id ?? '', user.id, user.username ?? '');
-      navigate(`/group/${g.id}`);
+    if (!user?.username || isMember()) return;
+
+    batch(() => {
+      joinGroup(z, group().id, user.id, user.username ?? '');
+      navigate(`/group/${group().id}`);
     });
-    // console.log('nav');
   };
 
   return (
-    <Suspense>
-      <Show when={session.user() && group()}>
+    <Show when={session.user()}>
+      <Show when={group()}>
         {(group) => (
           <form
             onSubmit={formPrevent(handleJoinGroup)}
@@ -108,6 +112,6 @@ export default function JoinGroupPage() {
           </form>
         )}
       </Show>
-    </Suspense>
+    </Show>
   );
 }

@@ -44,7 +44,6 @@ export const textfieldLabel = cva(
     },
   },
 );
-
 type textFieldLabelProps<T extends ValidComponent = 'label'> =
   TextFieldLabelProps<T> & {
     class?: string;

@@ -1,5 +1,4 @@
 import { Zero } from '@/lib/zero';
-import { uuidv7 as genUUIDv7 } from 'uuidv7';
 
 export function getTopLevelGroupDetailsByInviteLink(
   z: Zero,
@@ -14,12 +13,10 @@ export function joinGroup(
   userId: string,
   username: string,
 ) {
-  const id = genUUIDv7();
   const shouldSetDefault =
     z.query.member.where('userId', userId).materialize().data.length === 0;
 
   void z.mutate.member.insert({
-    id: id,
     groupId: groupId,
     userId: userId,
     nickname: username,
@@ -33,14 +30,17 @@ export function joinGroup(
   }
 }
 
-export function getGroupMembersWhereUserIsAMember(
+export function getUserIsMemberByInvitationId(
   z: Zero,
-  groupId: string,
+  invitationId: string,
   userId: string,
 ) {
   return z.query.group
-    .where('id', '=', groupId)
+    .where('invitationId', '=', invitationId)
     .whereExists('members', (m) => m.where('userId', userId))
-    .related('members')
-    .one();
+    .related('members');
+}
+
+export function getGroupByInvitationId(z: Zero, invitationId: string) {
+  return z.query.group.where('invitationId', '=', invitationId);
 }

@@ -20,7 +20,7 @@ import { toast } from '@/components/ui/toast';
 import { createSignalBoundTextField, formPrevent } from '@/lib/util.client';
 import { useZero } from '@/lib/zero';
 import { useQuery } from '@rocicorp/zero/solid';
-import { useLocation, useNavigate, useParams } from '@solidjs/router';
+import { useNavigate, useParams } from '@solidjs/router';
 import { useUser } from 'clerk-solidjs';
 import { Show } from 'solid-js';
 
@@ -141,7 +141,6 @@ function AddMembersSection(props: AddMembersSectionProps) {
 
         <form
           onSubmit={formPrevent(() => {
-            console.log('clicked?');
             props.generateLink();
           })}
           class="space-y-6"
@@ -229,7 +228,6 @@ function DangerZoneSection(props: DangerZoneSectionProps) {
 export default function GroupSettingsPage() {
   const z = useZero();
   const navigate = useNavigate();
-  const location = useLocation();
   const params = useParams<GroupParams>();
   const session = useUser();
   const group = useQuery(() =>
@@ -291,14 +289,13 @@ export default function GroupSettingsPage() {
 
     if (!g || !user || !g.invitationId) return null;
 
-    console.log(location);
     return `http://localhost:3000/group/join/${g.invitationId}`; // TODO: fix this
   };
 
   return (
     <Show when={session.user() && group()}>
       {(group) => (
-        <div class="grid grid-cols-2 gap-4">
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
           <DetailsSection
             update={handleUpdateGroupDetails}
             groupName={group().title}

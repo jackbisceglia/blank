@@ -12,7 +12,7 @@ const badgeGradientClasslist = (value: number) => {
     [`${gradientPart} to-orange-400`]: value % 8 === 0,
     [`${gradientPart} to-red-400`]: value % 8 === 1,
     [`${gradientPart} to-violet-400`]: value % 8 === 2,
-    [`${gradientPart} to-fuschia-400`]: value % 8 === 3,
+    [`${gradientPart} to-purple-400`]: value % 8 === 3,
     [`${gradientPart} to-rose-400`]: value % 8 === 4,
     [`${gradientPart} to-teal-400`]: value % 8 === 5,
     [`${gradientPart} to-yellow-400`]: value % 8 === 6,
@@ -21,7 +21,7 @@ const badgeGradientClasslist = (value: number) => {
 };
 
 const shellClass =
-  'border-primary flex items-center justify-center bg-transparent rounded-full h-min aspect-square p-1.5 text-xs leading-none';
+  'border-primary flex items-center justify-center bg-transparent rounded-full h-min aspect-square p-1.5 text-xs leading-none hover:bg-transparent';
 
 type BaseUserBadgeProps = {
   gradientHash: number;

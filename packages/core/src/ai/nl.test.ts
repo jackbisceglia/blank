@@ -58,13 +58,15 @@ const judgePrompts = {
 const newTransaction = (
   description: string,
   amount: Transaction['amount'],
-  paidBy: string,
-  paidFor: string[],
+  payerName: string,
+  transactionMemberNames: string[],
 ): TransactionParseable => ({
   description,
   amount,
-  payerName: paidBy,
-  payees: paidFor.map((payeeName) => ({ payeeName })),
+  payerName,
+  transactionMembers: transactionMemberNames.map((name) => ({
+    transactionMemberName: name,
+  })),
 });
 
 // todo: update db to include multiple payees
@@ -158,7 +160,7 @@ function testGeneralTransactionParsing(llms: LLMOptions[], opts?: TestOptions) {
             logger().lines([
               `Amount: ${shape.amount.toFixed(2)}`,
               `Payer: ${shape.payerName}`,
-              `Payees: ${shape.payees.map((p) => p.payeeName).join(', ')}`,
+              `Payees: ${shape.transactionMembers.map((m) => m.transactionMemberName).join(', ')}`,
             ]),
             'Expected',
           );
@@ -167,7 +169,7 @@ function testGeneralTransactionParsing(llms: LLMOptions[], opts?: TestOptions) {
             logger().lines([
               `Amount: ${parsed.amount.toFixed(2)}`,
               `Payer: ${parsed.payerName}`,
-              `Payees: ${parsed.payees.map((p) => p.payeeName).join(', ')}`,
+              `Payees: ${parsed.transactionMembers.map((m) => m.transactionMemberName).join(', ')}`,
             ]),
             'Parsed',
           );
@@ -235,7 +237,6 @@ const config: {
   llms: [
     { provider: providers.anthropic, model: models.anthropic.default },
     { provider: providers.openai, model: models.openai.default },
-    // { provider: providers.mistral, model: models.mistral.default },
   ],
   opts: { log: false },
 };

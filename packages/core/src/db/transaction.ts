@@ -4,30 +4,44 @@ import { memberTable } from './member.schema';
 import {
   Transaction,
   TransactionInsert,
-  payeeTable,
+  TransactionInsertWithTransactionMembers,
+  transactionMemberTable,
   transactionTable,
 } from './transaction.schema';
 
-import { and, desc, eq, inArray } from 'drizzle-orm';
+import { and, desc, eq, inArray, not } from 'drizzle-orm';
 
 // temp: replace with relation/join/query when users are set up
-const findMemberIdByName = async (name: string, groupId: string) => {
-  console.log('FINDING: ', name);
+const findMemberIdByName = async (
+  userId: string,
+  name: string,
+  groupId: string,
+) => {
   const members = await db.query.memberTable.findMany({
-    columns: { nickname: true, id: true },
-    where: eq(memberTable.groupId, groupId),
+    columns: { nickname: true, groupId: true, userId: true },
+    where: and(
+      not(eq(memberTable.userId, userId)),
+      eq(memberTable.groupId, groupId),
+    ),
   });
 
-  console.log('MEMBERS: ', members);
+  console.log('groupId in fuzzy finding: ', groupId);
 
-  // more complex matching logic, otherwise delegate this to the db
+  // TODO: more complex matching logic, otherwise delegate this to the db. probably want to score based on match similarity
+  const fuzzyMatch = (nickname: string, name: string) =>
+    nickname.toLowerCase().includes(name.toLowerCase()) ||
+    name.toLowerCase().includes(nickname.toLowerCase());
+
   const match = members.find(
-    ({ nickname }) =>
-      nickname.toLowerCase().includes(name.toLowerCase()) ||
-      name.toLowerCase().includes(nickname.toLowerCase()),
+    (m) => m.userId !== userId && fuzzyMatch(m.nickname, name),
   );
 
-  return match?.id ?? null;
+  return match
+    ? {
+        groupId: match.groupId,
+        userId: match.userId,
+      }
+    : null;
 };
 
 // module for crud operations on transaction entity
@@ -43,18 +57,24 @@ export const transaction = {
 
     return inserted;
   },
-  createPayees(memberIds: string[], transactionId: string) {
+  createTransactionMembers(
+    memberUserIds: string[],
+    groupId: string,
+    transactionId: string,
+  ) {
     // TODO: check if we should add and() with payerId
-    if (!memberIds.length) {
+    if (!memberUserIds.length) {
       return [];
     }
 
     const inserted = db
-      .insert(payeeTable)
+      .insert(transactionMemberTable)
       .values(
-        memberIds.map((memberId) => ({
-          transactionId,
-          memberId,
+        memberUserIds.map((userId) => ({
+          userId: userId,
+          groupId: groupId,
+          transactionId: transactionId,
+          // share: 0.5,
         })),
       )
       .returning();
@@ -64,7 +84,7 @@ export const transaction = {
   getAllByUserId(id: string) {
     return db.query.transactionTable.findMany({
       with: {
-        payees: {
+        transactionMembers: {
           with: {
             member: {
               columns: {
@@ -87,23 +107,16 @@ export const transaction = {
         and(eq(transactionTable.id, id), eq(transactionTable.payerId, userId)),
       );
   },
-  deleteById(id: string, userId: string) {
+  deleteById(id: string) {
     return db
       .delete(transactionTable)
-      .where(
-        and(eq(transactionTable.id, id), eq(transactionTable.payerId, userId)),
-      )
+      .where(and(eq(transactionTable.id, id)))
       .returning();
   },
-  deleteByIds(ids: string[], userId: string) {
+  deleteByIds(ids: string[]) {
     return db
       .delete(transactionTable)
-      .where(
-        and(
-          inArray(transactionTable.id, ids),
-          eq(transactionTable.payerId, userId),
-        ),
-      )
+      .where(and(inArray(transactionTable.id, ids)))
       .returning();
   },
   deleteAll(userId: string) {
@@ -115,38 +128,41 @@ export const transaction = {
     parsed: TransactionParseable,
     userId: string,
     groupId: string,
-  ) {
+  ): Promise<TransactionInsertWithTransactionMembers> {
     const payerId = userId;
     // get user ids from name using core module
     // we can do like getIdNearestToName(name) to get the closest match
     // could potentially use an llm to try and find the closest match
-    const memberIds = (
+    const transactionMembers = (
       await Promise.all(
-        parsed.payees.map(
-          async (payee) => await findMemberIdByName(payee.payeeName, groupId),
+        parsed.transactionMembers.map(
+          async (joined) =>
+            await findMemberIdByName(
+              userId,
+              joined.transactionMemberName,
+              groupId,
+            ),
         ),
       )
     ).filter((id) => id !== null);
 
-    console.log('payees', parsed.payees);
-    console.log('memberIds', memberIds);
-
-    if (!payerId || memberIds.length !== parsed.payees.length) {
+    if (
+      !payerId ||
+      transactionMembers.length !== parsed.transactionMembers.length
+    ) {
       throw new Error(
-        `Could not find payeeId for payer or payee, payees: ${JSON.stringify(parsed.payees)}`,
+        `Could not find payeeId for payer or payee, payees: ${JSON.stringify(parsed.transactionMembers)}`,
       );
     }
 
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const { payerName: _, ...rest } = parsed;
 
-    const insertable = {
+    return {
       ...rest,
       payerId,
       groupId,
-      payees: memberIds.map((id) => ({ memberId: id })),
+      transactionMembers,
     };
-
-    return insertable;
   },
 };

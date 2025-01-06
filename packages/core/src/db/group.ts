@@ -50,7 +50,6 @@ export const group = {
           columns: {
             nickname: true,
             userId: true,
-            id: true,
           },
         },
       },
@@ -76,9 +75,25 @@ export const group = {
           columns: {
             nickname: true,
             userId: true,
-            id: true,
           },
         },
+      },
+    });
+  },
+  hasUserAsMember(groupId: string, userId: string) {
+    return db.query.groupTable.findFirst({
+      where: (groups, { exists, eq }) => {
+        return exists(
+          db
+            .select()
+            .from(memberTable)
+            .where(
+              and(
+                eq(memberTable.userId, userId),
+                eq(memberTable.groupId, groupId),
+              ),
+            ),
+        );
       },
     });
   },

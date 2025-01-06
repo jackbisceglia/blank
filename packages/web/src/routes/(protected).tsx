@@ -6,6 +6,7 @@ import {
 
 import Redirect from '@/components/redirect';
 import { Toaster } from '@/components/ui/toast';
+import { ZeroProvider } from '@/lib/zero';
 import { RouteSectionProps, useNavigate } from '@solidjs/router';
 import { ClerkLoaded, SignedIn, SignedOut } from 'clerk-solidjs';
 import { ParentComponent, onCleanup, onMount } from 'solid-js';
@@ -55,17 +56,23 @@ const ProtectedGlobalComponents: ParentComponent = () => {
 };
 
 export default function ProtectedLayout(props: RouteSectionProps) {
+  onMount(() => {
+    console.log('is this running?');
+  });
+
   return (
     <>
       <ClerkLoaded>
         <SignedIn>
-          <DialogProvider>
-            <main class="min-h-full flex flex-col px-8 pb-12 pt-6 text-center gap-4 sm:min-w-96 w-full max-w-screen-xl">
-              {props.children}
-            </main>
-            <ProtectedGlobalComponents />
-            <ProtectedGlobalActions />
-          </DialogProvider>
+          <ZeroProvider>
+            <DialogProvider>
+              <main class="min-h-full flex flex-col px-8 pb-12 pt-6 text-center gap-4 sm:min-w-96 w-full max-w-screen-xl">
+                {props.children}
+              </main>
+              <ProtectedGlobalComponents />
+              <ProtectedGlobalActions />
+            </DialogProvider>
+          </ZeroProvider>
         </SignedIn>
         <SignedOut>
           <Redirect url={'/landing'} />

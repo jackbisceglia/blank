@@ -16,9 +16,11 @@ export function getGroupDetails(z: Zero, groupId: string, userId: string) {
   return z.query.group
     .where('id', '=', groupId)
     .whereExists('members', (m) => m.where('userId', userId))
+    .one()
     .related('members')
-    .related('transactions', (q) => q.related('payees'))
-    .one();
+    .related('transactions', (q) =>
+      q.related('transactionMembers', (q) => q.related('members').one()),
+    );
 }
 
 export const createTransactionAction = action(
@@ -72,11 +74,16 @@ export const useCreateTransaction = () => {
 
 // TODO: get rid of this guy and replace with zero
 export const deleteTransactionsAction = action(async function (
-  deleteIds: string[],
+  deleteIds: {
+    transactionId: string;
+    groupId: string;
+  }[],
   resetRows?: () => void,
 ) {
   const res = await api.transactions.$delete({
-    json: { body: { ids: deleteIds } },
+    json: {
+      body: { ids: deleteIds },
+    },
   });
 
   if (!res.ok) {
@@ -111,6 +118,24 @@ export const useDeleteTransactions = () => {
     use: useAction(deleteTransactionsAction),
   };
 };
+
+export async function deleteTransaction(z: Zero, transactionId: string) {
+  // TODO: cascade
+  await z.mutate.transaction.delete({
+    id: transactionId,
+  });
+}
+
+export async function deleteTransactions(z: Zero, transactionIds: string[]) {
+  // TODO: cascade
+  await z.mutateBatch(async (tx) => {
+    for (const transactionId of transactionIds) {
+      await tx.transaction.delete({
+        id: transactionId,
+      });
+    }
+  });
+}
 
 // will only work if you have jane/john doe in your contacts
 const devOnlySeedTransactions = action(async () => {

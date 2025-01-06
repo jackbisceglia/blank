@@ -4,13 +4,12 @@ import { useRows } from './-useRows';
 import {
   getGroupDetails,
   useCreateTransaction,
-  useDeleteTransactions,
-  useDevOnlySeedTransactions,
+  deleteTransactions as zDeleteTransactions,
 } from './index.data';
 
 import { Transaction } from '@blank/core/zero';
 
-import { Button, ButtonLoadable } from '@/components/ui/button';
+import { Button } from '@/components/ui/button';
 import {
   Select,
   SelectContent,
@@ -43,8 +42,19 @@ export default function GroupPage() {
   );
   const transactionsMutable = createMemo(
     () =>
-      JSON.parse(JSON.stringify(group()?.transactions ?? {})) as Transaction[],
+      JSON.parse(
+        JSON.stringify(
+          group()?.transactions.map((t) => ({
+            ...t,
+            transactionMembers: t.transactionMembers?.members ?? [],
+          })) ?? {},
+        ),
+      ) as Transaction[],
   ); // TODO: i should find a better deep clone solution that also strips readonly modifier, this is temp
+
+  createEffect(() => {
+    console.log(transactionsMutable());
+  });
 
   createEffect(() => {
     const g = group();
@@ -60,12 +70,12 @@ export default function GroupPage() {
   const someRowsSelected = () => rows.selected.size() > 0;
 
   // crud
-  const [createTransaction, deleteTransaction] = [
-    useCreateTransaction(),
-    useDeleteTransactions(),
-    useDevOnlySeedTransactions(),
-  ];
   const createDialog = useNewTransactionDialog();
+  const createTransaction = useCreateTransaction();
+
+  const deleteTransactions = (transactionIds: string[]) => {
+    void zDeleteTransactions(z, transactionIds);
+  };
 
   return (
     <>
@@ -82,18 +92,18 @@ export default function GroupPage() {
             New
           </Button>
 
-          <ButtonLoadable
+          <Button
             variant="destructive"
             size="sm"
             class="w-1/3 sm:w-20"
-            disabled={!someRowsSelected() || deleteTransaction.ctx.pending}
-            loading={deleteTransaction.ctx.pending}
-            onClick={() =>
-              void deleteTransaction.use(rows.selected.ids(), rows.reset)
-            }
+            disabled={!someRowsSelected()}
+            onClick={() => {
+              deleteTransactions(rows.selected.ids());
+              rows.reset();
+            }}
           >
             Delete
-          </ButtonLoadable>
+          </Button>
         </div>
         <div class="flex gap-1.5 px-2">
           <For each={group()?.members}>
@@ -101,8 +111,7 @@ export default function GroupPage() {
               <Tooltip>
                 <TooltipTrigger>
                   <UserBadge
-                    gradientHash={[member.id, member.nickname]
-                      .join('')
+                    gradientHash={member.userId
                       .split('')
                       .reduce((sum, char) => sum + char.charCodeAt(0), 0)}
                     href="members"
@@ -153,8 +162,10 @@ export default function GroupPage() {
                 open: () => {},
               },
             }}
+            deleteTransactions={deleteTransactions}
             data={transactions}
             columns={columns}
+            groupId={group()?.id ?? ''}
           />
         )}
       </Show>

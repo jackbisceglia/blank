@@ -1,3 +1,4 @@
+import { GroupParams } from '.';
 import { useCreateTransaction } from './index.data';
 
 import { Button, ButtonLoadable } from '@/components/ui/button';
@@ -5,6 +6,7 @@ import {
   Dialog,
   DialogClose,
   DialogContent,
+  DialogDescription,
   DialogFooter,
   DialogHeader,
   DialogTitle,
@@ -14,9 +16,10 @@ import {
   TextFieldLabel,
   TextFieldRoot,
 } from '@/components/ui/textfield';
-import { action, useAction, useSearchParams } from '@solidjs/router';
+import { action, useAction, useParams, useSearchParams } from '@solidjs/router';
 import {
   ParentComponent,
+  Show,
   createContext,
   createMemo,
   createSignal,
@@ -78,6 +81,7 @@ export function useNewTransactionDialog() {
 }
 
 export const NewTransactionDialog = () => {
+  const params = useParams<Partial<GroupParams>>();
   const { state, close, open } = useNewTransactionDialog();
 
   const create = useCreateTransaction();
@@ -97,7 +101,7 @@ export const NewTransactionDialog = () => {
 
   const createAndNew = useAction(
     action(async (description: string) => {
-      await create.use(description, undefined, cleanupForm);
+      await create.use(description, params.id, cleanupForm);
       await Promise.resolve();
 
       return;
@@ -109,9 +113,14 @@ export const NewTransactionDialog = () => {
       <DialogContent>
         <DialogHeader>
           <DialogTitle class="uppercase">New Transaction</DialogTitle>
+          <Show when={!params.id}>
+            <DialogDescription class="lowercase">
+              NOTE: Not on group page, using your default group
+            </DialogDescription>
+          </Show>
         </DialogHeader>
         <form
-          action={create.raw.with(transactionDescription(), undefined, () => {
+          action={create.raw.with(transactionDescription(), params.id, () => {
             close(cleanupForm);
           })}
           method="post"
