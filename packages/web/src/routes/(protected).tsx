@@ -56,17 +56,13 @@ const ProtectedGlobalComponents: ParentComponent = () => {
 };
 
 export default function ProtectedLayout(props: RouteSectionProps) {
-  onMount(() => {
-    console.log('is this running?');
-  });
-
   return (
     <>
       <ClerkLoaded>
         <SignedIn>
           <ZeroProvider>
             <DialogProvider>
-              <main class="min-h-full flex flex-col px-8 pb-12 pt-6 text-center gap-4 sm:min-w-96 w-full max-w-screen-xl">
+              <main class="min-h-full flex flex-col px-8 pb-48 pt-6 text-center gap-4 sm:min-w-96 w-full max-w-screen-2xl">
                 {props.children}
               </main>
               <ProtectedGlobalComponents />

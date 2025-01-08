@@ -1,15 +1,32 @@
+import ai from './ai';
+import clerk from './clerk';
 import database from './database';
+import domain from './domain';
 
-export default new sst.aws.Function('API', {
+const api = new sst.aws.Function('API', {
   url: true,
-  link: [database],
+  link: [database, ai],
   handler: 'packages/api/src/index.default',
+
   environment: {
-    DEVELOPMENT: process.env.DEVELOPMENT ?? '',
-    OPENAI_API_KEY: process.env.OPENAI_API_KEY ?? '',
-    MISTRAL_API_KEY: process.env.MISTRAL_API_KEY ?? '',
-    ANTHROPIC_API_KEY: process.env.ANTHROPIC_API_KEY ?? '',
-    CLERK_SECRET_KEY: process.env.CLERK_SECRET_KEY ?? '',
-    CLERK_PUBLISHABLE_KEY: process.env.CLERK_PUBLISHABLE_KEY ?? '',
+    DEVELOPMENT: process.env.DEVELOPMENT ?? 'false',
+    CLERK_SECRET_KEY: clerk.properties.clerkSecretKey,
+    CLERK_PUBLISHABLE_KEY: clerk.properties.clerkPublishableKey,
+    OPENAI_API_KEY: ai.properties.openaiApiKey,
+    MISTRAL_API_KEY: ai.properties.mistralApiKey,
+    ANTHROPIC_API_KEY: ai.properties.anthropicApiKey,
   },
 });
+
+new sst.aws.Router('ApiRouter', {
+  domain: {
+    name:
+      $app.stage === 'production'
+        ? $interpolate`api.${domain}`
+        : $interpolate`${$app.stage}-api.${domain}`,
+    dns: sst.cloudflare.dns(),
+  },
+  routes: { '/*': api.url },
+});
+
+export default api;

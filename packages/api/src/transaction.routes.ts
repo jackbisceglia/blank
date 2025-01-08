@@ -85,6 +85,14 @@ const api = new Hono()
           ? body.payload
           : await getInsertableFromNl(body.payload.nl, auth.userId, groupId);
 
+      if (
+        insertableTransactionData.transactionMembers.find(
+          (m) => m.userId === insertableTransactionData.payerId,
+        )
+      ) {
+        throw new Error('Payer can not also be a payee');
+      }
+
       const rows = await transaction.create({
         ...insertableTransactionData,
       });

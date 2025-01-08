@@ -53,10 +53,6 @@ export default function GroupPage() {
   ); // TODO: i should find a better deep clone solution that also strips readonly modifier, this is temp
 
   createEffect(() => {
-    console.log(transactionsMutable());
-  });
-
-  createEffect(() => {
     const g = group();
     if (g && !g.members.find((m) => m.userId === session.user()?.id)) {
       navigate('/dashboard');

@@ -16,10 +16,15 @@ import {
   TextFieldLabel,
   TextFieldRoot,
 } from '@/components/ui/textfield';
-import { action, useAction, useParams, useSearchParams } from '@solidjs/router';
+import {
+  // action,
+  // useAction,
+  useParams,
+  useSearchParams,
+} from '@solidjs/router';
 import {
   ParentComponent,
-  Show,
+  // Show,
   createContext,
   createMemo,
   createSignal,
@@ -99,25 +104,28 @@ export const NewTransactionDialog = () => {
     }
   };
 
-  const createAndNew = useAction(
-    action(async (description: string) => {
-      await create.use(description, params.id, cleanupForm);
-      await Promise.resolve();
+  // const createAndNew = useAction(
+  //   action(async (description: string) => {
+  //     await create.use(description, params.id, cleanupForm);
+  //     await Promise.resolve();
 
-      return;
-    }, 'create-transaction-and-new'),
-  );
+  //     return;
+  //   }, 'create-transaction-and-new'),
+  // );
+
+  const getDialogDescription = () =>
+    !params.id
+      ? 'this will be created for your default group'
+      : 'Must use a valid group member name as the payee';
 
   return (
     <Dialog open={state() === 'open'} onOpenChange={onOpenChange}>
       <DialogContent>
         <DialogHeader>
           <DialogTitle class="uppercase">New Transaction</DialogTitle>
-          <Show when={!params.id}>
-            <DialogDescription class="lowercase">
-              NOTE: Not on group page, using your default group
-            </DialogDescription>
-          </Show>
+          <DialogDescription class="lowercase">
+            <span class="uppercase">NOTE:</span> {getDialogDescription()}
+          </DialogDescription>
         </DialogHeader>
         <form
           action={create.raw.with(transactionDescription(), params.id, () => {
@@ -134,7 +142,7 @@ export const NewTransactionDialog = () => {
                 name="transaction-description"
                 id="transaction-description"
                 class="w-full px-3 py-2 border bg-ui-muted focus:outline-none focus:ring-1 focus:ring-gray-400 transition duration-150 ease-in-out"
-                placeholder="coffee, $18, split with..."
+                placeholder="split coffee with johndoe, $19"
                 value={transactionDescription()}
                 onInput={(e) =>
                   setTransactionDescription(e.currentTarget.value)
@@ -153,7 +161,7 @@ export const NewTransactionDialog = () => {
               >
                 create
               </ButtonLoadable>
-              <ButtonLoadable
+              {/* <ButtonLoadable
                 onclick={() => void createAndNew(transactionDescription())}
                 class="w-full"
                 size="sm"
@@ -162,7 +170,7 @@ export const NewTransactionDialog = () => {
                 loading={create.ctx.pending}
               >
                 create & new
-              </ButtonLoadable>
+              </ButtonLoadable> */}
             </div>
             <Button
               as={DialogClose}

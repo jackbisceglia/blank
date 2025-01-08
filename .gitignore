@@ -7,6 +7,7 @@ node_modules
 # environment
 .env
 .env*.local
+.sst.secrets
 
 # editors (don't remember where this came from, but seems fine
 .project
@@ -18,3 +19,5 @@ node_modules
 .DS_Store
 dist
 .neon
+
+zero.db*

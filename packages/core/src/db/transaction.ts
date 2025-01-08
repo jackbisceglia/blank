@@ -25,8 +25,6 @@ const findMemberIdByName = async (
     ),
   });
 
-  console.log('groupId in fuzzy finding: ', groupId);
-
   // TODO: more complex matching logic, otherwise delegate this to the db. probably want to score based on match similarity
   const fuzzyMatch = (nickname: string, name: string) =>
     nickname.toLowerCase().includes(name.toLowerCase()) ||

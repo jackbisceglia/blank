@@ -26,9 +26,7 @@ export const group = {
       })
       .returning();
 
-    console.log('should be inserting?: ', numGroupsUserIsAMemberOf);
     if (numGroupsUserIsAMemberOf === 0) {
-      console.log('entered?');
       await db.insert(preferenceTable).values({
         userId,
         defaultGroupId: groupRow.id,

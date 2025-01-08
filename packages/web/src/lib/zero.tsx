@@ -29,7 +29,7 @@ const useCreateZero = async () => {
     userID,
     auth: jwt,
     // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
-    server: import.meta.env.VITE_PUBLIC_SERVER,
+    server: import.meta.env.VITE_PUBLIC_ZERO_CACHE_URL,
     schema,
     kvStore: STORE,
   });

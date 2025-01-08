@@ -2,16 +2,12 @@ import './app.css';
 
 import Nav from './components/Nav';
 import { WithChildren } from './lib/util.client';
-import { ZeroProvider } from './lib/zero';
 
 import { ColorModeProvider, ColorModeScript } from '@kobalte/core';
 import { RouteSectionProps, Router } from '@solidjs/router';
 import { FileRoutes } from '@solidjs/start/router';
 import { ClerkProvider } from 'clerk-solidjs';
 import { Suspense } from 'solid-js';
-
-//   {props.children}
-// </ZeroProvider>
 
 function Providers(props: WithChildren) {
   return (

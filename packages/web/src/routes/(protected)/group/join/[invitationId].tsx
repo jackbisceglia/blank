@@ -17,7 +17,7 @@ import { Zero, useZero } from '@/lib/zero';
 import { useQuery } from '@rocicorp/zero/solid';
 import { A, useNavigate, useParams } from '@solidjs/router';
 import { useUser } from 'clerk-solidjs';
-import { Show, batch, createEffect, createMemo } from 'solid-js';
+import { Show, batch, createMemo } from 'solid-js';
 
 type Params = { invitationId: string };
 
