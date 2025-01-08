@@ -1,0 +1,181 @@
+{
+  "permissions": {
+    "group": {
+      "row": {
+        "update": {}
+      }
+    }
+  },
+  "schema": {
+    "version": 1,
+    "tables": {
+      "group": {
+        "tableName": "group",
+        "primaryKey": [
+          "id"
+        ],
+        "columns": {
+          "id": {
+            "type": "string",
+            "optional": false
+          },
+          "ownerId": {
+            "type": "string",
+            "optional": false
+          },
+          "title": {
+            "type": "string",
+            "optional": false
+          }
+        },
+        "relationships": {
+          "members": {
+            "sourceField": [
+              "id"
+            ],
+            "destField": [
+              "groupId"
+            ],
+            "destSchema": "member"
+          },
+          "owner": {
+            "sourceField": [
+              "ownerId"
+            ],
+            "destField": [
+              "id"
+            ],
+            "destSchema": "member"
+          },
+          "transactions": {
+            "sourceField": [
+              "id"
+            ],
+            "destField": [
+              "groupId"
+            ],
+            "destSchema": "transaction"
+          }
+        }
+      },
+      "member": {
+        "tableName": "member",
+        "primaryKey": [
+          "id"
+        ],
+        "columns": {
+          "groupId": {
+            "type": "string",
+            "optional": false
+          },
+          "id": {
+            "type": "string",
+            "optional": false
+          },
+          "nickname": {
+            "type": "string",
+            "optional": false
+          },
+          "userId": {
+            "type": "string",
+            "optional": false
+          }
+        },
+        "relationships": {}
+      },
+      "payee": {
+        "tableName": "payee",
+        "primaryKey": [
+          "id"
+        ],
+        "columns": {
+          "id": {
+            "type": "string",
+            "optional": false
+          },
+          "memberId": {
+            "type": "string",
+            "optional": false
+          },
+          "transactionId": {
+            "type": "string",
+            "optional": false
+          }
+        },
+        "relationships": {}
+      },
+      "preference": {
+        "tableName": "preference",
+        "primaryKey": [
+          "userId",
+          "defaultGroupId"
+        ],
+        "columns": {
+          "defaultGroupId": {
+            "type": "string",
+            "optional": false
+          },
+          "userId": {
+            "type": "string",
+            "optional": false
+          }
+        },
+        "relationships": {}
+      },
+      "transaction": {
+        "tableName": "transaction",
+        "primaryKey": [
+          "id"
+        ],
+        "columns": {
+          "amount": {
+            "type": "number",
+            "optional": false
+          },
+          "date": {
+            "type": "number",
+            "optional": false
+          },
+          "description": {
+            "type": "string",
+            "optional": false
+          },
+          "groupId": {
+            "type": "string",
+            "optional": false
+          },
+          "id": {
+            "type": "string",
+            "optional": false
+          },
+          "payerId": {
+            "type": "string",
+            "optional": false
+          }
+        },
+        "relationships": {
+          "payees": [
+            {
+              "sourceField": [
+                "id"
+              ],
+              "destField": [
+                "transactionId"
+              ],
+              "destSchema": "payee"
+            },
+            {
+              "sourceField": [
+                "memberId"
+              ],
+              "destField": [
+                "id"
+              ],
+              "destSchema": "member"
+            }
+          ]
+        }
+      }
+    }
+  }
+}

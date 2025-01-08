@@ -1,5 +1,5 @@
 import { useNewGroupDialog } from './+group.create.dialog';
-import { getGroups, useCreateGroup } from './index.data';
+import { getGroupsUserBelongsTo } from './index.data';
 
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -10,38 +10,20 @@ import {
   LinkCard,
 } from '@/components/ui/card';
 import { navigation } from '@/lib/signals';
-import { createAsync } from '@solidjs/router';
+import { useZero } from '@/lib/zero';
+import { useQuery } from '@rocicorp/zero/solid';
 import { useUser } from 'clerk-solidjs';
-import { For, Show, Suspense } from 'solid-js';
+import { For, Show } from 'solid-js';
 
 const C = '\\';
 const blank = `
 ________    ___         ________    ________     ___  __
-|.   __  .  |.  .       |.   __  .  |.   ___  .  |.  .|.  .
-. .  .|. /. . .  .      . .  .|.  . . .  .. .  . . .  ./  /|_
- . .   __  . . .  .      . .   __  . . .  .. .  . . .   ___  .
-  . .  .|.  . . .  ._____ . .  . .  . . .  .. .  . . .  .. .  .
-   . ._______. . ._______. . .__. .__. . .__.. .__. . .__.. .__.
-    .|_______|  .|_______|  .|__|.|__|  .|__| .|__|  .|__| .|__|`;
-
-const SkeletonGroupGrid = () => {
-  return (
-    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-      {/* TODO: can read from local storage to check last time we loaded  */}
-      <For each={Array(3)}>
-        {() => (
-          <GroupCard
-            id="loading"
-            name="Loading"
-            lastSettledAt={'__/__/____'}
-            memberCount={-1}
-            isOwner={false}
-          />
-        )}
-      </For>
-    </div>
-  );
-};
+ |.   __  .  |.  .       |.   __  .  |.   ___  .  |.  .|.  .
+   . .  .|. /. . .  .      . .  .|.  . . .  .. .  . . .  ./  /|_
+     . .   __  . . .  .      . .   __  . . .  .. .  . . .   ___  .
+       . .  .|.  . . .  ._____ . .  . .  . . .  .. .  . . .  .. .  .
+         . ._______. . ._______. . .__. .__. . .__.. .__. . .__.. .__.
+          .|_______|  .|_______|  .|__|.|__|  .|__| .|__|  .|__| .|__|`;
 
 type NoGroupsViewProps = {
   open: () => void;
@@ -135,50 +117,47 @@ const GroupCard = (props: GroupCardProps) => {
 
 export default function DashboardPage() {
   const session = useUser();
-  const groups = createAsync(() => getGroups());
+  const z = useZero();
 
-  const createGroup = useCreateGroup();
+  const groups = useQuery(() =>
+    getGroupsUserBelongsTo(z, session.user()?.id ?? ''),
+  );
+
   const createGroupDialog = useNewGroupDialog();
 
   return (
     <>
-      <Suspense>
-        <Show when={groups()}>
-          {(groups) => (
-            <createGroupDialog.Component
-              numGroupsUserIsAMemberOf={groups().length}
-            />
-          )}
-        </Show>
-      </Suspense>
+      <Show when={groups()}>
+        <createGroupDialog.Component />
+      </Show>
 
       <div class="flex gap-2 py-1 w-full justify-between sm:items-center">
         <h1 class="text-left text-xl uppercase text-ui-foreground">
           Welcome back,{' '}
-          <Suspense fallback={'...'}>{session.user()?.username}</Suspense>
+          <Show when={session.user()} fallback={'...'}>
+            {session.user()?.username}
+          </Show>
         </h1>
+        {/* Button Bar */}
+        <div class="flex items-center gap-2 sm:w-fit">
+          <Button
+            class="w-full"
+            onClick={createGroupDialog.open}
+            // disabled={createGroup.ctx.pending} // TODO: user maxes out group count
+            variant="default"
+            size="sm"
+          >
+            New Group
+          </Button>
+        </div>
       </div>
       <Show when={session.user()}>
-        <div class="flex gap-2 py-1 w-full justify-between sm:items-center">
-          {/* Button Bar */}
-          <div class="flex items-center gap-2 sm:w-fit">
-            <Button
-              class="w-full"
-              disabled={createGroup.ctx.pending}
-              onClick={createGroupDialog.open}
-              variant="outline"
-              size="sm"
+        <Show when={groups()}>
+          {(groups) => (
+            <Show
+              when={!!groups().length}
+              fallback={<NoGroupsView open={createGroupDialog.open} />}
             >
-              New Group
-            </Button>
-          </div>
-        </div>
-        <Suspense fallback={<SkeletonGroupGrid />}>
-          <Show
-            when={!!groups()?.length && groups()}
-            fallback={<NoGroupsView open={createGroupDialog.open} />}
-          >
-            {(groups) => (
               <ul class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                 <For each={groups()}>
                   {(group) => (
@@ -192,9 +171,9 @@ export default function DashboardPage() {
                   )}
                 </For>
               </ul>
-            )}
-          </Show>
-        </Suspense>
+            </Show>
+          )}
+        </Show>
       </Show>
     </>
   );

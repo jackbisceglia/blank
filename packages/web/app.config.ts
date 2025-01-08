@@ -14,5 +14,13 @@ export default defineConfig({
         '@': `${dirname(fileURLToPath(import.meta.url))}/src`,
       },
     },
+    optimizeDeps: {
+      esbuildOptions: {
+        target: 'esnext',
+      },
+    },
+    build: {
+      target: 'esnext',
+    },
   },
 });

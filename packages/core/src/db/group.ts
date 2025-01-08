@@ -14,6 +14,8 @@ export const group = {
       .values({ title, ownerId: userId })
       .returning();
 
+    const groupRow = groupRowsCreated[0];
+
     // insert self as member (and owner)
     const memberRowsCreated = await db
       .insert(memberTable)
@@ -25,15 +27,15 @@ export const group = {
       .returning();
 
     if (numGroupsUserIsAMemberOf === 0) {
-      db.insert(preferenceTable).values({
+      await db.insert(preferenceTable).values({
         userId,
-        defaultGroupId: groupRowsCreated[0].id,
+        defaultGroupId: groupRow.id,
       });
     }
 
     return [
       {
-        ...groupRowsCreated[0],
+        ...groupRow,
         members: memberRowsCreated,
       },
     ];
@@ -46,7 +48,6 @@ export const group = {
           columns: {
             nickname: true,
             userId: true,
-            id: true,
           },
         },
       },
@@ -72,9 +73,25 @@ export const group = {
           columns: {
             nickname: true,
             userId: true,
-            id: true,
           },
         },
+      },
+    });
+  },
+  hasUserAsMember(groupId: string, userId: string) {
+    return db.query.groupTable.findFirst({
+      where: (groups, { exists, eq }) => {
+        return exists(
+          db
+            .select()
+            .from(memberTable)
+            .where(
+              and(
+                eq(memberTable.userId, userId),
+                eq(memberTable.groupId, groupId),
+              ),
+            ),
+        );
       },
     });
   },

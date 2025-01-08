@@ -1,0 +1,936 @@
+{
+  "permissions": {
+    "group": {
+      "row": {
+        "update": {
+          "preMutation": [
+            [
+              "allow",
+              {
+                "type": "simple",
+                "left": {
+                  "type": "column",
+                  "name": "ownerId"
+                },
+                "right": {
+                  "type": "static",
+                  "anchor": "authData",
+                  "field": "sub"
+                },
+                "op": "="
+              }
+            ]
+          ]
+        },
+        "delete": [
+          [
+            "allow",
+            {
+              "type": "simple",
+              "left": {
+                "type": "column",
+                "name": "ownerId"
+              },
+              "right": {
+                "type": "static",
+                "anchor": "authData",
+                "field": "sub"
+              },
+              "op": "="
+            }
+          ]
+        ]
+      }
+    },
+    "member": {
+      "row": {
+        "select": [
+          [
+            "allow",
+            {
+              "type": "correlatedSubquery",
+              "related": {
+                "system": "permissions",
+                "correlation": {
+                  "parentField": [
+                    "groupId"
+                  ],
+                  "childField": [
+                    "id"
+                  ]
+                },
+                "subquery": {
+                  "table": "group",
+                  "alias": "zsubq_group",
+                  "where": {
+                    "type": "correlatedSubquery",
+                    "related": {
+                      "system": "permissions",
+                      "correlation": {
+                        "parentField": [
+                          "id"
+                        ],
+                        "childField": [
+                          "groupId"
+                        ]
+                      },
+                      "subquery": {
+                        "table": "member",
+                        "alias": "zsubq_members",
+                        "where": {
+                          "type": "simple",
+                          "left": {
+                            "type": "column",
+                            "name": "userId"
+                          },
+                          "right": {
+                            "type": "static",
+                            "anchor": "authData",
+                            "field": "sub"
+                          },
+                          "op": "="
+                        },
+                        "orderBy": [
+                          [
+                            "groupId",
+                            "asc"
+                          ],
+                          [
+                            "userId",
+                            "asc"
+                          ]
+                        ]
+                      }
+                    },
+                    "op": "EXISTS"
+                  },
+                  "orderBy": [
+                    [
+                      "id",
+                      "asc"
+                    ]
+                  ]
+                }
+              },
+              "op": "EXISTS"
+            }
+          ]
+        ],
+        "insert": [
+          [
+            "allow",
+            {
+              "type": "correlatedSubquery",
+              "related": {
+                "system": "permissions",
+                "correlation": {
+                  "parentField": [
+                    "groupId"
+                  ],
+                  "childField": [
+                    "id"
+                  ]
+                },
+                "subquery": {
+                  "table": "group",
+                  "alias": "zsubq_group",
+                  "where": {
+                    "type": "correlatedSubquery",
+                    "related": {
+                      "system": "permissions",
+                      "correlation": {
+                        "parentField": [
+                          "id"
+                        ],
+                        "childField": [
+                          "groupId"
+                        ]
+                      },
+                      "subquery": {
+                        "table": "member",
+                        "alias": "zsubq_members",
+                        "where": {
+                          "type": "simple",
+                          "left": {
+                            "type": "column",
+                            "name": "userId"
+                          },
+                          "right": {
+                            "type": "static",
+                            "anchor": "authData",
+                            "field": "sub"
+                          },
+                          "op": "="
+                        },
+                        "orderBy": [
+                          [
+                            "groupId",
+                            "asc"
+                          ],
+                          [
+                            "userId",
+                            "asc"
+                          ]
+                        ]
+                      }
+                    },
+                    "op": "EXISTS"
+                  },
+                  "orderBy": [
+                    [
+                      "id",
+                      "asc"
+                    ]
+                  ]
+                }
+              },
+              "op": "EXISTS"
+            }
+          ]
+        ],
+        "update": {
+          "preMutation": [
+            [
+              "allow",
+              {
+                "type": "and",
+                "conditions": [
+                  {
+                    "type": "simple",
+                    "left": {
+                      "type": "column",
+                      "name": "userId"
+                    },
+                    "right": {
+                      "type": "static",
+                      "anchor": "authData",
+                      "field": "sub"
+                    },
+                    "op": "="
+                  },
+                  {
+                    "type": "correlatedSubquery",
+                    "related": {
+                      "system": "permissions",
+                      "correlation": {
+                        "parentField": [
+                          "groupId"
+                        ],
+                        "childField": [
+                          "id"
+                        ]
+                      },
+                      "subquery": {
+                        "table": "group",
+                        "alias": "zsubq_group",
+                        "where": {
+                          "type": "correlatedSubquery",
+                          "related": {
+                            "system": "permissions",
+                            "correlation": {
+                              "parentField": [
+                                "id"
+                              ],
+                              "childField": [
+                                "groupId"
+                              ]
+                            },
+                            "subquery": {
+                              "table": "member",
+                              "alias": "zsubq_members",
+                              "where": {
+                                "type": "simple",
+                                "left": {
+                                  "type": "column",
+                                  "name": "userId"
+                                },
+                                "right": {
+                                  "type": "static",
+                                  "anchor": "authData",
+                                  "field": "sub"
+                                },
+                                "op": "="
+                              },
+                              "orderBy": [
+                                [
+                                  "groupId",
+                                  "asc"
+                                ],
+                                [
+                                  "userId",
+                                  "asc"
+                                ]
+                              ]
+                            }
+                          },
+                          "op": "EXISTS"
+                        },
+                        "orderBy": [
+                          [
+                            "id",
+                            "asc"
+                          ]
+                        ]
+                      }
+                    },
+                    "op": "EXISTS"
+                  }
+                ]
+              }
+            ]
+          ]
+        },
+        "delete": [
+          [
+            "allow",
+            {
+              "type": "and",
+              "conditions": [
+                {
+                  "type": "simple",
+                  "left": {
+                    "type": "column",
+                    "name": "userId"
+                  },
+                  "right": {
+                    "type": "static",
+                    "anchor": "authData",
+                    "field": "sub"
+                  },
+                  "op": "="
+                },
+                {
+                  "type": "correlatedSubquery",
+                  "related": {
+                    "system": "permissions",
+                    "correlation": {
+                      "parentField": [
+                        "groupId"
+                      ],
+                      "childField": [
+                        "id"
+                      ]
+                    },
+                    "subquery": {
+                      "table": "group",
+                      "alias": "zsubq_group",
+                      "where": {
+                        "type": "correlatedSubquery",
+                        "related": {
+                          "system": "permissions",
+                          "correlation": {
+                            "parentField": [
+                              "id"
+                            ],
+                            "childField": [
+                              "groupId"
+                            ]
+                          },
+                          "subquery": {
+                            "table": "member",
+                            "alias": "zsubq_members",
+                            "where": {
+                              "type": "simple",
+                              "left": {
+                                "type": "column",
+                                "name": "userId"
+                              },
+                              "right": {
+                                "type": "static",
+                                "anchor": "authData",
+                                "field": "sub"
+                              },
+                              "op": "="
+                            },
+                            "orderBy": [
+                              [
+                                "groupId",
+                                "asc"
+                              ],
+                              [
+                                "userId",
+                                "asc"
+                              ]
+                            ]
+                          }
+                        },
+                        "op": "EXISTS"
+                      },
+                      "orderBy": [
+                        [
+                          "id",
+                          "asc"
+                        ]
+                      ]
+                    }
+                  },
+                  "op": "EXISTS"
+                }
+              ]
+            }
+          ]
+        ]
+      }
+    },
+    "transaction": {
+      "row": {
+        "select": [
+          [
+            "allow",
+            {
+              "type": "correlatedSubquery",
+              "related": {
+                "system": "permissions",
+                "correlation": {
+                  "parentField": [
+                    "groupId"
+                  ],
+                  "childField": [
+                    "id"
+                  ]
+                },
+                "subquery": {
+                  "table": "group",
+                  "alias": "zsubq_group",
+                  "where": {
+                    "type": "correlatedSubquery",
+                    "related": {
+                      "system": "permissions",
+                      "correlation": {
+                        "parentField": [
+                          "id"
+                        ],
+                        "childField": [
+                          "groupId"
+                        ]
+                      },
+                      "subquery": {
+                        "table": "member",
+                        "alias": "zsubq_members",
+                        "where": {
+                          "type": "simple",
+                          "left": {
+                            "type": "column",
+                            "name": "userId"
+                          },
+                          "right": {
+                            "type": "static",
+                            "anchor": "authData",
+                            "field": "sub"
+                          },
+                          "op": "="
+                        },
+                        "orderBy": [
+                          [
+                            "groupId",
+                            "asc"
+                          ],
+                          [
+                            "userId",
+                            "asc"
+                          ]
+                        ]
+                      }
+                    },
+                    "op": "EXISTS"
+                  },
+                  "orderBy": [
+                    [
+                      "id",
+                      "asc"
+                    ]
+                  ]
+                }
+              },
+              "op": "EXISTS"
+            }
+          ]
+        ],
+        "insert": [
+          [
+            "allow",
+            {
+              "type": "correlatedSubquery",
+              "related": {
+                "system": "permissions",
+                "correlation": {
+                  "parentField": [
+                    "groupId"
+                  ],
+                  "childField": [
+                    "id"
+                  ]
+                },
+                "subquery": {
+                  "table": "group",
+                  "alias": "zsubq_group",
+                  "where": {
+                    "type": "correlatedSubquery",
+                    "related": {
+                      "system": "permissions",
+                      "correlation": {
+                        "parentField": [
+                          "id"
+                        ],
+                        "childField": [
+                          "groupId"
+                        ]
+                      },
+                      "subquery": {
+                        "table": "member",
+                        "alias": "zsubq_members",
+                        "where": {
+                          "type": "simple",
+                          "left": {
+                            "type": "column",
+                            "name": "userId"
+                          },
+                          "right": {
+                            "type": "static",
+                            "anchor": "authData",
+                            "field": "sub"
+                          },
+                          "op": "="
+                        },
+                        "orderBy": [
+                          [
+                            "groupId",
+                            "asc"
+                          ],
+                          [
+                            "userId",
+                            "asc"
+                          ]
+                        ]
+                      }
+                    },
+                    "op": "EXISTS"
+                  },
+                  "orderBy": [
+                    [
+                      "id",
+                      "asc"
+                    ]
+                  ]
+                }
+              },
+              "op": "EXISTS"
+            }
+          ]
+        ],
+        "update": {
+          "preMutation": [
+            [
+              "allow",
+              {
+                "type": "correlatedSubquery",
+                "related": {
+                  "system": "permissions",
+                  "correlation": {
+                    "parentField": [
+                      "groupId"
+                    ],
+                    "childField": [
+                      "id"
+                    ]
+                  },
+                  "subquery": {
+                    "table": "group",
+                    "alias": "zsubq_group",
+                    "where": {
+                      "type": "correlatedSubquery",
+                      "related": {
+                        "system": "permissions",
+                        "correlation": {
+                          "parentField": [
+                            "id"
+                          ],
+                          "childField": [
+                            "groupId"
+                          ]
+                        },
+                        "subquery": {
+                          "table": "member",
+                          "alias": "zsubq_members",
+                          "where": {
+                            "type": "simple",
+                            "left": {
+                              "type": "column",
+                              "name": "userId"
+                            },
+                            "right": {
+                              "type": "static",
+                              "anchor": "authData",
+                              "field": "sub"
+                            },
+                            "op": "="
+                          },
+                          "orderBy": [
+                            [
+                              "groupId",
+                              "asc"
+                            ],
+                            [
+                              "userId",
+                              "asc"
+                            ]
+                          ]
+                        }
+                      },
+                      "op": "EXISTS"
+                    },
+                    "orderBy": [
+                      [
+                        "id",
+                        "asc"
+                      ]
+                    ]
+                  }
+                },
+                "op": "EXISTS"
+              }
+            ]
+          ]
+        },
+        "delete": [
+          [
+            "allow",
+            {
+              "type": "and",
+              "conditions": [
+                {
+                  "type": "or",
+                  "conditions": [
+                    {
+                      "type": "simple",
+                      "left": {
+                        "type": "column",
+                        "name": "payerId"
+                      },
+                      "right": {
+                        "type": "static",
+                        "anchor": "authData",
+                        "field": "sub"
+                      },
+                      "op": "="
+                    },
+                    {
+                      "type": "correlatedSubquery",
+                      "related": {
+                        "system": "permissions",
+                        "correlation": {
+                          "parentField": [
+                            "id"
+                          ],
+                          "childField": [
+                            "transactionId"
+                          ]
+                        },
+                        "subquery": {
+                          "table": "transactionMember",
+                          "alias": "zsubq_transactionMembers",
+                          "where": {
+                            "type": "simple",
+                            "left": {
+                              "type": "column",
+                              "name": "userId"
+                            },
+                            "right": {
+                              "type": "static",
+                              "anchor": "authData",
+                              "field": "sub"
+                            },
+                            "op": "="
+                          },
+                          "orderBy": [
+                            [
+                              "transactionId",
+                              "asc"
+                            ],
+                            [
+                              "groupId",
+                              "asc"
+                            ],
+                            [
+                              "userId",
+                              "asc"
+                            ]
+                          ]
+                        }
+                      },
+                      "op": "EXISTS"
+                    }
+                  ]
+                },
+                {
+                  "type": "correlatedSubquery",
+                  "related": {
+                    "system": "permissions",
+                    "correlation": {
+                      "parentField": [
+                        "groupId"
+                      ],
+                      "childField": [
+                        "id"
+                      ]
+                    },
+                    "subquery": {
+                      "table": "group",
+                      "alias": "zsubq_group",
+                      "where": {
+                        "type": "correlatedSubquery",
+                        "related": {
+                          "system": "permissions",
+                          "correlation": {
+                            "parentField": [
+                              "id"
+                            ],
+                            "childField": [
+                              "groupId"
+                            ]
+                          },
+                          "subquery": {
+                            "table": "member",
+                            "alias": "zsubq_members",
+                            "where": {
+                              "type": "simple",
+                              "left": {
+                                "type": "column",
+                                "name": "userId"
+                              },
+                              "right": {
+                                "type": "static",
+                                "anchor": "authData",
+                                "field": "sub"
+                              },
+                              "op": "="
+                            },
+                            "orderBy": [
+                              [
+                                "groupId",
+                                "asc"
+                              ],
+                              [
+                                "userId",
+                                "asc"
+                              ]
+                            ]
+                          }
+                        },
+                        "op": "EXISTS"
+                      },
+                      "orderBy": [
+                        [
+                          "id",
+                          "asc"
+                        ]
+                      ]
+                    }
+                  },
+                  "op": "EXISTS"
+                }
+              ]
+            }
+          ]
+        ]
+      }
+    }
+  },
+  "schema": {
+    "version": 1,
+    "tables": {
+      "group": {
+        "tableName": "group",
+        "primaryKey": [
+          "id"
+        ],
+        "columns": {
+          "id": {
+            "type": "string",
+            "optional": false
+          },
+          "invitationId": {
+            "type": "string",
+            "optional": true
+          },
+          "ownerId": {
+            "type": "string",
+            "optional": false
+          },
+          "title": {
+            "type": "string",
+            "optional": false
+          }
+        },
+        "relationships": {
+          "members": {
+            "sourceField": [
+              "id"
+            ],
+            "destField": [
+              "groupId"
+            ],
+            "destSchema": "member"
+          },
+          "owner": {
+            "sourceField": [
+              "id",
+              "ownerId"
+            ],
+            "destField": [
+              "groupId",
+              "userId"
+            ],
+            "destSchema": "member"
+          },
+          "transactions": {
+            "sourceField": [
+              "id"
+            ],
+            "destField": [
+              "groupId"
+            ],
+            "destSchema": "transaction"
+          }
+        }
+      },
+      "member": {
+        "tableName": "member",
+        "primaryKey": [
+          "groupId",
+          "userId"
+        ],
+        "columns": {
+          "groupId": {
+            "type": "string",
+            "optional": false
+          },
+          "nickname": {
+            "type": "string",
+            "optional": false
+          },
+          "userId": {
+            "type": "string",
+            "optional": false
+          }
+        },
+        "relationships": {
+          "group": {
+            "sourceField": [
+              "groupId"
+            ],
+            "destField": [
+              "id"
+            ],
+            "destSchema": "group"
+          }
+        }
+      },
+      "preference": {
+        "tableName": "preference",
+        "primaryKey": [
+          "userId",
+          "defaultGroupId"
+        ],
+        "columns": {
+          "defaultGroupId": {
+            "type": "string",
+            "optional": false
+          },
+          "userId": {
+            "type": "string",
+            "optional": false
+          }
+        },
+        "relationships": {}
+      },
+      "transaction": {
+        "tableName": "transaction",
+        "primaryKey": [
+          "id"
+        ],
+        "columns": {
+          "amount": {
+            "type": "number",
+            "optional": false
+          },
+          "date": {
+            "type": "number",
+            "optional": false
+          },
+          "description": {
+            "type": "string",
+            "optional": false
+          },
+          "groupId": {
+            "type": "string",
+            "optional": false
+          },
+          "id": {
+            "type": "string",
+            "optional": false
+          },
+          "payerId": {
+            "type": "string",
+            "optional": false
+          }
+        },
+        "relationships": {
+          "group": {
+            "sourceField": [
+              "groupId"
+            ],
+            "destField": [
+              "id"
+            ],
+            "destSchema": "group"
+          },
+          "transactionMembers": {
+            "sourceField": [
+              "id"
+            ],
+            "destField": [
+              "transactionId"
+            ],
+            "destSchema": "transactionMember"
+          }
+        }
+      },
+      "transactionMember": {
+        "tableName": "transactionMember",
+        "primaryKey": [
+          "transactionId",
+          "groupId",
+          "userId"
+        ],
+        "columns": {
+          "groupId": {
+            "type": "string",
+            "optional": false
+          },
+          "transactionId": {
+            "type": "string",
+            "optional": false
+          },
+          "userId": {
+            "type": "string",
+            "optional": false
+          }
+        },
+        "relationships": {
+          "members": {
+            "sourceField": [
+              "groupId",
+              "userId"
+            ],
+            "destField": [
+              "groupId",
+              "userId"
+            ],
+            "destSchema": "member"
+          }
+        }
+      }
+    }
+  }
+}

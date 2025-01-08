@@ -1,9 +1,9 @@
-export default new sst.Linkable("DATABASE", {
+export default new sst.Linkable('DATABASE', {
   properties: {
-    host: new sst.Secret("DatabaseHost", process.env.NEON_DB_HOST).value,
-    password: new sst.Secret("DatabasePassword", process.env.NEON_DB_PASSWORD)
+    host: new sst.Secret('DatabaseHost', process.env.NEON_DB_HOST).value,
+    password: new sst.Secret('DatabasePassword', process.env.NEON_DB_PASSWORD)
       .value,
-    user: "neondb_owner",
-    database: "neondb",
+    user: 'neondb_owner',
+    database: 'neondb',
   },
 });

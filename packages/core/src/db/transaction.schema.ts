@@ -8,23 +8,28 @@ import {
 } from './utils';
 
 import { relations, sql } from 'drizzle-orm';
-import { integer, text } from 'drizzle-orm/pg-core';
+import {
+  // doublePrecision,
+  integer,
+  primaryKey,
+  text,
+} from 'drizzle-orm/pg-core';
 import { createInsertSchema, createSelectSchema } from 'drizzle-zod';
 
 // sql
 export const transactionTable = createTable('transaction', {
-  id: uuidv7WithDefault('id').primaryKey(),
-  groupId: uuidv7('group_id').notNull(),
-  payerId: uuidv7('payer_id').notNull(),
-  amount: integer('amount').notNull(),
-  date: text('date').default(sql`(CURRENT_TIMESTAMP)`),
-  description: text('description').notNull(),
+  id: uuidv7WithDefault().primaryKey(),
+  groupId: uuidv7().notNull(),
+  payerId: uuidv7().notNull(),
+  amount: integer().notNull(),
+  date: text().default(sql`(CURRENT_TIMESTAMP)`),
+  description: text().notNull(),
 });
 
 export const transactionRelation = relations(
   transactionTable,
   ({ one, many }) => ({
-    payees: many(payeeTable),
+    transactionMembers: many(transactionMemberTable),
     group: one(groupTable, {
       fields: [transactionTable.groupId],
       references: [groupTable.id],
@@ -32,71 +37,81 @@ export const transactionRelation = relations(
   }),
 );
 
-export const payeeTable = createTable('transaction_payee', {
-  id: uuidv7WithDefault('id').primaryKey(),
-  transactionId: uuidv7('transaction_id').notNull(),
-  memberId: uuidv7('payee_id').notNull(),
-});
+export const transactionMemberTable = createTable(
+  'transactionMember',
+  {
+    transactionId: uuidv7().notNull(),
+    groupId: uuidv7().notNull(),
+    userId: uuidv7().notNull(),
+    // share: doublePrecision().notNull(),
+  },
+  (table) => [
+    primaryKey({ columns: [table.transactionId, table.groupId, table.userId] }),
+  ],
+);
 
-export const payeeRelation = relations(payeeTable, ({ one }) => ({
-  transaction: one(transactionTable, {
-    fields: [payeeTable.transactionId],
-    references: [transactionTable.id],
+export const transactionMemberRelation = relations(
+  transactionMemberTable,
+  ({ one }) => ({
+    transaction: one(transactionTable, {
+      fields: [transactionMemberTable.transactionId],
+      references: [transactionTable.id],
+    }),
+    member: one(memberTable, {
+      fields: [transactionMemberTable.groupId, transactionMemberTable.userId],
+      references: [memberTable.groupId, memberTable.userId],
+    }),
   }),
-  member: one(memberTable, {
-    fields: [payeeTable.memberId],
-    references: [memberTable.id],
-  }),
-}));
+);
 
 // types
 type TransactionTypes = DrizzleModelTypes<typeof transactionTable>;
-type PayeeTypes = DrizzleModelTypes<typeof payeeTable>;
+type TransactionMemberTypes = DrizzleModelTypes<typeof transactionMemberTable>;
 
 export type Transaction = TransactionTypes['Select'];
 export type TransactionInsert = TransactionTypes['Insert'];
-export type Payee = PayeeTypes['Select'];
-export type PayeeInsert = PayeeTypes['Insert'];
+export type TransactionMember = TransactionMemberTypes['Select'];
+export type TransactionMemberInsert = TransactionMemberTypes['Insert'];
 
-export type PayeeWithMember = Payee & {
+export type TransactionMemberWithMember = TransactionMember & {
   member: Pick<Member, 'nickname' | 'userId'>;
 };
 
-export type TransactionInsertWithPayees = TransactionInsert & {
-  payees: Omit<PayeeInsert, 'transactionId' | 'id'>[];
+export type TransactionInsertWithTransactionMembers = TransactionInsert & {
+  transactionMembers: Omit<TransactionMemberInsert, 'transactionId' | 'id'>[];
 };
-export type TransactionWithPayees = TransactionInsert & {
-  payees: Payee[];
+export type TransactionWithTransactionMembers = TransactionInsert & {
+  transactionMembers: TransactionMember[];
 };
 
-export type TransactionInsertWithPayeesWithMembers = TransactionInsert & {
-  payees: PayeeWithMember[];
+export type TransactionInsertWithTransactionMembersWithMembers =
+  TransactionInsert & {
+    transactionMembers: TransactionMemberWithMember[];
+  };
+export type TransactionWithTransactionMembersWithMembers = Transaction & {
+  transactionMembers: TransactionMemberWithMember[];
 };
-export type TransactionWithPayeesWithMembers = Transaction & {
-  payees: PayeeWithMember[];
+
+export type TransactionWithMembersAsTransactionMembers = Transaction & {
+  transactionMembers: Member[];
 };
 
 // runtime schemas
 export const Transaction = createSelectSchema(transactionTable);
 export const TransactionInsert = createInsertSchema(transactionTable);
-export const Payee = createSelectSchema(payeeTable);
-export const PayeeInsert = createInsertSchema(payeeTable);
+export const TransactionMember = createSelectSchema(transactionMemberTable);
+export const TransactionMemberInsert = createInsertSchema(
+  transactionMemberTable,
+);
 
-export const PayeeWithMember = Payee.extend({
-  member: Member.omit({ id: true }),
-});
+export const TransactionInsertWithTransactionMembers = TransactionInsert.extend(
+  {
+    transactionMembers: TransactionMemberInsert.omit({
+      transactionId: true,
+    }).array(),
+  },
+);
 
-export const TransactionInsertWithPayees = TransactionInsert.extend({
-  payees: PayeeInsert.omit({
-    id: true,
-    transactionId: true,
-  }).array(),
-});
-
-export const TransactionWithPayees = Transaction.extend({
-  payees: Payee.array(),
-});
-
-export const TransactionWithPayeesWithMembers = Transaction.extend({
-  payees: PayeeWithMember.array(),
+export const TransactionWithTransactionMembers = Transaction.extend({
+  transactionMembers: TransactionMember.array(),
 });
