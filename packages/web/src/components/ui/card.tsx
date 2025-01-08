@@ -3,6 +3,21 @@ import { A } from '@solidjs/router';
 import type { ComponentProps, ParentComponent } from 'solid-js';
 import { splitProps } from 'solid-js';
 
+export const CardListItem = (props: ComponentProps<'li'>) => {
+  const [local, rest] = splitProps(props, ['class']);
+
+  return (
+    <li
+      class={cn(
+        'border bg-ui-muted border-ui-border text-ui-card-foreground shadow',
+        local.class,
+      )}
+      {...rest}
+    />
+  );
+};
+
+
 export const LinkCard = (props: ComponentProps<typeof A>) => {
   const [local, rest] = splitProps(props, ['class']);
 
@@ -23,7 +38,7 @@ export const Card = (props: ComponentProps<'div'>) => {
   return (
     <div
       class={cn(
-        'border bg-ui-accent border-ui-border text-ui-card-foreground shadow',
+        'border bg-ui-muted border-ui-border text-ui-card-foreground shadow',
         local.class,
       )}
       {...rest}

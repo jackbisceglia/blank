@@ -42,7 +42,7 @@ const api = new Hono()
       z.object({
         body: z.object({
           title: z.string().min(2).max(20),
-          numGroupsUserIsAMemberOf: z.number().min(1).max(10),
+          numGroupsUserIsAMemberOf: z.number().min(0).max(10),
         }),
       }),
     ),

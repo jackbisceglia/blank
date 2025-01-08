@@ -51,8 +51,8 @@ export default function Nav() {
         </A>
       </>,
     ],
-    ['/contacts', 'Contacts'],
-    ['/actions', 'Actions'],
+    // ['/contacts', 'Contacts'],
+    // ['/actions', 'Actions'],
     ['/sign-out', <SignOutButton class={linkClasses} />],
   ];
 

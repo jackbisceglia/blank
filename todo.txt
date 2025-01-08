@@ -1,0 +1,63 @@
+a bunch of things i need to do and probably won't remember by TODO: comments
+
+TODO
+--------------------------------------------------------------------------
++ web
+  + feat
+    + high
+      [ ] settle transactions
+        [ ] some sort of flow that calculates open transactions and settles who owes who what, then closes/archives them
+      [ ] filter between archived and open transactions
+      [x] join group page
+      [ ] members page
+      [ ] user's group setting 
+        [ ] nickname
+      [ ] zero authentication
+      [ ] zero permissions
+      [ ] transactions default to current group id on group page
+      [ ] update default/preferred group
+    + low 
+      [ ] debounced llm transaction creation
+      [ ] invite by email
+      [ ] standard transaction creation
+
+  + fix
+    + high
+      [ ] invitation link should log the actual url base 
+      [ ] authorization with mem db mode; need to distinguish between undefined meanings
+      [ ] more secure group joining technique
+      [ ] fix state flash right after joining but before navigation
+
++ core
+  + feat
+    + high
+      [ ] nanoids for non essential ids
+        [ ] group id?
+        [ ] join id
+    + low
+      [ ] sending emails
+      [ ] max groups per user
+      [ ] max llm based transactions per user (depends on regular creation)
+
+--------------------------------------------------------------------------
+
+
+details
+format:
+> [domain]
+  > [type]
+    > [priority] 
+        [ ] todo
+        [x] done (mm/dd/yy)
+
+domains:
+  - web
+  - api
+  - core (core and/or zero)
+types:
+  - feat (needs to be implemented)
+  - fix  (has todo comment)
+  - bug  (broken and not understood yet)
+priority:
+  - low
+  - high

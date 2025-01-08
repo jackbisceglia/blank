@@ -1,56 +1,44 @@
-import { Group, TransactionWithPayeesWithMembers } from '@blank/core/db';
+// import { Group, TransactionWithPayeesWithMembers } from '@blank/core/db';
 
 import { toast } from '@/components/ui/toast';
 import { api } from '@/lib/hono';
+import { Zero } from '@/lib/zero';
 import {
   action,
-  query,
+  // query,
   revalidate,
   useAction,
   useSubmission,
 } from '@solidjs/router';
-import { Accessor, startTransition } from 'solid-js';
+import { startTransition } from 'solid-js';
 
-type GroupFetch = Group & {
-  transactions: TransactionWithPayeesWithMembers[];
-};
-
-export const getGroup = query(async (groupId: string) => {
-  // embed this in group data
-  const resTransactions = await api.transactions.$get();
-
-  // // TODO: update this function
-  const resGroup = await api.groups[':id'].$get({
-    param: { id: groupId },
-  });
-
-  if (!resTransactions.ok || !resGroup.ok) {
-    throw new Error(`HTTP error! status`);
-  }
-
-  const group = await resGroup.json();
-  const transaction = await resTransactions.json();
-
-  const merged: GroupFetch = {
-    ...group,
-    transactions: transaction,
-  };
-
-  return merged;
-}, 'transactions');
+export function getGroupDetails(z: Zero, groupId: string, userId: string) {
+  return z.query.group
+    .where('id', '=', groupId)
+    .whereExists('members', (m) => m.where('userId', userId))
+    .one()
+    .related('members')
+    .related('transactions', (q) =>
+      q.related('transactionMembers', (q) => q.related('members').one()),
+    );
+}
 
 export const createTransactionAction = action(
-  async (
-    description: Accessor<string>,
-    groupId?: string,
-    close?: () => void,
-  ) => {
+  async (description: string, groupId?: string, close?: () => void) => {
+    toast({
+      title: 'Processing Transaction...',
+      description: "We'll notify you when it's been parsed.",
+      variant: 'neutral' as const,
+    });
+
+    close?.();
+
     const res = await api.transactions.$post({
       json: {
         body: {
-          type: 'natural_language',
+          type: 'natural_language' as const,
           payload: {
-            nl: description(),
+            nl: description,
             groupId,
           },
         },
@@ -65,7 +53,6 @@ export const createTransactionAction = action(
       });
     } else {
       await revalidate('transactions'); // get rid of this when we can have time to add optimistic updates
-      close?.();
       toast({
         title: 'Transaction created!',
         description: 'Your transaction has been created.',
@@ -80,86 +67,23 @@ export const useCreateTransaction = () => {
   const submission = useSubmission(createTransactionAction);
   return {
     raw: createTransactionAction,
-    ctx: {
-      pendingFor: (input: string) =>
-        submission.input?.[0]() === input && submission.pending,
-      ...submission,
-    },
+    ctx: submission,
     use: useAction(createTransactionAction),
   };
 };
 
-// export const updateTransactionAction = action(async function (
-//   transaction: TransactionWithPayeesWithMembers,
-//   form: UpdateableTransactionPartial,
-//   close?: () => void,
-// ) {
-//   const check = form;
-//   const diff = {} as UpdateableTransactionPartial & { id: string };
-
-//   (Object.keys(check) as Array<keyof UpdateableTransactionPartial>).forEach(
-//     (key) => {
-//       // Only add to diff if the value has changed
-//       if (check[key] !== transaction[key]) {
-//         diff[key] = check[key];
-//       }
-//     },
-//   );
-
-//   if (Object.keys(diff).length === 0) {
-//     toast({
-//       title: 'No changes made.',
-//       description: 'There were no updates entered.',
-//       variant: 'neutral' as const,
-//     });
-//     close?.();
-//   } else {
-//     const payload = {
-//       ...diff,
-//       id: transaction.id,
-//     };
-
-//     const res = await api.transactions.$patch({
-//       json: { body: payload },
-//     });
-
-//     if (!res.ok) {
-//       toast({
-//         title: 'Uh oh! Something went wrong.',
-//         description: 'There was a problem with your request.',
-//         variant: 'destructive' as const,
-//       });
-//     } else {
-//       await revalidate('transactions'); // get rid of this when we can have time to add optimistic updates
-//       close?.();
-//       toast({
-//         title: 'Transaction updated!',
-//         description: 'Your transaction has been updated.',
-//         variant: 'default' as const,
-//       });
-//     }
-//   }
-// });
-
-// export const useUpdateTransaction = () => {
-//   const submission = useSubmission(updateTransactionAction);
-//   return {
-//     raw: updateTransactionAction,
-//     ctx: {
-//       ...submission,
-//       pendingFor: (input: Transaction) =>
-//         submission.input?.[0] === input && submission.pending,
-//     },
-//     use: useAction(updateTransactionAction),
-//   };
-// };
-
+// TODO: get rid of this guy and replace with zero
 export const deleteTransactionsAction = action(async function (
-  deleteIds: string[],
+  deleteIds: {
+    transactionId: string;
+    groupId: string;
+  }[],
   resetRows?: () => void,
 ) {
   const res = await api.transactions.$delete({
-    json: { body: { ids: deleteIds } },
+    json: {
+      body: { ids: deleteIds },
+    },
   });
 
   if (!res.ok) {
@@ -194,6 +118,24 @@ export const useDeleteTransactions = () => {
     use: useAction(deleteTransactionsAction),
   };
 };
+
+export async function deleteTransaction(z: Zero, transactionId: string) {
+  // TODO: cascade
+  await z.mutate.transaction.delete({
+    id: transactionId,
+  });
+}
+
+export async function deleteTransactions(z: Zero, transactionIds: string[]) {
+  // TODO: cascade
+  await z.mutateBatch(async (tx) => {
+    for (const transactionId of transactionIds) {
+      await tx.transaction.delete({
+        id: transactionId,
+      });
+    }
+  });
+}
 
 // will only work if you have jane/john doe in your contacts
 const devOnlySeedTransactions = action(async () => {

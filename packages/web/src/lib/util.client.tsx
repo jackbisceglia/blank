@@ -12,7 +12,7 @@ async function copy(text: string) {
 }
 
 export const createSignalBoundTextField = <
-  T extends string | number | string[] | undefined,
+  T extends string | number | string[] | undefined | null,
 >(
   defaultValue: T,
 ) => {
@@ -37,6 +37,11 @@ export const createSignalBoundTextField = <
 
 export const clipboard = {
   copy,
+};
+
+export const formPrevent = (fn: () => void) => (e: Event) => {
+  e.preventDefault();
+  fn();
 };
 
 /* 

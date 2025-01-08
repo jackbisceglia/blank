@@ -1,3 +1,4 @@
+import { GroupParams } from '.';
 import { useCreateTransaction } from './index.data';
 
 import { Button, ButtonLoadable } from '@/components/ui/button';
@@ -5,6 +6,7 @@ import {
   Dialog,
   DialogClose,
   DialogContent,
+  DialogDescription,
   DialogFooter,
   DialogHeader,
   DialogTitle,
@@ -14,9 +16,15 @@ import {
   TextFieldLabel,
   TextFieldRoot,
 } from '@/components/ui/textfield';
-import { action, useAction, useSearchParams } from '@solidjs/router';
+import {
+  // action,
+  // useAction,
+  useParams,
+  useSearchParams,
+} from '@solidjs/router';
 import {
   ParentComponent,
+  // Show,
   createContext,
   createMemo,
   createSignal,
@@ -78,6 +86,7 @@ export function useNewTransactionDialog() {
 }
 
 export const NewTransactionDialog = () => {
+  const params = useParams<Partial<GroupParams>>();
   const { state, close, open } = useNewTransactionDialog();
 
   const create = useCreateTransaction();
@@ -95,23 +104,31 @@ export const NewTransactionDialog = () => {
     }
   };
 
-  const createAndNew = useAction(
-    action(async () => {
-      await create.use(transactionDescription, undefined, cleanupForm);
-      await Promise.resolve();
+  // const createAndNew = useAction(
+  //   action(async (description: string) => {
+  //     await create.use(description, params.id, cleanupForm);
+  //     await Promise.resolve();
 
-      return;
-    }, 'create-transaction-and-new'),
-  );
+  //     return;
+  //   }, 'create-transaction-and-new'),
+  // );
+
+  const getDialogDescription = () =>
+    !params.id
+      ? 'this will be created for your default group'
+      : 'Must use a valid group member name as the payee';
 
   return (
     <Dialog open={state() === 'open'} onOpenChange={onOpenChange}>
       <DialogContent>
         <DialogHeader>
           <DialogTitle class="uppercase">New Transaction</DialogTitle>
+          <DialogDescription class="lowercase">
+            <span class="uppercase">NOTE:</span> {getDialogDescription()}
+          </DialogDescription>
         </DialogHeader>
         <form
-          action={create.raw.with(transactionDescription, undefined, () => {
+          action={create.raw.with(transactionDescription(), params.id, () => {
             close(cleanupForm);
           })}
           method="post"
@@ -120,11 +137,12 @@ export const NewTransactionDialog = () => {
             <TextFieldRoot class="lowercase w-full">
               <TextFieldLabel>description</TextFieldLabel>
               <TextField
+                autocomplete="off"
                 type="text"
                 name="transaction-description"
                 id="transaction-description"
                 class="w-full px-3 py-2 border bg-ui-muted focus:outline-none focus:ring-1 focus:ring-gray-400 transition duration-150 ease-in-out"
-                placeholder="coffee, $18, split with..."
+                placeholder="split coffee with johndoe, $19"
                 value={transactionDescription()}
                 onInput={(e) =>
                   setTransactionDescription(e.currentTarget.value)
@@ -143,8 +161,8 @@ export const NewTransactionDialog = () => {
               >
                 create
               </ButtonLoadable>
-              <ButtonLoadable
-                onclick={() => void createAndNew()}
+              {/* <ButtonLoadable
+                onclick={() => void createAndNew(transactionDescription())}
                 class="w-full"
                 size="sm"
                 variant="secondary"
@@ -152,7 +170,7 @@ export const NewTransactionDialog = () => {
                 loading={create.ctx.pending}
               >
                 create & new
-              </ButtonLoadable>
+              </ButtonLoadable> */}
             </div>
             <Button
               as={DialogClose}

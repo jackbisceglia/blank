@@ -1,13 +1,9 @@
 /* eslint-disable solid/reactivity */ // not sure if this rule is accurate, but code is straight from shadcn-solid docs
 
-// import { useRows } from '.';
 import { DialogState } from './+transaction.create.dialog';
 import { useRows } from './-useRows';
-import { useDeleteTransactions } from './index.data';
 
-// import { useDeleteTransactions } from './-transaction.data';
-
-import { TransactionWithPayeesWithMembers } from '@blank/core/db';
+import { Transaction } from '@blank/core/zero';
 
 import { Badge, badgeVariants } from '@/components/ui/badge';
 import {
@@ -18,7 +14,6 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
-// import { A } from '@solidjs/router';
 import {
   Row,
   createSolidTable,
@@ -45,7 +40,6 @@ const createKeyboardNav = () => {
     keypress: string,
     focusNext: () => void,
     focusPrevious: () => void,
-    // select: () => void,
   ) => {
     type DirectionConfig = {
       check: (k: string) => boolean;
@@ -166,15 +160,14 @@ function createRowSelect<TData>(
 }
 
 export const headers = {
-  // select: 'SELECTS',
   cost: 'COST',
   description: 'DESCRIPTION',
-  payees: 'WITH',
+  transactionMembers: 'WITH',
   payer: 'PAID BY',
   date: 'DATE',
 };
 
-export const columns: ColumnDef<TransactionWithPayeesWithMembers>[] = [
+export const columns: ColumnDef<Transaction>[] = [
   {
     id: 'amount',
     accessorKey: 'amount',
@@ -201,22 +194,16 @@ export const columns: ColumnDef<TransactionWithPayeesWithMembers>[] = [
     },
   },
   {
-    id: 'payees',
-    accessorKey: 'payees',
-    header: headers.payees,
+    id: 'transactionMembers',
+    accessorKey: 'transactionMembers',
+    header: headers.transactionMembers,
     cell: (props) => {
       return (
         <div class="flex flex-wrap gap-2 w-full h-full">
-          <For each={props.row.original.payees}>
-            {(payee) => (
-              // <A
-              //   href={`/contacts/${payee.contact.id}`}
-              //   class={badgeVariants({ variant: 'tertiary' })}
-              // >
-              //   {payee.contact.name}
-              // </A>
+          <For each={props.row.original.transactionMembers}>
+            {(member) => (
               <p class={badgeVariants({ variant: 'tertiary' })}>
-                {payee.member.nickname}
+                {member.nickname}
               </p>
             )}
           </For>
@@ -240,8 +227,7 @@ export const columns: ColumnDef<TransactionWithPayeesWithMembers>[] = [
     id: 'date',
     accessorKey: 'date',
     header: headers.date,
-    cell: (props) =>
-      new Date(props.row.original.date ?? '').toLocaleDateString(),
+    cell: (props) => new Date(props.row.original.date).toLocaleDateString(),
     size: 10,
   },
 ];
@@ -253,7 +239,9 @@ type Props<TData, TValue> = {
 
 export const TransactionTable = <TData, TValue>(
   props: Props<TData, TValue> & {
+    groupId: string;
     rows: ReturnType<typeof useRows> | null;
+    deleteTransactions: (transactionIds: string[]) => void;
     dialogs: {
       create: {
         state: () => DialogState;
@@ -297,7 +285,7 @@ export const TransactionTable = <TData, TValue>(
     set: setAnchors,
   });
 
-  const deleteTransaction = useDeleteTransactions();
+  // const deleteTransaction = useDeleteTransactions();
 
   const keyboardnav = (e: KeyboardEvent | PointerEvent, row: Row<TData>) => {
     const selected = getSelected();
@@ -323,7 +311,7 @@ export const TransactionTable = <TData, TValue>(
           props.dialogs.create.state,
           props.dialogs.edit.state,
         ] as const;
-        const handleKeyDown = async (e: KeyboardEvent) => {
+        const handleKeyDown = (e: KeyboardEvent) => {
           const keys = ['d', 'e'];
           if (
             getSelected().length < 1 ||
@@ -335,11 +323,16 @@ export const TransactionTable = <TData, TValue>(
 
           switch (e.key) {
             case 'd': {
-              await deleteTransaction.use(
-                props.rows?.selected.ids() as string[],
-                props.rows?.reset,
-              );
-
+              // await deleteTransaction.use(
+              //   props.rows?.selected.ids().map((id) => ({
+              //     transactionId: id,
+              //     groupId: props.groupId,
+              //   })) ?? [],
+              //   props.rows?.reset,
+              // );
+              //
+              props.deleteTransactions(props.rows?.selected.ids() ?? []);
+              props.rows?.reset();
               break;
             }
             case 'e': {
@@ -349,7 +342,9 @@ export const TransactionTable = <TData, TValue>(
           }
         };
 
-        table.addEventListener('keydown', (e) => void handleKeyDown(e));
+        table.addEventListener('keydown', (e) => {
+          handleKeyDown(e);
+        });
       }}
       class="border text overflow-scroll"
     >
@@ -376,7 +371,7 @@ export const TransactionTable = <TData, TValue>(
         </For>
       </TableHeader>
       <TableBody
-        onKeyPress={(e) => {
+        onKeyDown={(e) => {
           const { directions, handleKeyboardNav } = createKeyboardNav();
 
           type Directions = (typeof directions)[number];

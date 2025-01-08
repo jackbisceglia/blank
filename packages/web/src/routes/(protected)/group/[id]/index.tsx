@@ -2,69 +2,82 @@ import { useNewTransactionDialog } from './+transaction.create.dialog';
 import { TransactionTable, columns } from './+transaction.table';
 import { useRows } from './-useRows';
 import {
-  getGroup,
+  getGroupDetails,
   useCreateTransaction,
-  useDeleteTransactions,
-  useDevOnlySeedTransactions,
+  deleteTransactions as zDeleteTransactions,
 } from './index.data';
 
-import { Button, ButtonLoadable } from '@/components/ui/button';
-import { createAsync, useParams } from '@solidjs/router';
-import { Show, createMemo } from 'solid-js';
+import { Transaction } from '@blank/core/zero';
 
-// we can't do this on mount because transactions hasn't loaded yet
-// const useSyncUrlToRows = (
-//   idFromURL: () => string | undefined,
-//   transactions: Accessor<TransactionWithPayeesWithMembers[] | undefined>,
-//   setSelected: Setter<Record<string, boolean>>,
-//   singleRowSelected: () => boolean,
-// ) => {
+import { Button } from '@/components/ui/button';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from '@/components/ui/tooltip';
+import { UserBadge } from '@/components/user-badge';
+import { useZero } from '@/lib/zero';
+import { useQuery } from '@rocicorp/zero/solid';
+import { useNavigate, useParams } from '@solidjs/router';
+import { useUser } from 'clerk-solidjs';
+import { For, Show, createEffect, createMemo } from 'solid-js';
 
-//   createEffect(() => {
-//     if (!transactions()) return;
-
-//     const id = idFromURL();
-//     if (!singleRowSelected() && id) {
-//       const index =
-//         transactions()?.findIndex((t) => {
-//           console.log('iteration', t.id);
-//           return t.id === id;
-//         }) ?? 0;
-
-//       setSelected((prev) => ({ ...prev, [index.toString()]: true }));
-//     }
-//   });
-// };
-type Params = { id: string };
+export type GroupParams = { id: string };
 
 export default function GroupPage() {
-  const params = useParams<Params>();
-  const group = createAsync(() => getGroup(params.id));
-  const transactions = createMemo(() => group()?.transactions);
+  const navigate = useNavigate();
+  const params = useParams<GroupParams>();
+  const session = useUser();
+  const z = useZero();
+
+  const group = useQuery(() =>
+    getGroupDetails(z, params.id, session.user()?.id ?? ''),
+  );
+  const transactionsMutable = createMemo(
+    () =>
+      JSON.parse(
+        JSON.stringify(
+          group()?.transactions.map((t) => ({
+            ...t,
+            transactionMembers: t.transactionMembers?.members ?? [],
+          })) ?? {},
+        ),
+      ) as Transaction[],
+  ); // TODO: i should find a better deep clone solution that also strips readonly modifier, this is temp
+
+  createEffect(() => {
+    const g = group();
+    if (g && !g.members.find((m) => m.userId === session.user()?.id)) {
+      navigate('/dashboard');
+    }
+  });
 
   // eslint-disable-next-line solid/reactivity
-  const rows = useRows(transactions);
+  const rows = useRows(transactionsMutable);
 
   // derived state
   const someRowsSelected = () => rows.selected.size() > 0;
 
-  // const singleRowSelected = () => rows.selected.size() === 1;
-  // const singleRowSelectedTransaction = () =>
-  //   transactions()?.[rows.selected.indices()[0]];
-
   // crud
-  const [createTransaction, deleteTransaction] = [
-    useCreateTransaction(),
-    useDeleteTransactions(),
-    useDevOnlySeedTransactions(),
-  ];
   const createDialog = useNewTransactionDialog();
+  const createTransaction = useCreateTransaction();
+
+  const deleteTransactions = (transactionIds: string[]) => {
+    void zDeleteTransactions(z, transactionIds);
+  };
 
   return (
     <>
       <div class="flex flex-col gap-2 py-1 w-full sm:flex-row sm:justify-between sm:items-center">
         {/* Button Bar */}
-        <div class="flex items-center gap-2 w-full sm:w-fit">
+        <div class="flex gap-2 w-full">
           <Button
             class="w-1/3 sm:w-20"
             disabled={createTransaction.ctx.pending}
@@ -74,30 +87,64 @@ export default function GroupPage() {
           >
             New
           </Button>
-          <ButtonLoadable
+
+          <Button
             variant="destructive"
             size="sm"
             class="w-1/3 sm:w-20"
-            disabled={!someRowsSelected() || deleteTransaction.ctx.pending}
-            loading={deleteTransaction.ctx.pending}
-            onClick={() =>
-              void deleteTransaction.use(rows.selected.ids(), rows.reset)
-            }
+            disabled={!someRowsSelected()}
+            onClick={() => {
+              deleteTransactions(rows.selected.ids());
+              rows.reset();
+            }}
           >
             Delete
-          </ButtonLoadable>
-          {/* <ButtonLoadable
-            variant="ghost"
-            size="sm"
-            class="*"
-            loading={devOnlySeedTransactions.ctx.pending}
-            onClick={() => void devOnlySeedTransactions.use()}
-          >
-            *
-          </ButtonLoadable> */}
+          </Button>
         </div>
+        <div class="flex gap-1.5 px-2">
+          <For each={group()?.members}>
+            {(member) => (
+              <Tooltip>
+                <TooltipTrigger>
+                  <UserBadge
+                    gradientHash={member.userId
+                      .split('')
+                      .reduce((sum, char) => sum + char.charCodeAt(0), 0)}
+                    href="members"
+                    variant="link"
+                  >
+                    {member.nickname.slice(0, 2)}
+                  </UserBadge>
+                </TooltipTrigger>
+                <TooltipContent>
+                  <p>{member.nickname}</p>
+                </TooltipContent>
+              </Tooltip>
+            )}
+          </For>
+        </div>
+
+        <Select
+          class="h-full"
+          options={['Current', 'Past']}
+          value={'Current'}
+          placeholder="Select a fruit…"
+          itemComponent={(props) => (
+            <SelectItem item={props.item}>{props.item.rawValue}</SelectItem>
+          )}
+        >
+          <SelectTrigger class="text-xs px-0 pl-3.5 pr-2.5 w-1/3 py-0 h-full sm:w-28 uppercase justify-between gap-0">
+            <SelectValue<string>>
+              {(state) => state.selectedOption()}
+            </SelectValue>
+          </SelectTrigger>
+          <SelectContent />
+        </Select>
       </div>
-      <Show when={transactions()} fallback={<p>No transactions yet . . . </p>}>
+      <Show
+        when={transactionsMutable()}
+        fallback={<p>No transactions yet . . . </p>}
+      >
         {(transactions) => (
           <TransactionTable
             rows={rows}
@@ -111,8 +158,10 @@ export default function GroupPage() {
                 open: () => {},
               },
             }}
+            deleteTransactions={deleteTransactions}
             data={transactions}
             columns={columns}
+            groupId={group()?.id ?? ''}
           />
         )}
       </Show>

@@ -1,13 +1,9 @@
 import { requireAuthenticated } from './utils';
 
+import { models, nlToParsedTransaction, providers } from '@blank/core/ai';
 import {
-  TransactionParseable,
-  models,
-  nlToParsedTransaction,
-  providers,
-} from '@blank/core/ai';
-import {
-  TransactionInsertWithPayees,
+  TransactionInsertWithTransactionMembers,
+  group,
   preference,
   transaction,
 } from '@blank/core/db';
@@ -19,7 +15,7 @@ import * as z from 'zod';
 const CreateBodySchema = z.union([
   z.object({
     type: z.literal('default'),
-    payload: TransactionInsertWithPayees,
+    payload: TransactionInsertWithTransactionMembers,
   }),
   z.object({
     type: z.literal('natural_language'),
@@ -42,14 +38,27 @@ const api = new Hono()
     '/',
     zValidator('json', z.object({ body: CreateBodySchema })),
     async (c) => {
+      // const isTruthy = (value: string | null | undefined) =>
+      //   value !== null && value !== undefined;
+
       const auth = requireAuthenticated(c);
 
       const { body } = c.req.valid('json');
 
+      console.log('GROUP ID FROM BODY: ', body.payload.groupId);
       const groupId =
-        body.payload.groupId ?? (await preference.getDefaultGroupId('abc'));
+        body.payload.groupId ??
+        (await preference.getDefaultGroupId(auth.userId))?.defaultGroupId;
 
-      const getInsertableFromNl = async (input: string, userId: string) => {
+      if (!groupId) {
+        throw new Error('No default group found');
+      }
+
+      const getInsertableFromNl = async (
+        input: string,
+        userId: string,
+        groupId: string,
+      ): Promise<TransactionInsertWithTransactionMembers> => {
         const parsed = await nlToParsedTransaction(input, {
           llm: {
             provider: providers.default,
@@ -57,9 +66,14 @@ const api = new Hono()
           },
         });
 
-        const transformed = transaction.transformParsedToInsertable(
-          parsed ?? ({} as TransactionParseable),
+        if (!parsed) {
+          throw new Error('Failed to parse transaction');
+        }
+
+        const transformed = await transaction.transformParsedToInsertable(
+          parsed,
           userId,
+          groupId,
         );
 
         return transformed;
@@ -69,9 +83,19 @@ const api = new Hono()
       const insertableTransactionData =
         body.type === 'default'
           ? body.payload
-          : await getInsertableFromNl(body.payload.nl, auth.userId);
+          : await getInsertableFromNl(body.payload.nl, auth.userId, groupId);
 
-      const rows = await transaction.create(insertableTransactionData);
+      if (
+        insertableTransactionData.transactionMembers.find(
+          (m) => m.userId === insertableTransactionData.payerId,
+        )
+      ) {
+        throw new Error('Payer can not also be a payee');
+      }
+
+      const rows = await transaction.create({
+        ...insertableTransactionData,
+      });
 
       if (!rows.length) {
         throw new Error('Failed to create transaction');
@@ -79,8 +103,9 @@ const api = new Hono()
 
       const newTransaction = rows[0];
 
-      const newPayees = await transaction.createPayees(
-        insertableTransactionData.payees.map((p) => p.memberId),
+      const newPayees = await transaction.createTransactionMembers(
+        insertableTransactionData.transactionMembers.map((p) => p.userId),
+        newTransaction.groupId,
         newTransaction.id,
       );
 
@@ -95,15 +120,23 @@ const api = new Hono()
     zValidator(
       'param',
       z.object({
-        id: z.string(),
+        transactionId: z.string(),
+        groupId: z.string(),
       }),
     ),
     async (c) => {
       const auth = requireAuthenticated(c);
-
       const param = c.req.valid('param');
 
-      const rows = await transaction.deleteById(param.id, auth.userId);
+      const isMember = await group.hasUserAsMember(param.groupId, auth.userId);
+
+      if (!isMember) {
+        throw new Error(
+          'You do not have permission to delete this transaction',
+        );
+      }
+
+      const rows = await transaction.deleteById(param.transactionId);
 
       if (!rows.length) {
         throw new Error('Failed to delete transaction');
@@ -120,7 +153,12 @@ const api = new Hono()
       'json',
       z.object({
         body: z.object({
-          ids: z.string().array(),
+          ids: z
+            .object({
+              transactionId: z.string(),
+              groupId: z.string(),
+            })
+            .array(),
         }),
       }),
     ),
@@ -129,7 +167,19 @@ const api = new Hono()
 
       const payload = c.req.valid('json');
 
-      const rows = await transaction.deleteByIds(payload.body.ids, auth.userId);
+      const groupIds = (await group.getAllByUserId(auth.userId)).map(
+        (g) => g.id,
+      );
+
+      if (!payload.body.ids.every((id) => groupIds.includes(id.groupId))) {
+        throw new Error(
+          'You do not have permission to delete this transaction',
+        );
+      }
+
+      const rows = await transaction.deleteByIds(
+        payload.body.ids.map((id) => id.transactionId),
+      );
 
       if (!rows.length) {
         throw new Error('Failed to delete transaction');
