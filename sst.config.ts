@@ -15,6 +15,10 @@ export default $config({
   },
   console: {
     autodeploy: {
+      runner: () => ({
+        engine: 'codebuild',
+        architecture: 'x86_64',
+      }),
       target(event) {
         if (
           event.type === 'branch' &&

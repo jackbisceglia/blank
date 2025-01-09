@@ -12,7 +12,7 @@
     "@kobalte/core": "^0.13.7",
     "@rocicorp/zero": "0.10",
     "@solidjs/router": "^0.15.0",
-    "@solidjs/start": "^1.0.8",
+    "@solidjs/start": "^1.0.11",
     "@tanstack/solid-table": "^8.20.5",
     "autoprefixer": "^10.4.19",
     "class-variance-authority": "^0.7.0",
@@ -27,9 +27,9 @@
     "tailwind-merge": "^2.5.4",
     "tailwindcss": "^3.4.3",
     "tailwindcss-animate": "^1.0.7",
-    "vinxi": "^0.4.3"
+    "vinxi": "^0.5.1"
   },
   "engines": {
-    "node": ">=18"
+    "node": ">=20"
   }
 }
