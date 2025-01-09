@@ -25,5 +25,8 @@
   },
   "dependencies": {
     "sst": "3.4.54"
+  },
+  "engines": {
+    "node": "20.x"
   }
 }
