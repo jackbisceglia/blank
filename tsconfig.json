@@ -1,7 +1,15 @@
 {
   "compilerOptions": {
+    "lib": ["ESNext"],
+    "target": "ESNext",
+    "module": "ESNext",
+    "moduleDetection": "force",
+
+    "strict": true,
     "strictNullChecks": true,
-    "lib": ["esnext"],
-    "types": ["@cloudflare/workers-types"]
+    "skipLibCheck": true,
+    "noFallthroughCasesInSwitch": true,
+
+    "noPropertyAccessFromIndexSignature": false
   }
 }

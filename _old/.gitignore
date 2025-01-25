@@ -1,0 +1,23 @@
+# dependencies
+node_modules
+
+# sst
+.sst
+
+# environment
+.env
+.env*.local
+.sst.secrets
+
+# editors (don't remember where this came from, but seems fine
+.project
+.classpath
+*.launch
+.settings/
+
+# misc
+.DS_Store
+dist
+.neon
+
+zero.db*
