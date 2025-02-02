@@ -14,12 +14,12 @@
     "lint": "bunx eslint"
   },
   "dependencies": {
-    "drizzle-orm": "^0.29.7",
-    "drizzle-zod": "^0.4.1",
-    "postgres": "^3.4.3",
-    "zod": "^3.22.4"
+    "drizzle-orm": "^0.38.4",
+    "drizzle-zod": "^0.6.1",
+    "postgres": "^3.4.5",
+    "zod": "^3.24.1"
   },
   "peerDependencies": {
     "typescript": "^5.0.0"
   }
-} 
+}

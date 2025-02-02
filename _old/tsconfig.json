@@ -1,7 +1,0 @@
-{
-  "compilerOptions": {
-    "strictNullChecks": true,
-    "lib": ["esnext"],
-    "types": ["@cloudflare/workers-types"]
-  }
-}

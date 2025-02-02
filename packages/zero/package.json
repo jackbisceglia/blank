@@ -1,0 +1,14 @@
+{
+  "name": "@blank/zero",
+  "version": "0.0.0",
+  "type": "module",
+  "scripts": {
+    "dev": "zero-cache-dev"
+  },
+  "dependencies": {
+    "@rocicorp/zero": "*"
+  },
+  "peerDependencies": {
+    "typescript": "^5.0.0"
+  }
+}
