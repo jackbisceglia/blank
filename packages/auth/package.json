@@ -1,0 +1,23 @@
+{
+  "name": "@blank/auth",
+  "version": "0.0.0",
+  "type": "module",
+  "exports": {
+    "./subjects": "./src/subjects.ts"
+  },
+  "scripts": {
+    "lint": "eslint .",
+    "lint:fix": "eslint . --fix"
+  },
+  "dependencies": {
+    "@blank/core": "workspace:*",
+    "@openauthjs/openauth": "0.3.7",
+    "arktype": "^2.1.9",
+    "effect": "^3.13.10",
+    "hono": "^4.6.20",
+    "jose": "^6.0.6"
+  },
+  "peerDependencies": {
+    "typescript": "^5.0.0"
+  }
+}

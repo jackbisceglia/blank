@@ -1,15 +1,20 @@
-import database from "./database";
+import { Auth } from "./auth";
+import { Database } from "./database";
+import { getDomainConfig } from "./domain";
+import { Sync } from "./sync";
 
-export default new sst.aws.StaticSite(
-  "Web",
-  {
-    path: "packages/web",
-    build: {
-      command: "bun build",
-      output: "dist",
-    },
+export const Web = new sst.aws.TanstackStart("Web", {
+  path: "packages/web",
+  dev: {
+    url: "http://localhost:3000",
   },
-  {
-    link: [database],
-  }
-);
+  environment: {
+    VITE_AUTH_SERVER_URL: Auth.url,
+    VITE_SYNC_SERVER_URL: $interpolate`${Sync.url}`,
+  },
+  domain: getDomainConfig({
+    type: "root",
+    stage: $app.stage,
+  }),
+  link: [Database],
+});

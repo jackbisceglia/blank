@@ -1,9 +1,10 @@
 {
+  "extends": "@tsconfig/recommended/tsconfig.json",
   "compilerOptions": {
-    // Enable latest features
-    "lib": ["ESNext", "DOM"],
-    "target": "ESNext",
+    "strict": true,
+    "strictNullChecks": true,
+    "lib": ["ESNext"],
     "module": "ESNext",
-    "strictNullChecks": true
+    "moduleResolution": "Bundler"
   }
 }

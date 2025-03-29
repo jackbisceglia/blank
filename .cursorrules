@@ -1,0 +1,48 @@
+# React Props Type Definition
+- description: Define props type outside component
+- language: typescript
+- pattern: |
+    type ${1:Component}Props = {
+      ${2:// props}
+    }
+
+    function ${1:Component}(props: ${1:Component}Props) {
+      ${3:// component body}
+    }
+
+# Debug Logging
+- description: Console log with variable name
+- language: typescript
+- pattern: |
+    console.log("${1:VARIABLE_NAME}", ${1:variable})
+
+# Debug Object Logging
+- description: Console log object with formatting
+- language: typescript
+- pattern: |
+    console.log("${1:OBJECT_NAME}", JSON.stringify(${1:object}, null, 2))
+
+# Error Handling with neverthrow
+- description: Use Result type for error handling
+- language: typescript
+- pattern: |
+    import { Result, ok, err } from 'neverthrow'
+
+    function ${1:functionName}(): Result<${2:SuccessType}, ${3:ErrorType}> {
+      ${4:// implementation}
+    }
+  
+Code Style and Structure
+- Write concise, technical TypeScript code with accurate examples.
+- Use functional and declarative programming patterns; avoid classes.
+- Prefer iteration and modularization over code duplication.
+- I prefer statuses with string literals over is/has/was booleans most of the time
+- Avoid enums; use maps/string literals/types instead.
+- Use functional components with TypeScript interfaces.
+
+Naming Conventions
+- Use lowercase with dashes for directories (e.g., components/auth-wizard).
+
+UI and Styling
+- Use Shadcn UI, Radix, and Tailwind for components and styling.
+- Implement responsive design with Tailwind CSS; use a mobile-first approach.

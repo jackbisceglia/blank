@@ -5,8 +5,52 @@
 
 declare module "sst" {
   export interface Resource {
+    "Auth": {
+      "type": "sst.aws.Auth"
+      "url": string
+    }
+    "Database": {
+      "database": string
+      "host": string
+      "password": string
+      "type": "sst.sst.Linkable"
+      "user": string
+    }
+    "DatabaseHost": {
+      "type": "sst.sst.Secret"
+      "value": string
+    }
+    "DatabasePassword": {
+      "type": "sst.sst.Secret"
+      "value": string
+    }
+    "GoogleOAuth": {
+      "clientId": string
+      "clientSecret": string
+      "type": "sst.sst.Linkable"
+    }
+    "GoogleOAuthClientId": {
+      "type": "sst.sst.Secret"
+      "value": string
+    }
+    "GoogleOAuthClientSecret": {
+      "type": "sst.sst.Secret"
+      "value": string
+    }
+    "SyncReplicationBucket": {
+      "name": string
+      "type": "sst.aws.Bucket"
+    }
+    "SyncViewSyncer": {
+      "service": string
+      "type": "sst.aws.Service"
+      "url": string
+    }
+    "VirtualPrivateCloud": {
+      "type": "sst.aws.Vpc"
+    }
     "Web": {
-      "type": "sst.aws.StaticSite"
+      "type": "sst.aws.TanstackStart"
       "url": string
     }
   }

@@ -5,17 +5,21 @@
   "exports": {
     "./ai": "./ai/index.ts",
     "./db": "./db/index.ts",
-    "./zero": "./zero/index.ts"
+    "./zero": "./zero/index.ts",
+    "./utils": "./utils/index.ts"
   },
   "scripts": {
-    "db:push": "bunx sst shell -- drizzle-kit push",
-    "db:studio": "bunx sst shell drizzle-kit studio",
-    "test": "bunx sst shell bun test",
-    "lint": "bunx eslint"
+    "db": "pnpm dlx sst shell drizzle-kit",
+    "test": "pnpm dlx sst shell pnpm test",
+    "lint": "eslint .",
+    "lint:fix": "eslint . --fix"
   },
   "dependencies": {
-    "drizzle-orm": "^0.38.4",
-    "drizzle-zod": "^0.6.1",
+    "@neondatabase/serverless": "^0.10.4",
+    "arktype": "^2.1.9",
+    "drizzle-orm": "^0.39.0",
+    "drizzle-zod": "^0.7.0",
+    "neverthrow": "^8.2.0",
     "postgres": "^3.4.5",
     "zod": "^3.24.1"
   },

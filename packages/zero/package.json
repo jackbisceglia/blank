@@ -2,11 +2,13 @@
   "name": "@blank/zero",
   "version": "0.0.0",
   "type": "module",
-  "scripts": {
-    "dev": "zero-cache-dev"
+  "exports": {
+    ".": "./schema.ts"
   },
-  "dependencies": {
-    "@rocicorp/zero": "*"
+  "scripts": {
+    "dev": "zero-deploy-permissions && zero-cache",
+    "lint": "eslint .",
+    "lint:fix": "eslint . --fix"
   },
   "peerDependencies": {
     "typescript": "^5.0.0"

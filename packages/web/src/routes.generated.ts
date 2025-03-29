@@ -11,106 +11,256 @@
 // Import Routes
 
 import { Route as rootRoute } from './pages/__root'
-import { Route as AuthLayoutImport } from './pages/_auth/layout'
-import { Route as AuthIndexImport } from './pages/_auth/index'
+import { Route as StaticLayoutImport } from './pages/_static/layout'
+import { Route as ProtectedLayoutImport } from './pages/_protected/layout'
+import { Route as ProtectedIndexImport } from './pages/_protected/index'
 import { Route as StaticLandingImport } from './pages/_static/landing'
+import { Route as StaticAboutImport } from './pages/_static/about'
+import { Route as ProtectedAccountImport } from './pages/_protected/account'
+import { Route as ProtectedGroupsLayoutImport } from './pages/_protected/groups/layout'
+import { Route as ProtectedGroupsIndexImport } from './pages/_protected/groups/index'
+import { Route as ProtectedGroupsIdImport } from './pages/_protected/groups/$id'
 
 // Create/Update Routes
 
-const AuthLayoutRoute = AuthLayoutImport.update({
-  id: '/_auth',
+const StaticLayoutRoute = StaticLayoutImport.update({
+  id: '/_static',
   getParentRoute: () => rootRoute,
 } as any)
 
-const AuthIndexRoute = AuthIndexImport.update({
+const ProtectedLayoutRoute = ProtectedLayoutImport.update({
+  id: '/_protected',
+  getParentRoute: () => rootRoute,
+} as any)
+
+const ProtectedIndexRoute = ProtectedIndexImport.update({
   id: '/',
   path: '/',
-  getParentRoute: () => AuthLayoutRoute,
+  getParentRoute: () => ProtectedLayoutRoute,
 } as any)
 
 const StaticLandingRoute = StaticLandingImport.update({
-  id: '/_static/landing',
+  id: '/landing',
   path: '/landing',
-  getParentRoute: () => rootRoute,
+  getParentRoute: () => StaticLayoutRoute,
+} as any)
+
+const StaticAboutRoute = StaticAboutImport.update({
+  id: '/about',
+  path: '/about',
+  getParentRoute: () => StaticLayoutRoute,
+} as any)
+
+const ProtectedAccountRoute = ProtectedAccountImport.update({
+  id: '/account',
+  path: '/account',
+  getParentRoute: () => ProtectedLayoutRoute,
+} as any)
+
+const ProtectedGroupsLayoutRoute = ProtectedGroupsLayoutImport.update({
+  id: '/groups',
+  path: '/groups',
+  getParentRoute: () => ProtectedLayoutRoute,
+} as any)
+
+const ProtectedGroupsIndexRoute = ProtectedGroupsIndexImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => ProtectedGroupsLayoutRoute,
+} as any)
+
+const ProtectedGroupsIdRoute = ProtectedGroupsIdImport.update({
+  id: '/$id',
+  path: '/$id',
+  getParentRoute: () => ProtectedGroupsLayoutRoute,
 } as any)
 
 // Populate the FileRoutesByPath interface
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
-    '/_auth': {
-      id: '/_auth'
+    '/_protected': {
+      id: '/_protected'
       path: ''
       fullPath: ''
-      preLoaderRoute: typeof AuthLayoutImport
+      preLoaderRoute: typeof ProtectedLayoutImport
       parentRoute: typeof rootRoute
+    }
+    '/_static': {
+      id: '/_static'
+      path: ''
+      fullPath: ''
+      preLoaderRoute: typeof StaticLayoutImport
+      parentRoute: typeof rootRoute
+    }
+    '/_protected/groups': {
+      id: '/_protected/groups'
+      path: '/groups'
+      fullPath: '/groups'
+      preLoaderRoute: typeof ProtectedGroupsLayoutImport
+      parentRoute: typeof ProtectedLayoutImport
+    }
+    '/_protected/account': {
+      id: '/_protected/account'
+      path: '/account'
+      fullPath: '/account'
+      preLoaderRoute: typeof ProtectedAccountImport
+      parentRoute: typeof ProtectedLayoutImport
+    }
+    '/_static/about': {
+      id: '/_static/about'
+      path: '/about'
+      fullPath: '/about'
+      preLoaderRoute: typeof StaticAboutImport
+      parentRoute: typeof StaticLayoutImport
     }
     '/_static/landing': {
       id: '/_static/landing'
       path: '/landing'
       fullPath: '/landing'
       preLoaderRoute: typeof StaticLandingImport
-      parentRoute: typeof rootRoute
+      parentRoute: typeof StaticLayoutImport
     }
-    '/_auth/': {
-      id: '/_auth/'
+    '/_protected/': {
+      id: '/_protected/'
       path: '/'
       fullPath: '/'
-      preLoaderRoute: typeof AuthIndexImport
-      parentRoute: typeof AuthLayoutImport
+      preLoaderRoute: typeof ProtectedIndexImport
+      parentRoute: typeof ProtectedLayoutImport
+    }
+    '/_protected/groups/$id': {
+      id: '/_protected/groups/$id'
+      path: '/$id'
+      fullPath: '/groups/$id'
+      preLoaderRoute: typeof ProtectedGroupsIdImport
+      parentRoute: typeof ProtectedGroupsLayoutImport
+    }
+    '/_protected/groups/': {
+      id: '/_protected/groups/'
+      path: '/'
+      fullPath: '/groups/'
+      preLoaderRoute: typeof ProtectedGroupsIndexImport
+      parentRoute: typeof ProtectedGroupsLayoutImport
     }
   }
 }
 
 // Create and export the route tree
 
-interface AuthLayoutRouteChildren {
-  AuthIndexRoute: typeof AuthIndexRoute
+interface ProtectedGroupsLayoutRouteChildren {
+  ProtectedGroupsIdRoute: typeof ProtectedGroupsIdRoute
+  ProtectedGroupsIndexRoute: typeof ProtectedGroupsIndexRoute
 }
 
-const AuthLayoutRouteChildren: AuthLayoutRouteChildren = {
-  AuthIndexRoute: AuthIndexRoute,
+const ProtectedGroupsLayoutRouteChildren: ProtectedGroupsLayoutRouteChildren = {
+  ProtectedGroupsIdRoute: ProtectedGroupsIdRoute,
+  ProtectedGroupsIndexRoute: ProtectedGroupsIndexRoute,
 }
 
-const AuthLayoutRouteWithChildren = AuthLayoutRoute._addFileChildren(
-  AuthLayoutRouteChildren,
+const ProtectedGroupsLayoutRouteWithChildren =
+  ProtectedGroupsLayoutRoute._addFileChildren(
+    ProtectedGroupsLayoutRouteChildren,
+  )
+
+interface ProtectedLayoutRouteChildren {
+  ProtectedGroupsLayoutRoute: typeof ProtectedGroupsLayoutRouteWithChildren
+  ProtectedAccountRoute: typeof ProtectedAccountRoute
+  ProtectedIndexRoute: typeof ProtectedIndexRoute
+}
+
+const ProtectedLayoutRouteChildren: ProtectedLayoutRouteChildren = {
+  ProtectedGroupsLayoutRoute: ProtectedGroupsLayoutRouteWithChildren,
+  ProtectedAccountRoute: ProtectedAccountRoute,
+  ProtectedIndexRoute: ProtectedIndexRoute,
+}
+
+const ProtectedLayoutRouteWithChildren = ProtectedLayoutRoute._addFileChildren(
+  ProtectedLayoutRouteChildren,
+)
+
+interface StaticLayoutRouteChildren {
+  StaticAboutRoute: typeof StaticAboutRoute
+  StaticLandingRoute: typeof StaticLandingRoute
+}
+
+const StaticLayoutRouteChildren: StaticLayoutRouteChildren = {
+  StaticAboutRoute: StaticAboutRoute,
+  StaticLandingRoute: StaticLandingRoute,
+}
+
+const StaticLayoutRouteWithChildren = StaticLayoutRoute._addFileChildren(
+  StaticLayoutRouteChildren,
 )
 
 export interface FileRoutesByFullPath {
-  '': typeof AuthLayoutRouteWithChildren
+  '': typeof StaticLayoutRouteWithChildren
+  '/groups': typeof ProtectedGroupsLayoutRouteWithChildren
+  '/account': typeof ProtectedAccountRoute
+  '/about': typeof StaticAboutRoute
   '/landing': typeof StaticLandingRoute
-  '/': typeof AuthIndexRoute
+  '/': typeof ProtectedIndexRoute
+  '/groups/$id': typeof ProtectedGroupsIdRoute
+  '/groups/': typeof ProtectedGroupsIndexRoute
 }
 
 export interface FileRoutesByTo {
+  '': typeof StaticLayoutRouteWithChildren
+  '/account': typeof ProtectedAccountRoute
+  '/about': typeof StaticAboutRoute
   '/landing': typeof StaticLandingRoute
-  '/': typeof AuthIndexRoute
+  '/': typeof ProtectedIndexRoute
+  '/groups/$id': typeof ProtectedGroupsIdRoute
+  '/groups': typeof ProtectedGroupsIndexRoute
 }
 
 export interface FileRoutesById {
   __root__: typeof rootRoute
-  '/_auth': typeof AuthLayoutRouteWithChildren
+  '/_protected': typeof ProtectedLayoutRouteWithChildren
+  '/_static': typeof StaticLayoutRouteWithChildren
+  '/_protected/groups': typeof ProtectedGroupsLayoutRouteWithChildren
+  '/_protected/account': typeof ProtectedAccountRoute
+  '/_static/about': typeof StaticAboutRoute
   '/_static/landing': typeof StaticLandingRoute
-  '/_auth/': typeof AuthIndexRoute
+  '/_protected/': typeof ProtectedIndexRoute
+  '/_protected/groups/$id': typeof ProtectedGroupsIdRoute
+  '/_protected/groups/': typeof ProtectedGroupsIndexRoute
 }
 
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '' | '/landing' | '/'
+  fullPaths:
+    | ''
+    | '/groups'
+    | '/account'
+    | '/about'
+    | '/landing'
+    | '/'
+    | '/groups/$id'
+    | '/groups/'
   fileRoutesByTo: FileRoutesByTo
-  to: '/landing' | '/'
-  id: '__root__' | '/_auth' | '/_static/landing' | '/_auth/'
+  to: '' | '/account' | '/about' | '/landing' | '/' | '/groups/$id' | '/groups'
+  id:
+    | '__root__'
+    | '/_protected'
+    | '/_static'
+    | '/_protected/groups'
+    | '/_protected/account'
+    | '/_static/about'
+    | '/_static/landing'
+    | '/_protected/'
+    | '/_protected/groups/$id'
+    | '/_protected/groups/'
   fileRoutesById: FileRoutesById
 }
 
 export interface RootRouteChildren {
-  AuthLayoutRoute: typeof AuthLayoutRouteWithChildren
-  StaticLandingRoute: typeof StaticLandingRoute
+  ProtectedLayoutRoute: typeof ProtectedLayoutRouteWithChildren
+  StaticLayoutRoute: typeof StaticLayoutRouteWithChildren
 }
 
 const rootRouteChildren: RootRouteChildren = {
-  AuthLayoutRoute: AuthLayoutRouteWithChildren,
-  StaticLandingRoute: StaticLandingRoute,
+  ProtectedLayoutRoute: ProtectedLayoutRouteWithChildren,
+  StaticLayoutRoute: StaticLayoutRouteWithChildren,
 }
 
 export const routeTree = rootRoute
@@ -123,22 +273,56 @@ export const routeTree = rootRoute
     "__root__": {
       "filePath": "__root.tsx",
       "children": [
-        "/_auth",
+        "/_protected",
+        "/_static"
+      ]
+    },
+    "/_protected": {
+      "filePath": "_protected/layout.tsx",
+      "children": [
+        "/_protected/groups",
+        "/_protected/account",
+        "/_protected/"
+      ]
+    },
+    "/_static": {
+      "filePath": "_static/layout.tsx",
+      "children": [
+        "/_static/about",
         "/_static/landing"
       ]
     },
-    "/_auth": {
-      "filePath": "_auth/layout.tsx",
+    "/_protected/groups": {
+      "filePath": "_protected/groups/layout.tsx",
+      "parent": "/_protected",
       "children": [
-        "/_auth/"
+        "/_protected/groups/$id",
+        "/_protected/groups/"
       ]
     },
-    "/_static/landing": {
-      "filePath": "_static/landing.tsx"
+    "/_protected/account": {
+      "filePath": "_protected/account.tsx",
+      "parent": "/_protected"
     },
-    "/_auth/": {
-      "filePath": "_auth/index.tsx",
-      "parent": "/_auth"
+    "/_static/about": {
+      "filePath": "_static/about.tsx",
+      "parent": "/_static"
+    },
+    "/_static/landing": {
+      "filePath": "_static/landing.tsx",
+      "parent": "/_static"
+    },
+    "/_protected/": {
+      "filePath": "_protected/index.tsx",
+      "parent": "/_protected"
+    },
+    "/_protected/groups/$id": {
+      "filePath": "_protected/groups/$id.tsx",
+      "parent": "/_protected/groups"
+    },
+    "/_protected/groups/": {
+      "filePath": "_protected/groups/index.tsx",
+      "parent": "/_protected/groups"
     }
   }
 }

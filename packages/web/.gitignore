@@ -1,18 +1,24 @@
-# Local
-.DS_Store
-*.local
-*.log*
-
-# Dist
 node_modules
-dist/
-.vinxi
-.output
-.vercel
-.netlify
-.wrangler
+# Keep environment variables out of version control
+!.env
+package-lock.json
+yarn.lock
 
-# IDE
-.vscode/*
-!.vscode/extensions.json
-.idea
+.DS_Store
+.cache
+.env
+.vercel
+.output
+.vinxi
+
+/build/
+/api/
+/server/build
+/public/build
+.vinxi
+# Sentry Config File
+.env.sentry-build-plugin
+/test-results/
+/playwright-report/
+/blob-report/
+/playwright/.cache/
