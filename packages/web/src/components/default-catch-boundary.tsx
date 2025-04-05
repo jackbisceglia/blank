@@ -4,8 +4,8 @@ import {
   rootRouteId,
   useMatch,
   useRouter,
+  type ErrorComponentProps,
 } from "@tanstack/react-router";
-import type { ErrorComponentProps } from "@tanstack/react-router";
 
 export function DefaultCatchBoundary({ error }: ErrorComponentProps) {
   const router = useRouter();
@@ -30,6 +30,7 @@ export function DefaultCatchBoundary({ error }: ErrorComponentProps) {
         </button>
         {isRoot ? (
           <Link
+            search={{ action: undefined, cmd: undefined }}
             to="/"
             className={`px-2 py-1 bg-gray-600 dark:bg-gray-700 rounded text-white uppercase font-extrabold`}
           >
@@ -37,6 +38,7 @@ export function DefaultCatchBoundary({ error }: ErrorComponentProps) {
           </Link>
         ) : (
           <Link
+            search={{ action: undefined, cmd: undefined }}
             to="/"
             className={`px-2 py-1 bg-gray-600 dark:bg-gray-700 rounded text-white uppercase font-extrabold`}
             onClick={(e) => {

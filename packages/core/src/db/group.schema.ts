@@ -3,7 +3,7 @@ import { DrizzleModelTypes } from "./utils";
 
 import { relations } from "drizzle-orm";
 import { pgTable, text, uuid } from "drizzle-orm/pg-core";
-import { createInsertSchema, createSelectSchema } from "drizzle-zod";
+import { createInsertSchema, createSelectSchema } from "drizzle-valibot";
 
 export const groupTable = pgTable("group", {
   id: uuid().primaryKey(), // update to make into ulid

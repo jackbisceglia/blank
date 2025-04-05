@@ -77,7 +77,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, []);
 
   if (state.status === "error") return <Navigate to="/landing" />;
-  if (state.status === "idle" || state.status === "loading") return null;
+  if (state.status === "idle" || state.status === "loading")
+    return (
+      <div className="flex min-h-screen items-center justify-center">
+        <div className="flex flex-col items-center gap-4">
+          <div className="h-4 w-4 animate-spin rounded-full border-2 border-primary border-t-transparent" />
+          <p className="text-sm text-muted-foreground">loading workspace...</p>
+        </div>
+      </div>
+    );
 
   return (
     <AuthContext.Provider value={{ state }}>{children}</AuthContext.Provider>

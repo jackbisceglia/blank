@@ -2,7 +2,7 @@ import { relations } from "drizzle-orm";
 import { pgTable, primaryKey, uuid } from "drizzle-orm/pg-core";
 import { expenseTable } from "./expense.schema";
 import { memberTable } from "./member.schema";
-import { createSelectSchema, createInsertSchema } from "drizzle-zod";
+import { createSelectSchema, createInsertSchema } from "drizzle-valibot";
 import { DrizzleModelTypes } from "./utils";
 
 export const expenseMemberTable = pgTable(
@@ -14,7 +14,7 @@ export const expenseMemberTable = pgTable(
   },
   (table) => [
     primaryKey({ columns: [table.expenseId, table.groupId, table.userId] }),
-  ],
+  ]
 );
 
 export const expenseMemberRelation = relations(
@@ -28,7 +28,7 @@ export const expenseMemberRelation = relations(
       fields: [expenseMemberTable.groupId, expenseMemberTable.userId],
       references: [memberTable.groupId, memberTable.userId],
     }),
-  }),
+  })
 );
 
 type ExpenseMemberTypes = DrizzleModelTypes<typeof expenseMemberTable>;

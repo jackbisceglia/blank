@@ -3,7 +3,7 @@ import { relations, sql } from "drizzle-orm";
 import { integer, pgTable, text, uuid } from "drizzle-orm/pg-core";
 import { expenseMemberTable } from "./expense-member.schema";
 import { DrizzleModelTypes } from "./utils";
-import { createInsertSchema, createSelectSchema } from "drizzle-zod";
+import { createInsertSchema, createSelectSchema } from "drizzle-valibot";
 
 export const expenseTable = pgTable("expense", {
   id: uuid()

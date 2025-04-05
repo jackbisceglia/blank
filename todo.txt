@@ -18,6 +18,13 @@
     [ ] preferred group
         [ ] ui indicator shown everywhere that preferred group is rendered
         [ ] easy way to change this
+    [ ] allow landing page to be accessed regardless of auth state
+    [ ] move zero preload into loader
+        [ ] wrap entire _protected in another pathless folder
+            - _protected
+                - _protected-with-context
+            OR
+        [ ] move providers for zero/auth up a level
 
 --KEYBOARD SHORTCUTS--
     [ ]

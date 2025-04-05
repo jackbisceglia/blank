@@ -13,6 +13,8 @@ export default [
   },
   {
     files: ["**/*.{ts,tsx}"],
+    // Add ignores for JS files in this TS-specific block
+    ignores: ["**/*.js", "**/*.cjs"],
     languageOptions: {
       parserOptions: {
         project: "./tsconfig.json",

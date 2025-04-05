@@ -9,6 +9,7 @@ import {
 
 const post = table("post")
   .columns({
+    authorId: string(),
     id: string(),
     title: string(),
     content: string(),

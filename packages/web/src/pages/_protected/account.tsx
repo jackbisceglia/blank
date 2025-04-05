@@ -1,10 +1,8 @@
-import { useAuthentication } from "@/lib/auth/react";
+import { PrimaryHeading } from "@/components/prose";
 import { createFileRoute } from "@tanstack/react-router";
 
 function AccountPage() {
-  const auth = useAuthentication();
-
-  return <h1>{auth.user.name}'s Account</h1>;
+  return <PrimaryHeading>Your Account</PrimaryHeading>;
 }
 
 export const Route = createFileRoute("/_protected/account")({

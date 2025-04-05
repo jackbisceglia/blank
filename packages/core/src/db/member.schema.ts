@@ -3,7 +3,7 @@ import { DrizzleModelTypes } from "./utils";
 
 import { relations } from "drizzle-orm";
 import { pgTable, primaryKey, text, uuid } from "drizzle-orm/pg-core";
-import { createInsertSchema, createSelectSchema } from "drizzle-zod";
+import { createInsertSchema, createSelectSchema } from "drizzle-valibot";
 
 export const memberTable = pgTable(
   "member",
@@ -12,7 +12,7 @@ export const memberTable = pgTable(
     userId: uuid().notNull(), // update to make into ulid
     nickname: text().notNull(),
   },
-  (table) => [primaryKey({ columns: [table.groupId, table.userId] })],
+  (table) => [primaryKey({ columns: [table.groupId, table.userId] })]
 );
 
 export const memberRelation = relations(memberTable, ({ one }) => ({

@@ -25,14 +25,14 @@ export namespace users {
   ): DrizzleResult<MaybeUser> {
     const columns = returning.reduce((a, c) => ({ ...a, [c]: true }), {});
 
-    const query = fromDrizzleThrowable(() =>
+    const safeQuery = fromDrizzleThrowable(() =>
       db.query.userTable.findFirst({
         where: eq(userTable[identifier.type], identifier.value),
         columns: returning.length ? columns : undefined,
       })
     );
 
-    return query();
+    return safeQuery();
   }
 
   export function getByEmail(email: string): DrizzleResult<MaybeUser> {
@@ -46,10 +46,10 @@ export namespace users {
   export function createUser(
     user: UserInsert
   ): DrizzleResult<Pick<User, "id">> {
-    const query = fromDrizzleThrowable(() =>
+    const safeQuery = fromDrizzleThrowable(() =>
       db.insert(userTable).values(user).returning({ id: userTable.id })
     );
 
-    return query().map((ids) => ids[0]);
+    return safeQuery().map((ids) => ids[0]);
   }
 }

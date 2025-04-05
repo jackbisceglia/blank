@@ -22,6 +22,7 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
+import { Route } from "@/pages/_protected";
 
 export const SIDEBAR_COOKIE_NAME = "sidebar_state";
 const SIDEBAR_COOKIE_MAX_AGE = 60 * 60 * 24 * 7;
@@ -156,6 +157,14 @@ function SidebarProvider({
   );
 }
 
+const s = {
+  Anchor: "a",
+  Button: "button",
+  Or: ",",
+  Parens: (...args: string[]) => `(${args.join("")})`,
+  Parts: (...args: string[]) => args.join(""),
+};
+
 function Sidebar({
   side = "left",
   variant = "floating",
@@ -168,8 +177,89 @@ function Sidebar({
   variant?: "sidebar" | "floating" | "inset";
   collapsible?: "offcanvas" | "icon" | "none";
 }) {
+  const r = Route.useNavigate();
   const { isMobile, state, openMobile, setOpenMobile, toggleSidebar, setOpen } =
     useSidebar();
+  const sidebarRef = React.useRef<HTMLDivElement>(null);
+
+  const selector = s.Parts(
+    s.Parts(
+      s.Anchor,
+      '[data-slot="sidebar-menu-button"]',
+      '[data-sidebar="menu-button"]'
+    ),
+    s.Or,
+    s.Parts(
+      s.Button,
+      '[data-slot="sidebar-menu-button"]',
+      '[data-sidebar="menu-button"]'
+    ),
+    s.Or,
+    s.Parts(
+      s.Anchor,
+      '[data-slot="sidebar-group-label"]',
+      '[data-sidebar="group-label"]'
+    )
+  );
+  React.useEffect(() => {
+    const sidebar = sidebarRef.current;
+    if (!sidebar) return;
+
+    const handleCustomSidebarNavigation = (event: KeyboardEvent) => {
+      const delta = () => (event.key === "j" || event.key === "n" ? 1 : -1);
+      const isModifier = event.ctrlKey;
+      const isJOrK = event.key === "j" || event.key === "k";
+      const isCtrlNOrP = isModifier && (event.key === "n" || event.key === "p");
+
+      if (!event.target) return;
+      if (!isJOrK && !isCtrlNOrP) return;
+      event.preventDefault();
+
+      const elements = Array.from(
+        sidebar.querySelectorAll<HTMLAnchorElement>(selector)
+      );
+
+      const element = (event.target as HTMLElement).closest(selector);
+      if (!element) return;
+
+      const currentIndex = elements.indexOf(element as HTMLAnchorElement);
+
+      if (currentIndex === -1) return;
+
+      const nextIndex =
+        (currentIndex + delta() + elements.length) % elements.length;
+
+      console.log("NEXT_INDEX", nextIndex);
+      console.log("NEXT_ELEMENT", elements[nextIndex]);
+
+      elements[nextIndex].focus();
+    };
+
+    sidebar.addEventListener("keydown", handleCustomSidebarNavigation);
+
+    return () => {
+      sidebar.removeEventListener("keydown", handleCustomSidebarNavigation);
+    };
+  }, [sidebarRef, selector]);
+
+  React.useEffect(() => {
+    const element = sidebarRef.current?.querySelector(selector);
+    const sidebarHasFocus = () =>
+      sidebarRef.current?.contains(document.activeElement);
+
+    if (!element || state === "collapsed" || sidebarHasFocus()) {
+      return;
+    }
+
+    const previouslyFocused = document.activeElement as HTMLElement;
+    (element as HTMLElement).focus();
+
+    return () => {
+      if (document.body.contains(previouslyFocused) && sidebarHasFocus()) {
+        previouslyFocused.focus();
+      }
+    };
+  }, [sidebarRef, state, selector]);
 
   if (collapsible === "none") {
     return (
@@ -246,6 +336,7 @@ function Sidebar({
         {...props}
       >
         <div
+          ref={sidebarRef}
           data-sidebar="sidebar"
           className="bg-sidebar group-data-[variant=floating]:border-sidebar-border flex h-full w-full flex-col group-data-[variant=floating]:rounded-lg group-data-[variant=floating]:border-2 group-data-[variant=floating]:shadow-sm"
         >
@@ -478,7 +569,8 @@ function SidebarMenuItem({ className, ...props }: React.ComponentProps<"li">) {
   );
 }
 
-const sidebarMenuButtonVariants = cva(
+export const sidebarMenuButtonVariants = cva(
+  // "peer/menu-button text-muted-foreground flex w-full items-center gap-2 overflow-hidden rounded-md px-2 py-2 text-left text-sm outline-hidden focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px] aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40 aria-invalid:border-destructive transition-[width,height,padding] hover:text-sidebar-accent-foreground hover:underline underline-offset-4 focus-visible:ring-3 active:bg-secondary active:text-sidebar-accent-foreground disabled:pointer-events-none disabled:opacity-50 group-has-data-[sidebar=menu-action]/menu-item:pr-8 aria-disabled:pointer-events-none aria-disabled:opacity-50 data-[active=true]:bg-sidebar-accent data-[active=true]:font-medium data-[active=true]:text-sidebar-accent-foreground data-[state=open]:hover:underline data-[state=open]:hover:text-sidebar-accent-foreground group-data-[collapsible=icon]:size-8! group-data-[collapsible=icon]:p-2! [&>span:last-child]:truncate [&>svg]:size-4 [&>svg]:shrink-0",
   "peer/menu-button text-muted-foreground flex w-full items-center gap-2 overflow-hidden rounded-md px-2 py-2 text-left text-sm outline-hidden focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px] aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40 aria-invalid:border-destructive transition-[width,height,padding] hover:text-sidebar-accent-foreground hover:underline underline-offset-4 focus-visible:ring-3 active:bg-secondary active:text-sidebar-accent-foreground disabled:pointer-events-none disabled:opacity-50 group-has-data-[sidebar=menu-action]/menu-item:pr-8 aria-disabled:pointer-events-none aria-disabled:opacity-50 data-[active=true]:bg-sidebar-accent data-[active=true]:font-medium data-[active=true]:text-sidebar-accent-foreground data-[state=open]:hover:underline data-[state=open]:hover:text-sidebar-accent-foreground group-data-[collapsible=icon]:size-8! group-data-[collapsible=icon]:p-2! [&>span:last-child]:truncate [&>svg]:size-4 [&>svg]:shrink-0",
   {
     variants: {

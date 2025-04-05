@@ -35,3 +35,25 @@ export function cn(...inputs: ClassValue[]) {
 export function log(str: string) {
   console.log(`\n\n${str}\n\n`);
 }
+
+type RegisterOptions = {
+  fn: (e: KeyboardEvent) => void;
+  when?: boolean;
+};
+
+export const keyboard = {
+  register: (opts: RegisterOptions) => {
+    const cond = opts.when ?? true;
+    if (cond) {
+      document.addEventListener("keydown", opts.fn);
+    }
+
+    return {
+      cleanup: () => {
+        if (cond) {
+          document.removeEventListener("keydown", opts.fn);
+        }
+      },
+    };
+  },
+};

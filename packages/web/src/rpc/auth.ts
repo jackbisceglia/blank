@@ -1,15 +1,15 @@
 import { createClient } from "@openauthjs/openauth/client";
 import { constants } from "../lib/utils";
-import { createServerFn } from "@tanstack/start";
-import { getCookie, getHeader } from "@tanstack/start/server";
+import { createServerFn } from "@tanstack/react-start";
+import { getCookie, getHeader } from "@tanstack/react-start/server";
 import { subjects } from "@blank/auth/subjects";
 import { redirect } from "@tanstack/react-router";
 import { users } from "@blank/core/db";
 import { keys, Tokens, TokenUtils } from "@/lib/auth";
 import { err, errAsync, ok, Result, ResultAsync } from "neverthrow";
-import { ArkErrors } from "arktype";
 import { serverResult } from "@/lib/neverthrow/serialize";
 import { ErrUtils, CustomError } from "@/lib/errors";
+import { fromParsed } from "@blank/core/utils";
 
 const TokensError = CustomError("Error Setting Tokens", "TokensError");
 const UserNotFound = CustomError("User Not Found", "UserError");
@@ -37,16 +37,6 @@ const openauth = createClient({
   clientID: constants.authClientId,
   issuer: constants.authServer,
 });
-
-function validateTokens(tokens: Partial<Tokens> | undefined) {
-  const validated = Tokens(tokens);
-
-  if (validated instanceof ArkErrors) {
-    return err(validated.summary);
-  }
-
-  return ok(validated);
-}
 
 /**
  * Verifies authentication tokens using OpenAuth
@@ -83,7 +73,7 @@ function verify(tokens: Partial<Tokens>) {
 export const authenticateRPC = createServerFn().handler(async () => {
   const safeSetToCookies = (tokens?: Partial<Tokens>) =>
     ok(tokens)
-      .andThen(validateTokens)
+      .andThen((tokens) => fromParsed(Tokens, tokens))
       .andThrough(
         Result.fromThrowable(
           TokenUtils().setToCookies,

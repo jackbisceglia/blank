@@ -1,48 +1,59 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { match, type } from "arktype";
 import { constants } from "@/lib/utils";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { useAuthentication } from "@/lib/auth/react";
 import { PrimaryHeading } from "@/components/prose";
+import * as v from "valibot";
 
-// optimization: if we have more domain suffixes to strip, we may want to use a more dynamic matcher
-const googleThumbnailSuffixMatcher =
-  `string.url & /${constants.googleThumbnailSuffix}$/` as const;
+const avatarSrc = v.parser(
+  v.pipe(
+    v.string(),
+    v.url(),
+    v.transform((url) => {
+      if (url.endsWith(constants.googleThumbnailSuffix)) {
+        return url.slice(
+          0,
+          url.length - constants.googleThumbnailSuffix.length
+        );
+      }
 
-const imageSourceNormalized = match({
-  [googleThumbnailSuffixMatcher]: (url) =>
-    url.slice(0, url.length - constants.googleThumbnailSuffix.length),
-  "string.url": (url) => url,
-  default: "assert",
-});
+      return url;
+    })
+  )
+);
 
-const matchAvatarFallbackFromName = type.match({
-  "/^\\w+\\s\\w+$/": (name) =>
-    name
-      .split(" ")
-      .map((word) => word[0].toUpperCase())
-      .join(""),
-  "string > 0": (name) => name.charAt(0).toUpperCase(),
-  default: () => "U",
-});
+const avatarFallback = v.parser(
+  v.fallback(
+    v.pipe(
+      v.string(),
+      v.minLength(1),
+      v.transform((name) => {
+        const parts = name.split(" ");
+        switch (parts.length) {
+          case 2:
+            return parts.map((p) => p.at(0)).join("");
+          case 1:
+          default:
+            return name.at(0) as string;
+        }
+      })
+    ),
+    "U"
+  )
+);
 
 function HomePage() {
   const auth = useAuthentication();
 
-  console.log(imageSourceNormalized(auth.user.image));
-
   return (
     <div className="flex flex-row items-center gap-4">
       <Avatar className="w-12 h-12 rounded-sm">
-        <AvatarImage
-          src={imageSourceNormalized(auth.user.image)}
-          alt="User Avatar"
-        />
-        <AvatarFallback>
-          {matchAvatarFallbackFromName(auth.user.name)}
-        </AvatarFallback>
+        {/* TODO: don't know if this is proper alt text  */}
+        <AvatarImage src={avatarSrc(auth.user.image)} alt="User Avatar" />
+        <AvatarFallback>{avatarFallback(auth.user.name)}</AvatarFallback>
       </Avatar>
       <PrimaryHeading>Welcome Back, {auth.user.name}</PrimaryHeading>
+      <div></div>
     </div>
   );
 }

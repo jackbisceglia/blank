@@ -11,7 +11,7 @@ import {
   SidebarRail,
 } from "@/components/ui/sidebar";
 import { Link } from "@tanstack/react-router";
-import { useServerFn } from "@tanstack/start";
+import { useServerFn } from "@tanstack/react-start";
 import { logoutRPC } from "@/rpc/auth";
 import { ChevronFirst, ChevronRight, Plus } from "lucide-react";
 import { underline_defaults } from "./ui/utils";
@@ -38,10 +38,22 @@ type SidebarItemChunk =
 type SidebarMenuItemChunkProps = PropsWithClassname<{
   item: SidebarItemChunk;
   nested?: boolean;
+  index: number;
 }>;
 
 function SidebarMenuItemChunk(props: SidebarMenuItemChunkProps) {
-  const Icon = props.nested ? ChevronRight : Plus;
+  const states = {
+    default: {
+      icon: Plus,
+      fontSizeOverride: "",
+    },
+    nested: {
+      icon: ChevronRight,
+    },
+  };
+
+  const Icon = props.nested ? states.nested.icon : states.default.icon;
+
   return (
     <>
       <SidebarMenuItem key={props.item.title}>
@@ -49,10 +61,11 @@ function SidebarMenuItemChunk(props: SidebarMenuItemChunkProps) {
           onClick={props.item.type === "fn" ? props.item.function : undefined}
           className={cn(props.className, "uppercase")}
           asChild={props.item.type === "link"}
+          data-sidebar-index={props.index}
         >
           {props.item.type === "link" ? (
             <Link
-              activeOptions={{ exact: true }}
+              activeOptions={{ exact: true, includeSearch: false }}
               activeProps={{ className: `${underline_defaults} text-primary` }}
               to={props.item.path}
             >
@@ -71,7 +84,11 @@ function SidebarMenuItemChunk(props: SidebarMenuItemChunkProps) {
   );
 }
 
-function QuickActions() {
+type QuickActionsProps = {
+  position: number;
+};
+
+function QuickActions(props: QuickActionsProps) {
   const quickActions: SidebarItemChunk[] = [
     { type: "link", title: "Home", path: "/" },
     { type: "link", title: "Groups", path: "/groups" },
@@ -85,14 +102,22 @@ function QuickActions() {
 
   return (
     <>
-      {quickActions.map((item) => (
-        <SidebarMenuItemChunk key={item.title} item={item} />
+      {quickActions.map((item, index) => (
+        <SidebarMenuItemChunk
+          key={item.title}
+          item={item}
+          index={props.position + index}
+        />
       ))}
     </>
   );
 }
 
-function Groups() {
+type GroupsProps = {
+  position: number;
+};
+
+function Groups(props: GroupsProps) {
   // TODO: replace w/ data fetching
   const mockGroups: SidebarItemChunk[] = [
     { type: "link", title: "la familia", path: "/groups/la-familia" },
@@ -102,8 +127,13 @@ function Groups() {
 
   return (
     <>
-      {mockGroups.map((item) => (
-        <SidebarMenuItemChunk key={item.title} item={item} nested />
+      {mockGroups.map((item, index) => (
+        <SidebarMenuItemChunk
+          key={item.title}
+          item={item}
+          index={props.position + index}
+          nested
+        />
       ))}
     </>
   );
@@ -122,7 +152,7 @@ type SideNavigationProps = React.ComponentProps<typeof Sidebar> & {
   }[];
 };
 
-export function SideNavigation(props: SideNavigationProps) {
+export function GlobalSidebar(props: SideNavigationProps) {
   const logout = useServerFn(logoutRPC);
 
   return (
@@ -135,7 +165,10 @@ export function SideNavigation(props: SideNavigationProps) {
               asChild
               className="data-[state=open]:bg-sidebar-accent data-[state=open]:text-sidebar-accent-foreground hover:no-underline"
             >
-              <Link to="/">
+              <Link
+                to="/"
+                search={(prev) => ({ cmd: prev.cmd, action: undefined })}
+              >
                 <div
                   className="flex aspect-square size-[30px] items-center justify-center rounded-lg bg-blank-theme text-primary-foreground font-bold text-base "
                   aria-hidden="true"
@@ -153,20 +186,24 @@ export function SideNavigation(props: SideNavigationProps) {
       <SidebarContent className="overflow-x-hidden">
         <SidebarGroup className="group-data-[collapsible=icon]:hidden">
           <SidebarMenu>
-            <QuickActions />
+            <QuickActions position={0} />
           </SidebarMenu>
         </SidebarGroup>
         <SidebarGroup className="group-data-[collapsible=icon]:hidden">
           <SidebarGroupLabel
             asChild
             className={cn("uppercase ", underline_defaults)}
+            data-sidebar-index={1}
           >
-            <Link to="/groups">
+            <Link
+              to="/groups"
+              search={(prev) => ({ cmd: prev.cmd, action: undefined })}
+            >
               <span>All Groups</span>
             </Link>
           </SidebarGroupLabel>
           <SidebarMenu>
-            <Groups />
+            <Groups position={2} />
           </SidebarMenu>
         </SidebarGroup>
       </SidebarContent>
@@ -179,7 +216,10 @@ export function SideNavigation(props: SideNavigationProps) {
               asChild
               className="data-[state=open]:bg-sidebar-accent data-[state=open]:text-sidebar-accent-foreground hover:no-underline"
             >
-              <Link to="/">
+              <Link
+                to="/"
+                search={(prev) => ({ cmd: prev.cmd, action: undefined })}
+              >
                 <div className="flex aspect-square size-[30px] items-center justify-center rounded-lg text-base ">
                   <ChevronFirst />
                 </div>

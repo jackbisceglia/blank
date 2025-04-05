@@ -7,10 +7,11 @@ import { subjects } from "./subjects";
 import { GoogleProvider } from "@openauthjs/openauth/provider/google";
 import { users } from "@blank/core/db";
 import { Select } from "@openauthjs/openauth/ui/select";
-import { type } from "arktype";
-import { err, ok, okAsync, Result } from "neverthrow";
+import { ok, okAsync, Result } from "neverthrow";
 import * as jose from "jose";
 import { Resource } from "sst";
+import * as v from "valibot";
+import { fromParsed, orDefaultError } from "@blank/core/utils";
 
 const Errors = {
   ProviderNotSupported: (provider: string) =>
@@ -24,44 +25,20 @@ const keys = {
   },
 };
 
-const DecodedJWTPayloadSchema = type({
-  email: "string",
-  email_verified: "true",
-  name: "string",
-  picture: "string",
-})
-  .omit("email_verified")
-  .pipe((o) => {
-    const { picture, ...rest } = o;
-    const result = { ...rest, image: picture };
-    return result;
-  });
+const Token = v.string();
 
-const TokenSchema = type.string;
-
-function orDefaultError<T>(error: Error, fn: (error: Error) => T | undefined) {
-  return fn(error) ?? error;
-}
-
-const validateToken = (token: unknown) => {
-  const validated = TokenSchema(token);
-
-  if (validated instanceof type.errors) {
-    return err(new Error(validated.summary));
-  }
-
-  return ok(validated);
-};
-
-const validatePayload = (payload: jose.JWTPayload) => {
-  const validated = DecodedJWTPayloadSchema(payload); // validate this DecodedJWTPayloadSchema
-
-  if (validated instanceof type.errors) {
-    return err(new Error(validated.summary));
-  }
-
-  return ok(validated);
-};
+const JwtPayload = v.pipe(
+  v.object({
+    email: v.pipe(v.string(), v.email()),
+    email_verified: v.literal(true),
+    name: v.string(),
+    picture: v.string(),
+  }),
+  v.transform(({ picture, ...rest }) => ({
+    ...rest,
+    image: picture,
+  }))
+);
 
 function decodeJwt(token: string) {
   return Result.fromThrowable(jose.decodeJwt)(token).mapErr((e) => {
@@ -80,7 +57,7 @@ function decodeJwt(token: string) {
   });
 }
 
-function getOrCreateUser(payload: typeof DecodedJWTPayloadSchema.infer) {
+function getOrCreateUser(payload: v.InferOutput<typeof JwtPayload>) {
   return users.getByEmail(payload.email).andThen((user) => {
     if (user) {
       return okAsync(user);
@@ -114,9 +91,9 @@ const app = issuer({
     switch (value.provider) {
       case "google":
         const user = await ok(value.tokenset.raw.id_token)
-          .andThen(validateToken)
+          .andThen((token) => fromParsed(Token, token))
           .andThen(decodeJwt)
-          .andThen(validatePayload)
+          .andThen((decoded) => fromParsed(JwtPayload, decoded))
           .asyncAndThen(getOrCreateUser);
 
         return user.match(

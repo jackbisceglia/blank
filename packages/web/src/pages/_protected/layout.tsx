@@ -1,18 +1,12 @@
-import { SideNavigation } from "@/components/navigation";
+import { GlobalSidebar } from "@/components/navigation";
 import {
   Breadcrumb,
   BreadcrumbList,
   BreadcrumbLink,
   BreadcrumbSeparator,
 } from "@/components/ui/breadcrumb";
-import {
-  SIDEBAR_COOKIE_NAME,
-  SidebarProvider,
-  SidebarTrigger,
-} from "@/components/ui/sidebar";
-import { AuthProvider } from "@/lib/auth/react";
-import { cn, isClient } from "@/lib/utils";
-import { ZeroProvider } from "@/lib/zero/react";
+import { SidebarTrigger } from "@/components/ui/sidebar";
+import { cn } from "@/lib/utils";
 import {
   createFileRoute,
   isMatch,
@@ -20,8 +14,10 @@ import {
   Outlet,
   useMatches,
 } from "@tanstack/react-router";
-import { getCookie as getCookieTanstackStart } from "@tanstack/start/server";
 import { Fragment } from "react/jsx-runtime";
+import { ProtectedLayoutProviders } from "./@providers";
+import { GlobalCommandBar } from "./@command-bar";
+import * as v from "valibot";
 
 const data = {
   groups: [
@@ -32,9 +28,7 @@ const data = {
 };
 
 function Breadcrumbs() {
-  const matches = useMatches();
-
-  const breadcrumbs = matches
+  const breadcrumbs = useMatches()
     .filter((match) => isMatch(match, "loaderData.crumb"))
     .filter((match) => !!match.loaderData?.crumb);
 
@@ -49,7 +43,15 @@ function Breadcrumbs() {
                 "uppercase data-[status=active]:text-foreground data-[status=active]:underline underline-offset-4"
               )}
             >
-              <Link activeOptions={{ exact: true }} from={match.fullPath}>
+              <Link
+                activeOptions={{ exact: true, includeSearch: false }}
+                search={(prev) => ({
+                  ...prev,
+                  action: prev.action,
+                  cmd: prev.cmd,
+                })}
+                from={match.fullPath}
+              >
                 {match.loaderData?.crumb}
               </Link>
             </BreadcrumbLink>
@@ -61,45 +63,32 @@ function Breadcrumbs() {
   );
 }
 
-function getCookie(name: string, fallback?: string) {
-  const getCookieOnServer = getCookieTanstackStart;
-  const getCookieOnClient = (name: string) => {
-    const all = document.cookie.split(";").map((c) => c.trim().split("="));
-
-    const [, cookieValue] = all.find(([key]) => key === name) ?? [];
-
-    return cookieValue;
-  };
-
-  return (isClient() ? getCookieOnClient : getCookieOnServer)(name) ?? fallback;
-}
-
-function Layout() {
+function ProtectedLayout() {
+  const search = Route.useSearch();
   return (
-    <AuthProvider>
-      <ZeroProvider>
-        <SidebarProvider
-          className="flex flex-col sm:flex-row"
-          defaultOpen={getCookie(SIDEBAR_COOKIE_NAME, "true") === "true"}
-        >
-          <SideNavigation groups={data.groups} collapsible="icon" />
-          <main className="w-full p-2 pl-1">
-            <main className="w-full flex flex-col items-start gap-3 py-3 px-6 min-h-full relative">
-              <header className="flex items-center gap-2 text-sm">
-                <SidebarTrigger className="" />
-                <Breadcrumbs />
-              </header>
-              <Outlet />
-            </main>
-          </main>
-        </SidebarProvider>
-      </ZeroProvider>
-    </AuthProvider>
+    <ProtectedLayoutProviders>
+      <GlobalSidebar groups={data.groups} collapsible="icon" />
+      <GlobalCommandBar searchParamKey={search.cmd} />
+      <main className="w-full p-2 pl-1">
+        <main className="w-full flex flex-col items-start gap-3 py-3 px-6 min-h-full relative">
+          <header className="flex items-center gap-2 text-sm">
+            <SidebarTrigger className="" />
+            <Breadcrumbs />
+          </header>
+          <Outlet />
+        </main>
+      </main>
+    </ProtectedLayoutProviders>
   );
 }
 
+export const GlobalSearchParams = v.object({
+  cmd: v.optional(v.literal("open")),
+  action: v.optional(v.literal("new-expense")),
+});
+
 export const Route = createFileRoute("/_protected")({
   ssr: false,
-  component: Layout,
-  loader: () => ({ crumb: "Home" }),
+  component: ProtectedLayout,
+  validateSearch: GlobalSearchParams,
 });

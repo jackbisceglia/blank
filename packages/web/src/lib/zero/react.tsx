@@ -1,4 +1,10 @@
-import { PropsWithChildren, useEffect, useState } from "react";
+import {
+  PropsWithChildren,
+  // createContext,
+  // useContext,
+  useEffect,
+  useState,
+} from "react";
 import { createZero } from ".";
 import { ResultSuccess } from "../neverthrow";
 import { ZeroProvider as ZeroProviderInternal } from "@rocicorp/zero/react";
@@ -9,6 +15,8 @@ export type ZeroInternal = ResultSuccess<ReturnType<typeof createZero>>;
 const CAN_NOT_INSTANTIATE_ZERO = Symbol("CAN_NOT_INSTANTIATE_ZERO");
 type CanNotInstantiateZero = typeof CAN_NOT_INSTANTIATE_ZERO;
 
+// const ZeroContext = createContext<ZeroInternal | null>(null);
+
 export const ZeroProvider = (props: PropsWithChildren) => {
   const auth = useAuthentication();
   const [zero, setZero] = useState<ZeroInternal | CanNotInstantiateZero | null>(
@@ -16,7 +24,6 @@ export const ZeroProvider = (props: PropsWithChildren) => {
   );
 
   useEffect(() => {
-    // TODO: I DON'T WANT TO DO THIS LIKE THIS
     createZero(auth.access).match(
       function success(z) {
         setZero(z);
@@ -36,6 +43,17 @@ export const ZeroProvider = (props: PropsWithChildren) => {
   }
 
   return (
+    // <ZeroContext.Provider value={zero}>
     <ZeroProviderInternal zero={zero}>{props.children}</ZeroProviderInternal>
+    // </ZeroContext.Provider>
   );
 };
+
+// export function useZeroClient() {
+//   const context = useContext(ZeroContext);
+
+//   if (context === null) {
+//     throw new Error("useZeroClient must be used within a ZeroProvider");
+//   }
+//   return context;
+// }

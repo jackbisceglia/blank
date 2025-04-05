@@ -1,21 +1,26 @@
 import openauth, { authenticateRPC } from "@/rpc/auth";
 import { LinkProps, redirect } from "@tanstack/react-router";
-import { deleteCookie, getCookie, setCookie } from "@tanstack/start/server";
-import { type } from "arktype";
+import {
+  deleteCookie,
+  getCookie,
+  setCookie,
+} from "@tanstack/react-start/server";
 import { hydrateAsyncServerResult } from "@/lib/neverthrow/serialize";
 import { subjects } from "@blank/auth/subjects";
 import { errAsync, ResultAsync, err, ok } from "neverthrow";
+import * as v from "valibot";
 
-const AccessToken = type.string;
-type AccessToken = typeof AccessToken.infer;
-const RefreshToken = type.string;
-type RefreshToken = typeof RefreshToken.infer;
-
-export const Tokens = type({
-  access: AccessToken,
-  refresh: RefreshToken,
+export const Tokens = v.object({
+  access: v.string(),
+  refresh: v.string(),
 });
-export type Tokens = typeof Tokens.infer;
+export type Tokens = v.InferOutput<typeof Tokens>;
+
+const AccessToken = Tokens.entries.access;
+export type AccessToken = v.InferOutput<typeof AccessToken>;
+
+const RefreshToken = Tokens.entries.refresh;
+export type RefreshToken = v.InferOutput<typeof RefreshToken>;
 
 export function status<T, R>(
   status: T,

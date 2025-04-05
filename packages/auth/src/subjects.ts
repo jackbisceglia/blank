@@ -1,8 +1,10 @@
 import { createSubjects } from "@openauthjs/openauth/subject";
-import { type } from "arktype";
+import * as v from "valibot";
 
 export const subjects = createSubjects({
-  user: type({ userID: type.string }),
+  user: v.object({
+    userID: v.string(),
+  }),
 });
 
 export type OpenAuthUser = typeof subjects.user;

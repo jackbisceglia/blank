@@ -1,7 +1,7 @@
 import { Button } from "@/components/ui/button";
 import { loginRPC } from "@/rpc/auth";
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useServerFn } from "@tanstack/start";
+import { useServerFn } from "@tanstack/react-start";
 import { useEffect, useState, useRef } from "react";
 
 function useClientEffect(fn: () => void, deps?: unknown[]) {
@@ -88,7 +88,7 @@ export const Route = createFileRoute("/_static/landing")({
         () => {
           generateRandomPosition();
         },
-        Math.random() * 2500 + 500, // Random interval between 0.5s and 3s
+        Math.random() * 2500 + 500 // Random interval between 0.5s and 3s
         // 1000
       );
 
@@ -181,7 +181,15 @@ export const Route = createFileRoute("/_static/landing")({
 
         <header className="relative z-10 px-8">
           <nav className="container flex items-center justify-between py-4 mx-auto w-full max-w-screen-2xl">
-            <Link to="/" className="flex items-center gap-2 duration-150">
+            <Link
+              search={(prev) => ({
+                cmd: prev.cmd,
+                action: prev.action,
+                ...prev,
+              })}
+              to="/"
+              className="flex items-center gap-2 duration-150"
+            >
               <img src="/blank-logo.svg" className="w-8 h-8" alt="BLANK logo" />
               <span className="text-xl font-semibold tracking-tight">
                 BLANK

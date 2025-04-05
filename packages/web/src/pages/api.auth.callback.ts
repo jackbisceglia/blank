@@ -1,7 +1,7 @@
 import { TokenUtils } from "@/lib/auth";
 import openauth from "@/rpc/auth";
-import { json } from "@tanstack/start";
-import { createAPIFileRoute } from "@tanstack/start/api";
+import { json } from "@tanstack/react-start";
+import { createAPIFileRoute } from "@tanstack/react-start/api";
 
 export const APIRoute = createAPIFileRoute("/api/auth/callback")({
   GET: async ({ request }) => {
@@ -15,7 +15,7 @@ export const APIRoute = createAPIFileRoute("/api/auth/callback")({
 
     const exchanged = await openauth.exchange(
       code,
-      `${url.origin}/api/auth/callback`,
+      `${url.origin}/api/auth/callback`
     );
 
     if (exchanged.err) return json(exchanged.err, { status: 400 });

@@ -25,3 +25,5 @@ export function omitKey<T extends object, K extends keyof T>(
   const { [key]: _, ...rest } = obj;
   return rest as Omit<T, K>;
 }
+
+export * from "./neverthrow";
