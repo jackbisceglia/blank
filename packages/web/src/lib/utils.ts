@@ -1,6 +1,27 @@
 import { clsx, type ClassValue } from "clsx";
 import { twMerge } from "tailwind-merge";
 
+/**
+ * Creates a function that joins a list of strings with a specified delimiter, filtering out any falsey values.
+ * @param delimiter - The delimiter to join the strings with.
+ * @returns A function that accepts a list of strings or falsey values and returns a string of the joined strings, or an empty string if no strings are provided.
+ */
+export function build(delimiter: string) {
+  return (...args: (string | false)[]) =>
+    args.filter((arg) => !!arg).join(delimiter);
+}
+
+export function slug(str: string) {
+  const encode = (s: string) => s.toLowerCase().replaceAll(" ", "-");
+  const decode = (s: string) => s.replaceAll("-", " ");
+
+  return {
+    encode: () => encode(str),
+    decode: () => decode(str),
+    isLossless: () => decode(encode(str)) === str.toLowerCase(), // check if the value survives a round trip
+  };
+}
+
 export type PropsWithClassname<T> = T & {
   className?: string;
 };
@@ -20,6 +41,7 @@ function removeTrailingSlash(str: string): string {
 }
 
 export const constants = {
+  zero_ttl: "1h",
   authServer: removeTrailingSlash(
     import.meta.env.VITE_AUTH_SERVER_URL as string
   ),
@@ -57,3 +79,12 @@ export const keyboard = {
     };
   },
 };
+
+export const fn = <T>(fn: () => T): T => fn();
+
+export function createPreventDefault(fn: () => void, e: KeyboardEvent) {
+  return () => {
+    e.preventDefault();
+    fn();
+  };
+}

@@ -8,14 +8,12 @@ import {
 import { createZero } from ".";
 import { ResultSuccess } from "../neverthrow";
 import { ZeroProvider as ZeroProviderInternal } from "@rocicorp/zero/react";
-import { useAuthentication } from "../auth/react";
+import { useAuthentication } from "../auth/client";
 
 export type ZeroInternal = ResultSuccess<ReturnType<typeof createZero>>;
 
 const CAN_NOT_INSTANTIATE_ZERO = Symbol("CAN_NOT_INSTANTIATE_ZERO");
 type CanNotInstantiateZero = typeof CAN_NOT_INSTANTIATE_ZERO;
-
-// const ZeroContext = createContext<ZeroInternal | null>(null);
 
 export const ZeroProvider = (props: PropsWithChildren) => {
   const auth = useAuthentication();
@@ -43,17 +41,6 @@ export const ZeroProvider = (props: PropsWithChildren) => {
   }
 
   return (
-    // <ZeroContext.Provider value={zero}>
     <ZeroProviderInternal zero={zero}>{props.children}</ZeroProviderInternal>
-    // </ZeroContext.Provider>
   );
 };
-
-// export function useZeroClient() {
-//   const context = useContext(ZeroContext);
-
-//   if (context === null) {
-//     throw new Error("useZeroClient must be used within a ZeroProvider");
-//   }
-//   return context;
-// }

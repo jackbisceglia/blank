@@ -4,6 +4,7 @@
   "type": "module",
   "scripts": {
     "dev": "sst dev",
+    "build": "pnpm -r build",
     "test": "pnpm -r run test",
     "lint": "pnpm -r run lint",
     "lint:fix": "pnpm -r run lint:fix"

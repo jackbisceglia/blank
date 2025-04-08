@@ -2,14 +2,17 @@ import { memberTable } from "./member.schema";
 import { DrizzleModelTypes } from "./utils";
 
 import { relations } from "drizzle-orm";
-import { pgTable, text, uuid } from "drizzle-orm/pg-core";
+import { pgTable, text, timestamp, uuid } from "drizzle-orm/pg-core";
 import { createInsertSchema, createSelectSchema } from "drizzle-valibot";
 
 export const groupTable = pgTable("group", {
   id: uuid().primaryKey(), // update to make into ulid
-  title: text().notNull(),
+  title: text().notNull().unique(),
+  slug: text().notNull(),
+  description: text().notNull(),
   ownerId: uuid().notNull(), // update to make into ulid
   invitationId: uuid(), // update to make into ulid
+  createdAt: timestamp().notNull().defaultNow(),
 });
 
 export const groupRelation = relations(groupTable, ({ many, one }) => ({

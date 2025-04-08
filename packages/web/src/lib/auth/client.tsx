@@ -7,9 +7,24 @@ import {
   type ReactNode,
 } from "react";
 import { hydrateAsyncServerResult } from "@/lib/neverthrow/serialize";
-import { getAuthenticatedUserRPC } from "@/rpc/auth";
 import { Navigate } from "@tanstack/react-router";
+import { Loading } from "@/components/loading";
+import * as v from "valibot";
+import { getAuthenticatedUserRPC } from "@/rpc/auth.server";
 
+export const Tokens = v.object({
+  access: v.string(),
+  refresh: v.string(),
+});
+export type Tokens = v.InferOutput<typeof Tokens>;
+
+const AccessToken = Tokens.entries.access;
+export type AccessToken = v.InferOutput<typeof AccessToken>;
+
+const RefreshToken = Tokens.entries.refresh;
+export type RefreshToken = v.InferOutput<typeof RefreshToken>;
+
+// --------------------------------
 type AuthState =
   | { status: "idle" | "loading" | "error"; user: null }
   | { status: "success"; data: { user: User; access: string } };
@@ -78,14 +93,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   if (state.status === "error") return <Navigate to="/landing" />;
   if (state.status === "idle" || state.status === "loading")
-    return (
-      <div className="flex min-h-screen items-center justify-center">
-        <div className="flex flex-col items-center gap-4">
-          <div className="h-4 w-4 animate-spin rounded-full border-2 border-primary border-t-transparent" />
-          <p className="text-sm text-muted-foreground">loading workspace...</p>
-        </div>
-      </div>
-    );
+    return <Loading className="min-h-screen" whatIsLoading="workspace" />;
 
   return (
     <AuthContext.Provider value={{ state }}>{children}</AuthContext.Provider>

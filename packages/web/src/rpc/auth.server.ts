@@ -5,11 +5,30 @@ import { getCookie, getHeader } from "@tanstack/react-start/server";
 import { subjects } from "@blank/auth/subjects";
 import { redirect } from "@tanstack/react-router";
 import { users } from "@blank/core/db";
-import { keys, Tokens, TokenUtils } from "@/lib/auth";
 import { err, errAsync, ok, Result, ResultAsync } from "neverthrow";
 import { serverResult } from "@/lib/neverthrow/serialize";
 import { ErrUtils, CustomError } from "@/lib/errors";
 import { fromParsed } from "@blank/core/utils";
+import { Tokens } from "@/lib/auth/client";
+import { TokenUtils } from "@/lib/auth/server";
+
+export const keys = {
+  refresh: "refresh_token",
+  access: "access_token",
+};
+
+export function status<T, R>(
+  status: T,
+  result: R
+): {
+  status: T;
+  result: R;
+} {
+  return {
+    status,
+    result,
+  };
+}
 
 const TokensError = CustomError("Error Setting Tokens", "TokensError");
 const UserNotFound = CustomError("User Not Found", "UserError");

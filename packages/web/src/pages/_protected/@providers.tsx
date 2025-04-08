@@ -1,7 +1,6 @@
 import { SIDEBAR_COOKIE_NAME } from "@/components/ui/sidebar";
 import { SidebarProvider } from "@/components/ui/sidebar";
-import { AuthProvider } from "@/lib/auth/react";
-import { isClient } from "@/lib/utils";
+import { AuthProvider } from "@/lib/auth/client";
 import { ZeroProvider } from "@/lib/zero/react";
 import { getCookie as getCookieTanstackStart } from "@tanstack/react-start/server";
 import { PropsWithChildren } from "react";
@@ -16,7 +15,10 @@ function getCookie(name: string, fallback?: string) {
     return cookieValue;
   };
 
-  return (isClient() ? getCookieOnClient : getCookieOnServer)(name) ?? fallback;
+  return (
+    (import.meta.env.SSR ? getCookieOnServer : getCookieOnClient)(name) ??
+    fallback
+  );
 }
 
 export function ProtectedLayoutProviders(props: PropsWithChildren) {

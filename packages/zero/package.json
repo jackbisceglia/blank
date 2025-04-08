@@ -6,6 +6,7 @@
     ".": "./schema.ts"
   },
   "scripts": {
+    "clean:sqlite": "rm sync-replica.db sync-replica.db-shm sync-replica.db-wal sync-replica.db-wal2",
     "dev": "zero-deploy-permissions && zero-cache",
     "lint": "eslint .",
     "lint:fix": "eslint . --fix"

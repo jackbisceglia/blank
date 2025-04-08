@@ -24,8 +24,6 @@ const getDatabaseConnection = () => {
   return url;
 };
 
-getAuthJwksUrl().apply((u) => console.log(u.toString()));
-
 const commonEnvironmentVariables = {
   ZERO_UPSTREAM_DB: getDatabaseConnection(),
   ZERO_CVR_DB: getDatabaseConnection(),

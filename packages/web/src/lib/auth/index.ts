@@ -1,73 +1,9 @@
-import openauth, { authenticateRPC } from "@/rpc/auth";
+import openauth, { authenticateRPC } from "@/rpc/auth.server";
 import { LinkProps, redirect } from "@tanstack/react-router";
-import {
-  deleteCookie,
-  getCookie,
-  setCookie,
-} from "@tanstack/react-start/server";
 import { hydrateAsyncServerResult } from "@/lib/neverthrow/serialize";
 import { subjects } from "@blank/auth/subjects";
 import { errAsync, ResultAsync, err, ok } from "neverthrow";
-import * as v from "valibot";
-
-export const Tokens = v.object({
-  access: v.string(),
-  refresh: v.string(),
-});
-export type Tokens = v.InferOutput<typeof Tokens>;
-
-const AccessToken = Tokens.entries.access;
-export type AccessToken = v.InferOutput<typeof AccessToken>;
-
-const RefreshToken = Tokens.entries.refresh;
-export type RefreshToken = v.InferOutput<typeof RefreshToken>;
-
-export function status<T, R>(
-  status: T,
-  result: R
-): {
-  status: T;
-  result: R;
-} {
-  return {
-    status,
-    result,
-  };
-}
-
-export const keys = {
-  refresh: "refresh_token",
-  access: "access_token",
-};
-
-export function TokenUtils() {
-  return {
-    getFromCookies: () => {
-      return {
-        access: getCookie(keys.access),
-        refresh: getCookie(keys.refresh),
-      };
-    },
-    deleteFromCookies: () => {
-      deleteCookie(keys.access);
-      deleteCookie(keys.refresh);
-    },
-    setToCookies: (tokens: Tokens) => {
-      setCookie(keys.access, tokens.access, {
-        path: "/",
-        httpOnly: true,
-        sameSite: "lax",
-        maxAge: 34560000,
-      });
-      setCookie(keys.refresh, tokens.refresh, {
-        path: "/",
-        httpOnly: true,
-        sameSite: "lax",
-        maxAge: 34560000,
-      });
-    },
-  };
-}
+import { Tokens } from "./client";
 
 /**
  * Verifies authentication tokens using OpenAuth

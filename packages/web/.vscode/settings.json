@@ -7,5 +7,7 @@
   },
   "files.readonlyInclude": {
     "**/routeTree.gen.ts": true
-  }
+  },
+  "tailwindCSS.experimental.configFile": "./src/styles/app.css",
+  "tailwindCSS.classFunctions": ["tw", "clsx"]
 }

@@ -6,23 +6,38 @@ import {
 } from "@tanstack/react-router";
 import { TanStackRouterDevtools } from "@tanstack/router-devtools";
 import appCss from "@/styles/app.css?url";
+import { seo } from "@/lib/seo";
+
+function Document() {
+  return (
+    <html>
+      <head>
+        <HeadContent />
+      </head>
+      <body className="dark">
+        <Children />
+        <TanStackRouterDevtools position="bottom-right" />
+        <Scripts />
+      </body>
+    </html>
+  );
+}
 
 export const Route = createRootRoute({
   head: () => ({
-    // meta: [
-    //   {
-    //     charSet: "utf-8",
-    //   },
-    //   {
-    //     name: "viewport",
-    //     content: "width=device-width, initial-scale=1",
-    //   },
-    //   ...seo({
-    //     title:
-    //       "TanStack Start | Type-Safe, Client-First, Full-Stack React Framework",
-    //     description: `TanStack Start is a type-safe, client-first, full-stack React framework. `,
-    //   }),
-    // ],
+    meta: [
+      //   {
+      //     charSet: "utf-8",
+      //   },
+      //   {
+      //     name: "viewport",
+      //     content: "width=device-width, initial-scale=1",
+      //   },
+      ...seo({
+        title: "withblank.com",
+        description: `Expense Splitting Made Easy`,
+      }),
+    ],
     links: [
       { rel: "stylesheet", href: appCss },
       // {
@@ -50,18 +65,3 @@ export const Route = createRootRoute({
   // notFoundComponent: () => <NotFound />,
   component: () => <Document />,
 });
-
-function Document() {
-  return (
-    <html>
-      <head>
-        <HeadContent />
-      </head>
-      <body className="dark">
-        <Children />
-        <TanStackRouterDevtools position="bottom-right" />
-        <Scripts />
-      </body>
-    </html>
-  );
-}

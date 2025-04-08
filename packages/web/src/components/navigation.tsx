@@ -7,25 +7,31 @@ import {
   SidebarHeader,
   SidebarMenu,
   SidebarMenuButton,
+  sidebarMenuButtonVariants,
   SidebarMenuItem,
   SidebarRail,
 } from "@/components/ui/sidebar";
-import { Link } from "@tanstack/react-router";
+import { Link, LinkOptions } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
-import { logoutRPC } from "@/rpc/auth";
+import { logoutRPC } from "@/rpc/auth.server";
 import { ChevronFirst, ChevronRight, Plus } from "lucide-react";
 import { underline_defaults } from "./ui/utils";
 import { cn, PropsWithClassname } from "@/lib/utils";
+import { Group } from "@blank/zero";
+import { useGetGroupsList } from "@/pages/_protected/groups/@data";
+import { useAuthentication } from "@/lib/auth/client";
+import { QueryStatus } from "@/lib/zero";
+// import { Loading } from "./loading";
 
-function createExpense() {
-  console.log("created expense: ");
-}
+// TODO: FIX TYPESAFETY IN THIS FILE
+
+function createExpense() {}
 
 type SidebarItemChunk =
   | {
       type: "link";
       title: string;
-      path: string;
+      opts: LinkOptions;
       function?: never;
     }
   | {
@@ -67,7 +73,7 @@ function SidebarMenuItemChunk(props: SidebarMenuItemChunkProps) {
             <Link
               activeOptions={{ exact: true, includeSearch: false }}
               activeProps={{ className: `${underline_defaults} text-primary` }}
-              to={props.item.path}
+              {...props.item.opts}
             >
               <Icon />
               <span>{props.item.title}</span>
@@ -90,14 +96,13 @@ type QuickActionsProps = {
 
 function QuickActions(props: QuickActionsProps) {
   const quickActions: SidebarItemChunk[] = [
-    { type: "link", title: "Home", path: "/" },
-    { type: "link", title: "Groups", path: "/groups" },
+    { type: "link", title: "Home", opts: { to: "/" } },
     {
       type: "fn",
       title: "New Expense",
       function: createExpense,
     },
-    { type: "link", title: "Account", path: "/account" },
+    { type: "link", title: "Account", opts: { to: "/account" } },
   ];
 
   return (
@@ -115,22 +120,37 @@ function QuickActions(props: QuickActionsProps) {
 
 type GroupsProps = {
   position: number;
+  groups: Group[];
+  status: QueryStatus;
 };
 
 function Groups(props: GroupsProps) {
-  // TODO: replace w/ data fetching
-  const mockGroups: SidebarItemChunk[] = [
-    { type: "link", title: "la familia", path: "/groups/la-familia" },
-    { type: "link", title: "the apartment", path: "/groups/the-aprtment" },
-    { type: "link", title: "homies", path: "/groups/homies" },
-  ];
+  // if (props.status === "loading")
+  //   return <Loading omitBaseText className="h-min min-h-0 w-fit p-2" />;
+
+  if (props.status === "empty") {
+    return (
+      <SidebarMenuItem
+        className={cn(
+          sidebarMenuButtonVariants({}),
+          "text-muted-alt active:text-muted-alt hover:text-muted-alt active:bg-transparent hover:no-underline lowercase"
+        )}
+      >
+        No Groups Yet
+      </SidebarMenuItem>
+    );
+  }
 
   return (
     <>
-      {mockGroups.map((item, index) => (
+      {props.groups.map((item, index) => (
         <SidebarMenuItemChunk
           key={item.title}
-          item={item}
+          item={{
+            title: item.title,
+            type: "link",
+            opts: { to: `/groups/$title`, params: { title: item.title } },
+          }}
           index={props.position + index}
           nested
         />
@@ -152,8 +172,12 @@ type SideNavigationProps = React.ComponentProps<typeof Sidebar> & {
   }[];
 };
 
+// TODO: FIX NAVIGATION TO GROUPS
 export function GlobalSidebar(props: SideNavigationProps) {
+  const { user } = useAuthentication();
   const logout = useServerFn(logoutRPC);
+
+  const groups = useGetGroupsList(user.id);
 
   return (
     <Sidebar {...props} className="overflow-x-hidden">
@@ -199,11 +223,11 @@ export function GlobalSidebar(props: SideNavigationProps) {
               to="/groups"
               search={(prev) => ({ cmd: prev.cmd, action: undefined })}
             >
-              <span>All Groups</span>
+              <span>Groups</span>
             </Link>
           </SidebarGroupLabel>
           <SidebarMenu>
-            <Groups position={2} />
+            <Groups position={2} groups={groups.data} status={groups.status} />
           </SidebarMenu>
         </SidebarGroup>
       </SidebarContent>

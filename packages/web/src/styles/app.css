@@ -6,7 +6,8 @@
 @custom-variant dark (&:is(.dark *));
 
 :root {
-  --blank-theme: hsl(224, 100%, 79%);
+  --blank-theme: hsl(226, 100%, 76%);
+  --blank-theme-text: hsl(226, 56%, 85%);
   --background: hsl(224, 35%, 90%);
   --foreground: hsl(224 10% 3.9%);
   --card: hsl(224, 35%, 90%);
@@ -17,6 +18,7 @@
   --primary-foreground: hsl(225, 35%, 90%);
   --secondary: hsl(224 4.8% 95.9%);
   --secondary-foreground: hsl(224 5.9% 10%);
+  --muted-alt: hsl(224, 35%, 90%, 0.7);
   --muted: hsl(224 4.8% 95.9%);
   --muted-foreground: hsl(224 3.8% 46.1%);
   --accent: hsl(224 4.8% 95.9%);
@@ -46,11 +48,12 @@
   --primary-foreground: hsl(224 5.9% 10%);
   --secondary: hsl(224 15% 15%);
   --secondary-foreground: hsl(225, 35%, 90%);
+  --muted-alt: hsl(224, 35%, 90%, 0.5);
   --muted: hsl(224 3.7% 15.9%);
   --muted-foreground: hsl(224 5% 70%);
   --accent: hsl(224 3.7% 15.9%);
   --accent-foreground: hsl(225, 35%, 90%);
-  --destructive: hsl(0, 60%, 37%);
+  --destructive: hsl(0, 61%, 56%);
   --destructive-foreground: hsl(225, 35%, 90%);
   /* --border: hsl(224 3.7% %); */
   --border: hsl(224 5% 37.5%);
@@ -73,6 +76,7 @@
 
 @theme inline {
   --color-blank-theme: var(--blank-theme);
+  --color-blank-theme-text: var(--blank-theme-text);
   --color-background: var(--background);
   --color-foreground: var(--foreground);
   --color-card: var(--card);
@@ -84,6 +88,7 @@
   --color-secondary: var(--secondary);
   --color-secondary-foreground: var(--secondary-foreground);
   --color-muted: var(--muted);
+  --color-muted-alt: var(--muted-alt);
   --color-muted-foreground: var(--muted-foreground);
   --color-accent: var(--accent);
   --color-accent-foreground: var(--accent-foreground);
@@ -118,5 +123,29 @@
   }
   body {
     @apply bg-background text-foreground;
+  }
+  /* Custom scrollbar styling */
+  ::-webkit-scrollbar {
+    width: 10px;
+    height: 10px;
+  }
+
+  ::-webkit-scrollbar-track {
+    background: hsl(224, 15%, 9%);
+  }
+
+  ::-webkit-scrollbar-thumb {
+    background: hsl(224, 5%, 37.5%);
+    border-radius: 5px;
+  }
+
+  ::-webkit-scrollbar-thumb:hover {
+    background: hsl(224, 5%, 45%);
+  }
+
+  /* Firefox scrollbar styling */
+  * {
+    scrollbar-width: thin;
+    scrollbar-color: hsl(224, 5%, 37.5%) hsl(224, 15%, 9%);
   }
 }

@@ -8,53 +8,40 @@ import {
 } from "@/components/ui/command";
 import { useEffect } from "react";
 // import { Route } from "./layout";
-import { keyboard } from "@/lib/utils";
+import { createPreventDefault, fn, keyboard } from "@/lib/utils";
 import { Link, useNavigate } from "@tanstack/react-router";
 import { GlobalSearchParams } from "./layout";
-import * as v from "valibot";
+import { useGetGroupsList } from "./groups/@data";
+import { useAuthentication } from "@/lib/auth/client";
+import { GlobalDialogProps, useDialogFromUrl } from "@/lib/dialog";
 
-type CommandParam = v.InferOutput<typeof GlobalSearchParams.entries.cmd>;
+// type CommandBarProps = {
+//   groups: Group[];
+// };
 
-function useCommandViewFromUrl(searchParamKey: CommandParam) {
-  type State = "open" | "closed";
-
+export function GlobalCommandBar<T extends keyof GlobalSearchParams>(
+  // props: GlobalDialogProps<T> & CommandBarProps
+  props: GlobalDialogProps<T>
+) {
   const navigate = useNavigate();
+  const { user } = useAuthentication();
+  const _groups = useGetGroupsList(user.id);
 
-  const setViewState = (state: State) => {
-    void navigate({
-      to: ".",
-      search: { cmd: state === "open" ? state : undefined },
-    });
-  };
-
-  return {
-    state: () => (searchParamKey === "open" ? "open" : "closed"),
-    open: () => {
-      setViewState("open");
+  const view = useDialogFromUrl({
+    search: {
+      key: props.searchKey,
+      value: props.searchValue,
+      valueWhenOpen: "open",
     },
-    close: () => {
-      setViewState("closed");
-    },
-  };
-}
-
-const fn = <T,>(fn: () => T): T => fn();
-
-type GlobalCommandBarProps = {
-  searchParamKey: CommandParam;
-};
-
-export function GlobalCommandBar(props: GlobalCommandBarProps) {
-  const navigate = useNavigate();
-  const view = useCommandViewFromUrl(props.searchParamKey);
+  });
 
   const commands = {
     home: fn(() => {
       const opts = {
         to: "/",
-        // search: { cmd: undefined, action: undefined }
       };
       return {
+        hotkey: "h",
         title: "home",
         opts,
         go: () => {
@@ -65,9 +52,9 @@ export function GlobalCommandBar(props: GlobalCommandBarProps) {
     groups: fn(() => {
       const opts = {
         to: "/groups",
-        // search: { cmd: undefined, action: undefined },
       };
       return {
+        hotkey: "g",
         title: "groups",
         opts,
         go: () => {
@@ -75,37 +62,52 @@ export function GlobalCommandBar(props: GlobalCommandBarProps) {
         },
       };
     }),
-    newExpense: fn(() => {
-      const opts = {
-        to: ".",
-        // search: { cmd: undefined, action: "new-expense" },
-      } as const;
-      return {
-        title: "create expense",
-        opts,
-        go: () => {
-          void navigate(opts);
-        },
-      };
-    }),
+    // newExpense: fn(() => {
+    //   const opts = {
+    //     to: ".",
+    //   } as const;
+    //   return {
+    //     hotkey: "e",
+    //     title: "create expense",
+    //     opts,
+    //     go: () => {
+    //       void navigate(opts);
+    //     },
+    //   };
+    // }),
+    // TODO: TEMPORARY
+    // newGroup: fn(() => {
+    //   const opts = {
+    //     to: "/groups",
+    //     search: {
+    //       cmd: undefined,
+    //       action: "new-group",
+    //     },
+    //   } as const;
+    //   return {
+    //     hotkey: "G",
+    //     title: "create group",
+    //     opts,
+    //     go: () => {
+    //       void navigate(opts);
+    //     },
+    //   };
+    // }),
   };
 
   useEffect(() => {
     const actions = keyboard.register({
       when: view.state() === "open",
       fn: (e) => {
-        if (!e.metaKey && !e.ctrlKey) return;
-        if (view.state() === "closed") return;
-        e.preventDefault();
+        const keymap = new Map<string, () => void>([
+          [commands.home.hotkey, createPreventDefault(commands.home.go, e)],
+          [commands.groups.hotkey, createPreventDefault(commands.groups.go, e)],
+        ]);
 
-        switch (e.key) {
-          case "h":
-            commands.home.go();
-            break;
-          case "g":
-            commands.groups.go();
-            break;
-        }
+        if (!e.metaKey && !e.ctrlKey) return;
+        if (!keymap.has(e.key)) return;
+
+        keymap.get(e.key)?.();
       },
     });
 
@@ -124,15 +126,11 @@ export function GlobalCommandBar(props: GlobalCommandBarProps) {
     };
   }, [view.state]);
 
-  const groups = [
-    { type: "link", title: "la familia", opts: { to: "/groups/la-familia" } },
-    {
-      type: "link",
-      title: "the apartment",
-      opts: { to: "/groups/the-aprtment" },
-    },
-    { type: "link", title: "homies", opts: { to: "/groups/homies" } },
-  ];
+  const groups = _groups.data.map((g) => ({
+    type: "link",
+    title: g.title,
+    opts: { to: `/groups/$title`, params: { title: g.title } },
+  }));
 
   return (
     <CommandDialog
@@ -156,18 +154,15 @@ export function GlobalCommandBar(props: GlobalCommandBarProps) {
               <Link {...action.opts}>
                 <span>+</span>
                 <span className="mr-auto">{action.title}</span>
-                <span className="text-primary/50">
-                  [{action.title.at(0)?.toUpperCase()}]
-                </span>
+                <span className="text-primary/50">[ctrl+{action.hotkey}]</span>
               </Link>
             </CommandItem>
           ))}
         </CommandGroup>
-        <CommandGroup heading="Group Pages">
+        <CommandGroup heading="Your Groups">
           {groups.map((group) => (
             <CommandItem
               onSelect={() => {
-                console.log(group);
                 void navigate(group.opts);
               }}
               asChild

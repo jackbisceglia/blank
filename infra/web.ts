@@ -6,6 +6,7 @@ import { Sync } from "./sync";
 export const Web = new sst.aws.TanstackStart("Web", {
   path: "packages/web",
   dev: {
+    command: "pnpm dev",
     url: "http://localhost:3000",
   },
   environment: {

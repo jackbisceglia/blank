@@ -2,8 +2,8 @@ import { defineConfig } from "drizzle-kit";
 import { Resource } from "sst";
 
 export default defineConfig({
-  out: "./db/generated",
-  schema: "./db/*.schema.ts",
+  out: "./src/db/generated",
+  schema: "./src/db/*.schema.ts",
   dialect: "postgresql",
   dbCredentials: {
     host: Resource.Database.host,

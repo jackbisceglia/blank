@@ -1,7 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { constants } from "@/lib/utils";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
-import { useAuthentication } from "@/lib/auth/react";
+import { useAuthentication } from "@/lib/auth/client";
 import { PrimaryHeading } from "@/components/prose";
 import * as v from "valibot";
 
@@ -42,7 +42,7 @@ const avatarFallback = v.parser(
   )
 );
 
-function HomePage() {
+function HomeRoute() {
   const auth = useAuthentication();
 
   return (
@@ -53,12 +53,12 @@ function HomePage() {
         <AvatarFallback>{avatarFallback(auth.user.name)}</AvatarFallback>
       </Avatar>
       <PrimaryHeading>Welcome Back, {auth.user.name}</PrimaryHeading>
-      <div></div>
     </div>
   );
 }
 
 export const Route = createFileRoute("/_protected/")({
   ssr: false,
-  component: HomePage,
+  component: HomeRoute,
+  loader: () => ({ crumb: "Home" }),
 });

@@ -1,5 +1,5 @@
-import { TokenUtils } from "@/lib/auth";
-import openauth from "@/rpc/auth";
+import { TokenUtils } from "@/lib/auth/server";
+import openauth from "@/rpc/auth.server";
 import { json } from "@tanstack/react-start";
 import { createAPIFileRoute } from "@tanstack/react-start/api";
 

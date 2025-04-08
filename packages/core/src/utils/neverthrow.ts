@@ -13,9 +13,12 @@ export class ValidationError<TErrorType> extends Error {
       message ??
       issues
         .map((issue) => {
-          const path = issue.path?.length
-            ? (issue.path as unknown as string[]).join(".")
-            : "(root)";
+          const path =
+            !!issue.path?.length &&
+            (issue.path as unknown as string[]).join(".");
+
+          if (!path) return issue.message;
+
           return `${path}: ${issue.message}`;
         })
         .join(", ");
