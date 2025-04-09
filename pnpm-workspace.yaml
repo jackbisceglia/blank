@@ -1,0 +1,7 @@
+packages:
+  - packages/*
+onlyBuiltDependencies:
+  - "@parcel/watcher"
+  - "@rocicorp/zero-sqlite3"
+  - esbuild
+  - protobufjs

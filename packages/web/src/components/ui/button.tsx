@@ -1,88 +1,61 @@
-import { Loading } from '../icons/loading';
+import * as React from "react";
+import { Slot } from "@radix-ui/react-slot";
+import { cva, type VariantProps } from "class-variance-authority";
 
-import { cn } from '@/lib/cn';
-import type { ButtonRootProps } from '@kobalte/core/button';
-import { Button as ButtonPrimitive } from '@kobalte/core/button';
-import type { PolymorphicProps } from '@kobalte/core/polymorphic';
-import type { VariantProps } from 'class-variance-authority';
-import { cva } from 'class-variance-authority';
-import type { JSX, ValidComponent } from 'solid-js';
-import { Show, splitProps } from 'solid-js';
+import { cn } from "@/lib/utils";
 
-export const buttonVariants = cva(
-  'inline-flex items-center uppercase justify-center text-s font-medium transition-[color,background-color,box-shadow] focus-visible:outline-none focus-visible:ring-[1.5px] focus-visible:ring-ui-ring disabled:pointer-events-none disabled:opacity-50',
+const buttonVariants = cva(
+  "uppercase inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-none text-sm font-medium transition-[color,box-shadow] disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg:not([class*='size-'])]:size-4 [&_svg]:shrink-0 outline-none focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-3 aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40 aria-invalid:border-destructive",
   {
     variants: {
       variant: {
         default:
-          'bg-ui-primary text-ui-primary-foreground shadow hover:bg-ui-primary/90',
+          "bg-primary text-primary-foreground shadow-xs hover:bg-primary/90",
+        theme:
+          "bg-blank-theme text-background shadow-xs hover:bg-blank-theme/90 focus-visible:ring-blank-theme/20 dark:focus-visible:ring-blank-theme/40",
         destructive:
-          'bg-ui-destructive border-ui-destructive text-ui-destructive-foreground shadow-sm hover:bg-ui-destructive/90',
+          "bg-destructive text-white shadow-xs hover:bg-destructive/90 focus-visible:ring-destructive/20 dark:focus-visible:ring-destructive/40",
         outline:
-          'border border-ui-input bg-ui-background shadow-sm hover:bg-ui-accent hover:text-ui-accent-foreground',
+          "border border-foreground bg-background shadow-xs hover:bg-accent hover:text-accent-foreground",
         secondary:
-          'bg-ui-secondary text-ui-secondary-foreground shadow-sm hover:bg-ui-secondary/80',
-        tertiary:
-          'border-transparent bg-ui-background text-ui-secondary-foreground hover:bg-ui-background/50',
-        ghost: 'hover:bg-ui-accent hover:text-ui-accent-foreground',
-        link: 'underline-offset-4 hover:underline',
+          "bg-secondary text-secondary-foreground shadow-xs hover:bg-secondary/80",
+        ghost: "hover:bg-accent hover:text-accent-foreground",
+        link: "text-primary underline-offset-4 hover:underline",
       },
       size: {
-        default: 'h-9 px-4 py-2',
-        sm: 'h-8 px-3 text-xs',
-        lg: 'h-10 px-8',
-        icon: 'h-9 w-9',
+        default: "h-9 px-4 py-2 has-[>svg]:px-3",
+        xs: "text-xs rounded-none px-4 py-2 has-[>svg]:px-2.5",
+        sm: "h-8 rounded-none px-4 has-[>svg]:px-2.5",
+        lg: "h-10 rounded-none px-8 has-[>svg]:px-4",
+        icon: "size-7",
       },
     },
     defaultVariants: {
-      variant: 'default',
-      size: 'default',
+      variant: "default",
+      size: "default",
     },
-  },
+  }
 );
 
-type buttonProps<T extends ValidComponent = 'button'> = ButtonRootProps<T> &
+function Button({
+  className,
+  variant,
+  size,
+  asChild = false,
+  ...props
+}: React.ComponentProps<"button"> &
   VariantProps<typeof buttonVariants> & {
-    class?: string;
-  };
-
-export const Button = <T extends ValidComponent = 'button'>(
-  props: PolymorphicProps<T, buttonProps<T>>,
-) => {
-  const [local, rest] = splitProps(props as buttonProps, [
-    'class',
-    'variant',
-    'size',
-  ]);
+    asChild?: boolean;
+  }) {
+  const Comp = asChild ? Slot : "button";
 
   return (
-    <ButtonPrimitive
-      class={cn(
-        buttonVariants({
-          size: local.size,
-          variant: local.variant,
-        }),
-        local.class,
-      )}
-      {...rest}
+    <Comp
+      data-slot="button"
+      className={cn(buttonVariants({ variant, size, className }))}
+      {...props}
     />
   );
-};
+}
 
-type ButtonLoadableProps<T extends ValidComponent = 'button'> =
-  PolymorphicProps<T, buttonProps<T>> & {
-    loading: boolean | undefined;
-    children: JSX.Element;
-  };
-
-export const ButtonLoadable = <T extends ValidComponent = 'button'>(
-  props: ButtonLoadableProps<T>,
-) => {
-  return (
-    <Button {...props}>
-      <Show when={!props.loading} fallback={<Loading />}>
-        {props.children}
-      </Show>
-    </Button>
-  );
-};
+export { Button, buttonVariants };

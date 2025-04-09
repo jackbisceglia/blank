@@ -1,13 +1,13 @@
-import { cn } from '@/lib/cn';
-import { splitProps, type ComponentProps } from 'solid-js';
+import { cn } from "@/lib/utils";
 
-export const Skeleton = (props: ComponentProps<'div'>) => {
-  const [local, rest] = splitProps(props, ['class']);
-
+function Skeleton({ className, ...props }: React.ComponentProps<"div">) {
   return (
     <div
-      class={cn('animate-pulse rounded-sm bg-ui-muted', local.class)}
-      {...rest}
+      data-slot="skeleton"
+      className={cn("bg-primary/10 animate-pulse rounded-md", className)}
+      {...props}
     />
   );
-};
+}
+
+export { Skeleton };

@@ -2,49 +2,14 @@
 /* tslint:disable */
 /* eslint-disable */
 /* deno-fmt-ignore-file */
-import "sst"
-export {}
-import "sst"
+
 declare module "sst" {
   export interface Resource {
-    "AI": {
-      "anthropicApiKey": string
-      "mistralApiKey": string
-      "openaiApiKey": string
-      "type": "sst.sst.Linkable"
-    }
-    "API": {
-      "name": string
-      "type": "sst.aws.Function"
+    "Auth": {
+      "type": "sst.aws.Auth"
       "url": string
     }
-    "AnthropicApiKey": {
-      "type": "sst.sst.Secret"
-      "value": string
-    }
-    "ApiRouter": {
-      "type": "sst.aws.Router"
-      "url": string
-    }
-    "Clerk": {
-      "clerkJwks": string
-      "clerkPublishableKey": string
-      "clerkSecretKey": string
-      "type": "sst.sst.Linkable"
-    }
-    "ClerkJWKS": {
-      "type": "sst.sst.Secret"
-      "value": string
-    }
-    "ClerkPublishableKey": {
-      "type": "sst.sst.Secret"
-      "value": string
-    }
-    "ClerkSecretKey": {
-      "type": "sst.sst.Secret"
-      "value": string
-    }
-    "DATABASE": {
+    "Database": {
       "database": string
       "host": string
       "password": string
@@ -59,26 +24,38 @@ declare module "sst" {
       "type": "sst.sst.Secret"
       "value": string
     }
-    "MistralApiKey": {
+    "GoogleOAuth": {
+      "clientId": string
+      "clientSecret": string
+      "type": "sst.sst.Linkable"
+    }
+    "GoogleOAuthClientId": {
       "type": "sst.sst.Secret"
       "value": string
     }
-    "OpenaiApiKey": {
+    "GoogleOAuthClientSecret": {
       "type": "sst.sst.Secret"
       "value": string
     }
-    "VPC": {
-      "bastion": string
-      "type": "sst.aws.Vpc"
+    "SyncReplicationBucket": {
+      "name": string
+      "type": "sst.aws.Bucket"
     }
-    "WEB": {
-      "type": "sst.aws.SolidStart"
-      "url": string
-    }
-    "ZERO": {
+    "SyncViewSyncer": {
       "service": string
       "type": "sst.aws.Service"
       "url": string
     }
+    "VirtualPrivateCloud": {
+      "type": "sst.aws.Vpc"
+    }
+    "Web": {
+      "type": "sst.aws.TanstackStart"
+      "url": string
+    }
   }
 }
+/// <reference path="sst-env.d.ts" />
+
+import "sst"
+export {}

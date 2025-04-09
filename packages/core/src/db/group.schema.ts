@@ -1,20 +1,18 @@
-import { memberTable } from './member.schema';
-import {
-  DrizzleModelTypes,
-  createTable,
-  uuidv7,
-  uuidv7WithDefault,
-} from './utils';
+import { memberTable } from "./member.schema";
+import { DrizzleModelTypes } from "./utils";
 
-import { relations } from 'drizzle-orm';
-import { text } from 'drizzle-orm/pg-core';
-import { createInsertSchema, createSelectSchema } from 'drizzle-zod';
+import { relations } from "drizzle-orm";
+import { pgTable, text, timestamp, uuid } from "drizzle-orm/pg-core";
+import { createInsertSchema, createSelectSchema } from "drizzle-valibot";
 
-export const groupTable = createTable('group', {
-  id: uuidv7WithDefault().primaryKey(),
-  title: text().notNull(),
-  ownerId: uuidv7().notNull(),
-  invitationId: uuidv7(),
+export const groupTable = pgTable("group", {
+  id: uuid().primaryKey(), // update to make into ulid
+  title: text().notNull().unique(),
+  slug: text().notNull(),
+  description: text().notNull(),
+  ownerId: uuid().notNull(), // update to make into ulid
+  invitationId: uuid(), // update to make into ulid
+  createdAt: timestamp().notNull().defaultNow(),
 });
 
 export const groupRelation = relations(groupTable, ({ many, one }) => ({
@@ -25,12 +23,10 @@ export const groupRelation = relations(groupTable, ({ many, one }) => ({
   }),
 }));
 
-// types
 type GroupTypes = DrizzleModelTypes<typeof groupTable>;
 
-export type Group = GroupTypes['Select'];
-export type GroupInsert = GroupTypes['Insert'];
-
-// runtime schemas
+export type Group = GroupTypes["Select"];
 export const Group = createSelectSchema(groupTable);
+
+export type GroupInsert = GroupTypes["Insert"];
 export const GroupInsert = createInsertSchema(groupTable);

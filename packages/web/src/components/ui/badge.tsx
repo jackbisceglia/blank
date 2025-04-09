@@ -1,44 +1,46 @@
-import { cn } from '@/lib/cn';
-import type { VariantProps } from 'class-variance-authority';
-import { cva } from 'class-variance-authority';
-import { splitProps, type ComponentProps } from 'solid-js';
+import * as React from "react";
+import { Slot } from "@radix-ui/react-slot";
+import { cva, type VariantProps } from "class-variance-authority";
 
-export const badgeVariants = cva(
-  'inline-flex items-center uppercase border px-3 py-1 text-xs font-semibold transition-shadow focus-visible:outline-none focus-visible:ring-[1.5px] focus-visible:ring-ring',
+import { cn } from "@/lib/utils";
+
+const badgeVariants = cva(
+  "inline-flex items-center justify-center rounded-md border px-2 py-0.5 text-xs font-medium w-fit whitespace-nowrap shrink-0 [&>svg]:size-3 gap-1 [&>svg]:pointer-events-none focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[1.5px] aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40 aria-invalid:border-destructive transition-[color,box-shadow] overflow-auto",
   {
     variants: {
       variant: {
         default:
-          'border-transparent bg-ui-primary text-ui-primary-foreground shadow hover:bg-ui-primary/80',
+          "border-transparent bg-primary text-primary-foreground [a&]:hover:bg-primary/90",
         secondary:
-          'border-transparent bg-ui-secondary text-ui-secondary-foreground hover:bg-ui-secondary/80',
-        tertiary:
-          'border-transparent hover:underline bg-ui-background text-ui-secondary-foreground hover:bg-ui-background/80',
+          "border-transparent bg-secondary text-secondary-foreground [a&]:hover:bg-secondary/90",
         destructive:
-          'border-transparent bg-ui-destructive text-ui-destructive-foreground shadow hover:bg-ui-destructive/80',
-        outline: 'text-ui-foreground',
+          "border-transparent bg-destructive text-white [a&]:hover:bg-destructive/90 focus-visible:ring-destructive/20 dark:focus-visible:ring-destructive/40",
+        outline:
+          "text-foreground [a&]:hover:bg-accent [a&]:hover:text-accent-foreground",
       },
     },
     defaultVariants: {
-      variant: 'default',
+      variant: "default",
     },
-  },
+  }
 );
 
-export const Badge = (
-  props: ComponentProps<'div'> & VariantProps<typeof badgeVariants>,
-) => {
-  const [local, rest] = splitProps(props, ['class', 'variant']);
+function Badge({
+  className,
+  variant,
+  asChild = false,
+  ...props
+}: React.ComponentProps<"span"> &
+  VariantProps<typeof badgeVariants> & { asChild?: boolean }) {
+  const Comp = asChild ? Slot : "span";
 
   return (
-    <div
-      class={cn(
-        badgeVariants({
-          variant: local.variant,
-        }),
-        local.class,
-      )}
-      {...rest}
+    <Comp
+      data-slot="badge"
+      className={cn(badgeVariants({ variant }), className)}
+      {...props}
     />
   );
-};
+}
+
+export { Badge, badgeVariants };
