@@ -1,27 +1,21 @@
-// eslint-disable-next-line @typescript-eslint/triple-slash-reference
-/// <reference path="../.sst/platform/config.d.ts" />
+import { Auth } from "./auth";
+import { Database } from "./database";
+import { getDomainConfig } from "./domain";
+import { Sync } from "./sync";
 
-import api from './api';
-import clerk from './clerk';
-import domain from './domain';
-import sync from './sync';
-
-export default new sst.aws.SolidStart('WEB', {
-  path: 'packages/web',
-  link: [clerk],
-  domain: {
-    name:
-      $app.stage === 'production'
-        ? domain
-        : $interpolate`${$app.stage}.${domain}`,
-    dns: sst.cloudflare.dns(),
+export const Web = new sst.aws.TanstackStart("Web", {
+  path: "packages/web",
+  dev: {
+    command: "pnpm dev",
+    url: "http://localhost:3000",
   },
   environment: {
-    VITE_API_URL: api.url,
-    VITE_CLERK_PUBLISHABLE_KEY: clerk.properties.clerkPublishableKey,
-    VITE_PUBLIC_ZERO_CACHE_URL:
-      $app.stage === 'production'
-        ? $interpolate`${sync.service.url}`
-        : 'http://localhost:4848',
+    VITE_AUTH_SERVER_URL: Auth.url,
+    VITE_SYNC_SERVER_URL: $interpolate`${Sync.url}`,
   },
+  domain: getDomainConfig({
+    type: "root",
+    stage: $app.stage,
+  }),
+  link: [Database],
 });

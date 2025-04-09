@@ -1,63 +1,69 @@
-a bunch of things i need to do and probably won't remember by TODO: comments
+[[FEATURES]]
 
-TODO
---------------------------------------------------------------------------
-+ web
-  + feat
-    + high
-      [ ] settle transactions
-        [ ] some sort of flow that calculates open transactions and settles who owes who what, then closes/archives them
-      [ ] filter between archived and open transactions
-      [x] join group page
-      [ ] members page
-      [ ] user's group setting 
-        [ ] nickname
-      [ ] zero authentication
-      [ ] zero permissions
-      [ ] transactions default to current group id on group page
-      [ ] update default/preferred group
-    + low 
-      [ ] debounced llm transaction creation
-      [ ] invite by email
-      [ ] standard transaction creation
+--SYNC--
+    [ ] zero init/scaffolding
+        [ ] setup schema in zero package
+        [ ] get infra working with schema
+        [ ] init zero instance in react after authentication
+        [ ] zero instance working with auth jwt/jwks from openauth
+    
+--UI--
+    [ ] modal/drawer/route for mutations?
+        [ ] tie url state to open state for relevant ui
+    [ ] dashboard
+        [ ] what to show here other than username
+    [ ] account page
+        [ ] update name
+        [ ] delete account
+    [ ] preferred group
+        [ ] ui indicator shown everywhere that preferred group is rendered
+        [ ] easy way to change this
+    [ ] allow landing page to be accessed regardless of auth state
+    [ ] move zero preload into loader
+        [ ] wrap entire _protected in another pathless folder
+            - _protected
+                - _protected-with-context
+            OR
+        [ ] move providers for zero/auth up a level
 
-  + fix
-    + high
-      [ ] invitation link should log the actual url base 
-      [ ] authorization with mem db mode; need to distinguish between undefined meanings
-      [ ] more secure group joining technique
-      [ ] fix state flash right after joining but before navigation
+--KEYBOARD SHORTCUTS--
+    [ ]
 
-+ core
-  + feat
-    + high
-      [ ] nanoids for non essential ids
-        [ ] group id?
-        [ ] join id
-    + low
-      [ ] sending emails
-      [ ] max groups per user
-      [ ] max llm based transactions per user (depends on regular creation)
+--NATIVE LLMs--
+    [ ] 
 
---------------------------------------------------------------------------
+--INFRA--
+    [ ] autodeploy from push (setup via sst)
+    [ ] spot instances to lower cost for now
+    [ ] migrate from neon ? 
+        + some issues recently
+        + not in same aws region
+        + still stuck on postgres via zero
 
+[[OPEN BUGS]]
 
-details
-format:
-> [domain]
-  > [type]
-    > [priority] 
-        [ ] todo
-        [x] done (mm/dd/yy)
+--ERROR HANDLING--
+[SOLVED]
+    [x] i have a weird mix of neverthrow and regular error handling because wrapping everything is *really* annoying
+        + this is lower priority than others
+        [solution]
+        -> this is not too bad now. the solution is:
+            -> user neverthrow WHEREVER possible
+            -> at network boundaries, if possible, use serializable neverthrow solution
+            -> at framework/library boundaries (eg. hooking into tanstack start), unwrap and throw when necessary
 
-domains:
-  - web
-  - api
-  - core (core and/or zero)
-types:
-  - feat (needs to be implemented)
-  - fix  (has todo comment)
-  - bug  (broken and not understood yet)
-priority:
-  - low
-  - high
+    [ ] neverthrow utils in /web that might need to be shared
+
+--AUTHENTICATION--
+    [SOLVED]
+    [x] i hit the server on *every* request
+        + this is a natural limitation of `beforeLoad` in tanstack
+        options
+            -> just forget about loaders/beforeLoad and do this in a useEffect (can cache with reactQuery). this would make me do:
+                -> useEffect auth&zero
+                -> react query for auth status
+        [solution]
+        -> this is in an *ok* state
+            -> i've simply moved the fetch of auth state into a use effect. this will work for now
+                -> there's no request aborting and unmount logic which is a potential problem
+                -> this can be moved into a layout loader likely and then just logic handled in an effect

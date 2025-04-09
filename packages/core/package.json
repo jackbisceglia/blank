@@ -4,37 +4,25 @@
   "type": "module",
   "exports": {
     "./ai": "./src/ai/index.ts",
-    "./zero": "./src/zero/schema.ts",
-    "./db": "./src/db/index.ts"
+    "./db": "./src/db/index.ts",
+    "./zero": "./src/zero/index.ts",
+    "./utils": "./src/utils/index.ts"
   },
   "scripts": {
-    "db": "npx sst shell drizzle-kit",
-    "db:push": "npx sst shell -- drizzle-kit push",
-    "db:push:main": "npx sst shell -- drizzle-kit push --config ./drizzle.config.temp.main.ts",
-    "db:studio": "npx sst shell drizzle-kit studio",
-    "dev:sync": "npx sst shell -- zero-cache-dev@0.10",
-    "test": "npx sst shell bun test",
-    "lint": "npx eslint"
-  },
-  "devDependencies": {
-    "@types/bun": "^1.1.11",
-    "@types/js-cookie": "^3.0.6",
-    "@types/pg": "^8.11.10",
-    "drizzle-kit": "^0.30.1"
+    "db": "pnpm dlx sst shell drizzle-kit",
+    "test": "pnpm dlx sst shell pnpm test",
+    "lint": "eslint .",
+    "lint:fix": "eslint . --fix"
   },
   "dependencies": {
-    "@ai-sdk/anthropic": "^1.0.0",
-    "@ai-sdk/mistral": "^0.0.44",
-    "@ai-sdk/openai": "^0.0.68",
     "@neondatabase/serverless": "^0.10.4",
-    "@rocicorp/zero": "0.10",
-    "ai": "^3.4.16",
-    "autoevals": "^0.0.105",
-    "drizzle-orm": "^0.38.2",
-    "drizzle-zod": "^0.5.1",
-    "pg": "^8.13.0",
-    "sst": "*",
-    "uuidv7": "^1.0.2",
-    "zod": "^3.23.8"
+    "drizzle-orm": "^0.39.0",
+    "drizzle-valibot": "^0.4.1",
+    "neverthrow": "^8.2.0",
+    "postgres": "^3.4.5",
+    "valibot": "^1.0.0"
+  },
+  "peerDependencies": {
+    "typescript": "^5.0.0"
   }
 }

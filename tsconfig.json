@@ -1,7 +1,10 @@
 {
+  "extends": "@tsconfig/recommended/tsconfig.json",
   "compilerOptions": {
+    "strict": true,
     "strictNullChecks": true,
-    "lib": ["esnext"],
-    "types": ["@cloudflare/workers-types"]
+    "lib": ["ESNext"],
+    "module": "ESNext",
+    "moduleResolution": "Bundler"
   }
 }

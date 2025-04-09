@@ -1,26 +1,27 @@
-import { defineConfig } from '@solidjs/start/config';
+import { defineConfig } from "@tanstack/react-start/config";
+import tailwindcss from "@tailwindcss/vite";
+import tsConfigPaths from "vite-tsconfig-paths";
+import path from "path";
+import { fileURLToPath } from "url";
 
-import { dirname } from 'node:path';
-import { fileURLToPath } from 'node:url';
+const root = path.dirname(fileURLToPath(import.meta.url));
 
 export default defineConfig({
-  ssr: false,
-  server: {
-    preset: 'aws-lambda',
-  },
   vite: {
+    plugins: [tailwindcss(), tsConfigPaths()],
     resolve: {
       alias: {
-        '@': `${dirname(fileURLToPath(import.meta.url))}/src`,
+        "@": path.resolve(root, "./src"),
       },
     },
-    optimizeDeps: {
-      esbuildOptions: {
-        target: 'esnext',
-      },
-    },
-    build: {
-      target: 'esnext',
-    },
+  },
+  tsr: {
+    appDirectory: "./src",
+    autoCodeSplitting: true,
+    routesDirectory: "./src/pages",
+    generatedRouteTree: "./src/routes.generated.ts",
+    routeFileIgnorePrefix: "@",
+    routeToken: "layout",
+    quoteStyle: "single",
   },
 });
