@@ -26,7 +26,8 @@ export const ZeroProvider = (props: PropsWithChildren) => {
       function success(z) {
         setZero(z);
       },
-      function error() {
+      function error(e) {
+        console.error("error", e);
         setZero(CAN_NOT_INSTANTIATE_ZERO);
       }
     );
