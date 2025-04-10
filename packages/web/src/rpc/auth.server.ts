@@ -1,16 +1,31 @@
 import { createClient } from "@openauthjs/openauth/client";
 import { constants } from "../lib/utils";
 import { createServerFn } from "@tanstack/react-start";
-import { getCookie, getHeader } from "@tanstack/react-start/server";
-import { subjects } from "@blank/auth/subjects";
+import { getHeader } from "@tanstack/react-start/server";
 import { redirect } from "@tanstack/react-router";
 import { users } from "@blank/core/db";
-import { err, errAsync, ok, Result, ResultAsync } from "neverthrow";
+import { err, ok, Result, ResultAsync } from "neverthrow";
 import { serverResult } from "@/lib/neverthrow/serialize";
 import { ErrUtils, CustomError } from "@/lib/errors";
-import { fromParsed } from "@blank/core/utils";
 import { Tokens } from "@/lib/auth/client";
 import { TokenUtils } from "@/lib/auth/server";
+import { authenticate, verify } from "@/lib/auth";
+
+// TODO: fix all this nonsense, we should use regular errors
+// https://medium.com/with-orus/the-5-commandments-of-clean-error-handling-in-typescript-93a9cbdf1af5
+// https://medium.com/@Nelsonalfonso/understanding-custom-errors-in-typescript-a-complete-guide-f47a1df9354c
+type LoginError =
+  | { type: "MissingAccessToken" }
+  | { type: "VerificationError"; error: unknown } // Capture the original error
+  | { type: "VerificationSuccessButNoTokens" }
+  | { type: "InvalidHost" }
+  | { type: "AuthorizationError"; error: unknown };
+
+const missingAccessTokenError = () => new Error("No access token present");
+const noTokensError = (): LoginError => ({
+  type: "VerificationSuccessButNoTokens",
+});
+const invalidHostError = (): LoginError => ({ type: "InvalidHost" });
 
 export const keys = {
   refresh: "refresh_token",
@@ -74,70 +89,59 @@ const openauth = createClient({
  *   const { subject, tokens } = result.value;
  * }
  */
-function verify(tokens: Partial<Tokens>) {
-  const { access, refresh } = tokens;
+const assertAccessTokenPresent = (tokens: Partial<Tokens>) => {
+  return !tokens.access
+    ? err(missingAccessTokenError())
+    : ok({ access: tokens.access, refresh: tokens.refresh });
+};
 
-  if (!access) {
-    return errAsync(new Error("No access token present"));
-  }
-
-  const result = ResultAsync.fromSafePromise(
-    openauth.verify(subjects, access, { refresh })
-  ).andThen((value) => (value.err ? err(value.err) : ok(value)));
-
-  return result;
-}
-
-// NOTE: no neverthrow
+// mostly just wraps the authenticate function to read and write cookies
 export const authenticateRPC = createServerFn().handler(async () => {
-  const safeSetToCookies = (tokens?: Partial<Tokens>) =>
-    ok(tokens)
-      .andThen((tokens) => fromParsed(Tokens, tokens))
-      .andThrough(
-        Result.fromThrowable(
-          TokenUtils().setToCookies,
-          Errors.Tokens.Write.callback
-        )
-      );
+  const Tokens = TokenUtils();
 
-  const verified = await verify(TokenUtils().getFromCookies());
-
-  verified.andThen((v) => safeSetToCookies(v.tokens));
+  const verified = await Tokens.getFromCookies()
+    .asyncAndThen(authenticate)
+    .andTee((v) => v.tokens && Tokens.setToCookies(v.tokens));
 
   return serverResult(verified);
 });
 
 // NOTE: no neverthrow
 export const loginRPC = createServerFn().handler(async () => {
-  const tokens = TokenUtils();
-  const accessToken = getCookie(keys.access);
-  const refreshToken = getCookie(keys.refresh);
+  const utils = TokenUtils();
 
-  if (accessToken) {
-    const verified = await openauth.verify(subjects, accessToken, {
-      refresh: refreshToken,
-    });
+  const verified = await TokenUtils()
+    .getFromCookies()
+    .andThen(assertAccessTokenPresent)
+    .asyncAndThen(verify);
 
-    if (!verified.err && verified.tokens) {
-      tokens.setToCookies(verified.tokens);
-      throw redirect({ href: "/" });
-    }
+  const processed = verified
+    .andThen((verified) =>
+      verified.tokens ? ok(verified.tokens) : err(noTokensError())
+    )
+    .andThrough(utils.setToCookies)
+    .map(() => redirect({ href: "/" }));
+
+  if (processed.isOk()) {
+    throw processed.value;
   }
 
-  const host = getHeader("host");
+  const result = await ok(getHeader("host"))
+    .andThen((host) => (host ? ok(host) : err(invalidHostError())))
+    .andThen((host) =>
+      ok([host, host.includes("localhost") ? "http" : "https"])
+    )
+    .asyncAndThen(([host, protocol]) =>
+      ResultAsync.fromThrowable(() =>
+        openauth.authorize(`${protocol}://${host}/api/auth/callback`, "code")
+      )()
+    );
 
-  const protocol = host?.includes("localhost") ? "http" : "https";
-
-  if (!host) {
-    throw new Error("Invalid host");
+  if (result.isErr()) {
+    throw result.error;
   }
 
-  const { url } = await openauth.authorize(
-    `${protocol}://${host}/api/auth/callback`,
-    "code"
-  );
-
-  throw redirect({ href: url });
+  throw redirect({ href: result.value.url });
 });
 
 // NOTE: no neverthrow
@@ -150,36 +154,20 @@ export const logoutRPC = createServerFn().handler(() => {
 });
 
 export const getAuthenticatedUserRPC = createServerFn().handler(async () => {
-  const getTokens = Result.fromThrowable(
-    TokenUtils().getFromCookies,
-    Errors.Tokens.Get.callback
-  );
-
-  const tokens = getTokens();
+  const Tokens = TokenUtils();
+  const tokens = Tokens.getFromCookies();
 
   const user = await tokens
-    .asyncAndThen(verify)
+    .asyncAndThen(authenticate)
     .andThen((openauth) =>
       users.getAuthenticatedUser(openauth.subject.properties.userID)
     )
-    .andThen((user) => {
-      if (!user) {
-        return Errors.User.NotFound.neverthrow();
-      }
-
-      return ok(user);
-    });
+    .andThen((user) => (user ? ok(user) : Errors.User.NotFound.neverthrow()));
 
   return serverResult(
     Result.combine([
       user,
-      tokens.andThen((t) => {
-        if (!t.access) {
-          return err(new Error("No access token present"));
-        }
-
-        return ok(t.access);
-      }),
+      tokens.andThen(assertAccessTokenPresent).map((t) => t.access),
     ])
   );
 });

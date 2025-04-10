@@ -4,6 +4,12 @@ import { hydrateAsyncServerResult } from "@/lib/neverthrow/serialize";
 import { subjects } from "@blank/auth/subjects";
 import { errAsync, ResultAsync, err, ok } from "neverthrow";
 import { Tokens } from "./client";
+import {
+  InvalidAccessTokenError,
+  InvalidRefreshTokenError,
+} from "@openauthjs/openauth/error";
+import { ValidationError } from "@blank/core/utils";
+import { CustomError } from "../errors";
 
 /**
  * Verifies authentication tokens using OpenAuth
@@ -22,6 +28,7 @@ import { Tokens } from "./client";
  *   const { subject, tokens } = result.value;
  * }
  */
+// NOTE: consider if this causes client/server issues in build
 export function verify(tokens: Partial<Tokens>) {
   const { access, refresh } = tokens;
 
@@ -36,6 +43,24 @@ export function verify(tokens: Partial<Tokens>) {
   return result;
 }
 
+export function authenticate(tokens: Partial<Tokens>) {
+  return ok(tokens)
+    .asyncAndThen(verify)
+    .mapErr((err) => {
+      const opts = { cause: err };
+
+      switch (true) {
+        case err instanceof InvalidRefreshTokenError:
+        case err instanceof InvalidAccessTokenError:
+        case err instanceof ValidationError:
+          return new Error("Could not access tokens from cookies", opts);
+        case err instanceof CustomError:
+          return new Error("Issue modifying cookies", opts);
+        default:
+          return err;
+      }
+    });
+}
 /**
  * Creates a route that's only accessible when user is NOT authenticated
  *
