@@ -1,13 +1,15 @@
 import { data } from "./@nl.expense.dataset";
-import { createExpenseEvalRunner, formatDatasetByTag, Tag } from ".";
-import { ModelKeys } from "../models";
+import { createExpenseEvalRunner, formatDatasetByTag, MODELS, Tag } from ".";
 
 const TAG: Tag = "description.omit-member-names";
 
-const MODEL: ModelKeys = "gpt-4o";
 const EXPERIMENT = `${TAG}.${Date.now().toString()}`;
 
-const evaluate = createExpenseEvalRunner(MODEL, EXPERIMENT);
+const evaluate = createExpenseEvalRunner(
+  MODELS.fast,
+  MODELS.quality,
+  EXPERIMENT
+);
 
 const dataset = formatDatasetByTag(data, TAG);
 

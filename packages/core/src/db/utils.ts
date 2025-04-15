@@ -6,11 +6,13 @@ import {
 import { PgTable, text } from "drizzle-orm/pg-core";
 import { ResultAsync } from "neverthrow";
 
+export type DrizzleResult<T, R = DrizzleError> = ResultAsync<T, R>;
+
 export function handleDrizzleError(error: unknown) {
   return error instanceof DrizzleError
     ? error
     : new DrizzleError({
-        message: "Error getting user by identifier",
+        message: "Drizzle Error",
         cause: error,
       });
 }

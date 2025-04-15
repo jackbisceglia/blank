@@ -95,7 +95,7 @@ const assertAccessTokenPresent = (tokens: Partial<Tokens>) => {
     : ok({ access: tokens.access, refresh: tokens.refresh });
 };
 
-function authenticateInternal() {
+export function authenticateInternal() {
   const Tokens = TokenUtils();
 
   return Tokens.getFromCookies()

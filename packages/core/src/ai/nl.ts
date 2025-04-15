@@ -3,7 +3,8 @@ import { ExpenseInsert } from "../db";
 import { valibotSchema } from "@ai-sdk/valibot";
 import * as v from "valibot";
 import { ExpenseMemberInsert } from "../db/expense-member.schema";
-import { ModelKeys, models } from "./models";
+import { DEFAULT, DEFAULT_FAST, ModelKeys, models } from "./models";
+import { ResultAsync } from "neverthrow";
 
 function unindent(strings: TemplateStringsArray, ...values: unknown[]) {
   const rawString = strings.reduce(
@@ -41,60 +42,78 @@ export namespace nl {
         ),
       }),
       grounding: unindent`
-        You are an expert at parsing summaries of expenses which are to be split beetween multiple people
+        # Expense Parser
 
-        You will be given a summary of an expense, and your job is to parse it into the given schema such that transformation of the natural language summary into the structured schema losslessly represents the original intent and essence
+        You are an expert at parsing informal expense summaries into structured data for expense splitting applications.
 
-        These summaries given can be typically of loose and inconsistent structure/format
+        ## Input
+        You'll receive natural language descriptions of expenses shared between multiple people.
 
-        In most situations, the summary will contain in it all of the fields required in order to parse into the given  
-        schema, though the various details may be present in a variety of orders or positions.
+        ## Key Rules
 
-        Here are rules to follow when formatting the resulting properties
+        ### Expense Description
+        - Omit member names (those go in the members array)
+          - Sometimes there is the name of a thing or person who is not a member, but part of the expense itself. These should be included in the description.
+        - Omit dates and times (both absolute like "June 2nd" and relative like "yesterday")
+        - Remove unnecessary verbs or actions
+        - Keep only the core essence of what was purchased/paid for
 
-        expense.description:
-        - members of the expense should be omitted from this field. these are parsed into the \`members\` array
-        - keep in mind, the mention of a person may not ALWAYS be a member. 
-          - if the person mentioned is a member, omit the name as they'll be included in the \`members\` array
-          - if the person mentioned is not a member, you should include this data as it may truly be part of the summary
-        - must include information such that the data is represented only in this field and does not overlap with other properties
-        - describes only the essence of the expense, not any actions taken or other unnecessary details (eg. leading verbs)
-        - must omit date and time information, both absolute and relative. eg. relative 'yesterday', 'the other day', and absolute: 'June 2nd', should be omitted
-        - must be concise and honors the intent of the expense as described in the summary
+        ### Expense Amount
+        - Always an integer in USD
 
-        expense.amount:
-        - must be an integer for now (will change in the future)
-        - uses USD as currency (for now)
+        ### Members
+        - Always include "USER" (the person initiating the expense) unless clearly excluded
+        - Omit anyone with a split of 0 (unless they're the payer)
+        - If no explicit payer is mentioned, assume "USER" is the payer
+        - Total of all splits must equal 1.0
+        - Default to equal splits when not specified
 
-        member:
-        - in most cases, the 'USER' member is not explicitly mentioned, but you must assume that 'USER' is a member of the expense that initiated this summary
-        - if dealing with an identified member with a split of 0, then they should not be included in the \`members\` array. consider if instead they are actually a subject of the expense and should be part of the description
+        ## Examples
 
-        member.split:
-        - represents a percentage of the total expense owed
-        - when no split is specified, assume that it is an even split between all members (eg. expense.amount / members.length)
-        - when a split is specified, the sum of all splits must equal 1
-
-        member.role:
-        - if this member is implied to be the payer, or is explicitly stated to be the payer, then consider this member to have the role 'payer'
-        - if this member is not the payer, then consider this member to have the role 'participant'
-        - remember, in cases where there is no clear mention of who paid, you should assume that the 'payer' is the person who initiated the summary ('USER')
-
-        member.name:
-        - this is either a person referenced in the summary, or the person who initiated the summary
-        - when it is the a person referenced, use the name that is referenced
-        - when it is the source of the summary, use the term 'USER'
-        `,
+        Input: "I paid for lunch with Sarah and Tom yesterday, $30"
+        Output:
+        \`\`\`json
+        {
+          "description": "Lunch",
+          "amount": 30,
+          "members": [
+            {"name": "USER", "split": 0.33, "role": "payer"},
+            {"name": "Sarah", "split": 0.33, "role": "participant"},
+            {"name": "Tom", "split": 0.34, "role": "participant"}
+          ]
+        }
+        \`\`\`
+      `,
       instruction: "Please parse the following summary into the given schema",
     },
-    parse: function (description: string, opts?: { model?: ModelKeys }) {
-      const llmParser = createSafeGenerateObject({
+    parse: function (
+      description: string,
+      opts?: { fastModel?: ModelKeys; qualityModel?: ModelKeys }
+    ) {
+      const fastModel = models[opts?.fastModel ?? DEFAULT_FAST]();
+      const qualityModel = models[opts?.qualityModel ?? DEFAULT]();
+
+      // TODO: split the context into two parts
+      const fastLLMParser = createSafeGenerateObject({
         schema: valibotSchema(this.config.schema),
         system: this.config.grounding,
-        model: opts?.model ? models[opts.model]() : undefined,
+        model: fastModel,
+      });
+      const qualityLLMParser = createSafeGenerateObject({
+        schema: valibotSchema(this.config.schema),
+        system: this.config.grounding,
+        model: qualityModel,
       });
 
-      return llmParser(`${this.config.instruction}: ${description}`);
+      return ResultAsync.combine([
+        fastLLMParser(`${this.config.instruction}: ${description}`),
+        qualityLLMParser(`${this.config.instruction}: ${description}`),
+      ]).map(([fast, quality]) => {
+        return {
+          expense: fast.object.expense,
+          members: quality.object.members,
+        };
+      });
     },
   };
 }

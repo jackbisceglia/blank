@@ -40,7 +40,7 @@ export const data = [
   ),
   entry(
     "Got Annie a haircut, split with Jane Doe, $71",
-    { amount: 71, description: "Annie's Haitcut" },
+    { amount: 71, description: "Annie's haircut" },
     [
       USER,
       {
@@ -91,7 +91,7 @@ export const data = [
   ),
   entry(
     "Cleaning supplies at Superstore with John. $23",
-    { amount: 23, description: "Cleaning supplies" },
+    { amount: 23, description: "Cleaning supplies at Superstore" },
     [
       USER,
       {
