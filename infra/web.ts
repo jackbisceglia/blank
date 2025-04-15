@@ -1,3 +1,4 @@
+import { AI } from "./ai";
 import { Auth } from "./auth";
 import { Database } from "./database";
 import { getDomainConfig } from "./domain";
@@ -17,5 +18,5 @@ export const Web = new sst.aws.TanstackStart("Web", {
     type: "root",
     stage: $app.stage,
   }),
-  link: [Database],
+  link: [Database, AI],
 });

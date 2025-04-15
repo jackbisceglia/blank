@@ -1,6 +1,6 @@
 import { groupTable } from "./group.schema";
 import { relations, sql } from "drizzle-orm";
-import { integer, pgTable, text, uuid } from "drizzle-orm/pg-core";
+import { integer, pgTable, text, timestamp, uuid } from "drizzle-orm/pg-core";
 import { expenseMemberTable } from "./expense-member.schema";
 import { DrizzleModelTypes } from "./utils";
 import { createInsertSchema, createSelectSchema } from "drizzle-valibot";
@@ -10,10 +10,10 @@ export const expenseTable = pgTable("expense", {
     .default(sql`gen_random_uuid()`)
     .primaryKey(), // update to make into ulid
   groupId: uuid().notNull(), // update to make into ulid
-  payerId: uuid().notNull(), // update to make into ulid
   amount: integer().notNull(),
-  date: text().default(sql`(CURRENT_TIMESTAMP)`),
+  date: timestamp().notNull().defaultNow(),
   description: text().notNull(),
+  createdAt: timestamp().notNull().defaultNow(),
 });
 
 export const expenseRelation = relations(expenseTable, ({ one, many }) => ({

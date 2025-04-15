@@ -15,6 +15,7 @@ export default $config({
     };
   },
   async run() {
+    await import("./infra/ai");
     const { Auth } = await import("./infra/auth");
     await import("./infra/cluster");
     await import("./infra/database");

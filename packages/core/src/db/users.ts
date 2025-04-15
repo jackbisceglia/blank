@@ -1,12 +1,16 @@
 import { db, userTable } from ".";
 
-import { DrizzleError, eq } from "drizzle-orm";
+import { eq } from "drizzle-orm";
 import { User, UserInsert } from "./user.schema";
-import { fromDrizzleThrowable } from "./utils";
-import { ResultAsync } from "neverthrow";
+import { DrizzleResult, fromDrizzleThrowable } from "./utils";
+import { err, ok } from "neverthrow";
+
+const Errors = {
+  UnexpectedInsertCount: (ct: number) =>
+    new Error(`Expected 1 user to be inserted, but got ${ct.toString()}`),
+};
 
 type MaybeUser = User | undefined;
-type DrizzleResult<T> = ResultAsync<T, DrizzleError>;
 
 type Identifier =
   | {
@@ -18,23 +22,23 @@ type Identifier =
       value: string;
     };
 
+function getByIdentifier(
+  identifier: Identifier,
+  ...returning: (keyof (typeof userTable)["$inferSelect"])[]
+): DrizzleResult<MaybeUser> {
+  const columns = returning.reduce((a, c) => ({ ...a, [c]: true }), {});
+
+  const safeQuery = fromDrizzleThrowable(() =>
+    db.query.userTable.findFirst({
+      where: eq(userTable[identifier.type], identifier.value),
+      columns: returning.length ? columns : undefined,
+    })
+  );
+
+  return safeQuery();
+}
+
 export namespace users {
-  function getByIdentifier(
-    identifier: Identifier,
-    ...returning: (keyof (typeof userTable)["$inferSelect"])[]
-  ): DrizzleResult<MaybeUser> {
-    const columns = returning.reduce((a, c) => ({ ...a, [c]: true }), {});
-
-    const safeQuery = fromDrizzleThrowable(() =>
-      db.query.userTable.findFirst({
-        where: eq(userTable[identifier.type], identifier.value),
-        columns: returning.length ? columns : undefined,
-      })
-    );
-
-    return safeQuery();
-  }
-
   export function getByEmail(email: string): DrizzleResult<MaybeUser> {
     return getByIdentifier({ type: "email", value: email }, "id");
   }
@@ -43,13 +47,15 @@ export namespace users {
     return getByIdentifier({ type: "id", value: id });
   }
 
-  export function createUser(
-    user: UserInsert
-  ): DrizzleResult<Pick<User, "id">> {
-    const safeQuery = fromDrizzleThrowable(() =>
+  export function create(user: UserInsert): DrizzleResult<Pick<User, "id">> {
+    const safelyInsertUserRecord = fromDrizzleThrowable(() =>
       db.insert(userTable).values(user).returning({ id: userTable.id })
     );
 
-    return safeQuery().map((ids) => ids[0]);
+    return safelyInsertUserRecord().andThen((ids) =>
+      ids.length === 1
+        ? ok(ids[0])
+        : err(Errors.UnexpectedInsertCount(ids.length))
+    );
   }
 }

@@ -63,7 +63,7 @@ function getOrCreateUser(payload: v.InferOutput<typeof JwtPayload>) {
       return okAsync(user);
     }
 
-    return users.createUser(payload);
+    return users.create(payload);
   });
 }
 
