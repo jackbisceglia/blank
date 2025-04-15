@@ -5,9 +5,20 @@
 
 declare module "sst" {
   export interface Resource {
+    "AI": {
+      "braintrustApiKey": string
+      "googleGenerativeAiApiKey": string
+      "groqApiKey": string
+      "openaiApiKey": string
+      "type": "sst.sst.Linkable"
+    }
     "Auth": {
       "type": "sst.aws.Auth"
       "url": string
+    }
+    "BraintrustApiKey": {
+      "type": "sst.sst.Secret"
+      "value": string
     }
     "Database": {
       "database": string
@@ -37,6 +48,10 @@ declare module "sst" {
       "type": "sst.sst.Secret"
       "value": string
     }
+    "OpenaiApiKey": {
+      "type": "sst.sst.Secret"
+      "value": string
+    }
     "SyncReplicationBucket": {
       "name": string
       "type": "sst.aws.Bucket"
@@ -52,6 +67,14 @@ declare module "sst" {
     "Web": {
       "type": "sst.aws.TanstackStart"
       "url": string
+    }
+    "googleGenerativeAiApiKey": {
+      "type": "sst.sst.Secret"
+      "value": string
+    }
+    "groqApiKey": {
+      "type": "sst.sst.Secret"
+      "value": string
     }
   }
 }

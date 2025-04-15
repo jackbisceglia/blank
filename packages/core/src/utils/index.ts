@@ -17,6 +17,13 @@
  * const readonlyData: Readonly<User> = { email: "user@example.com", email_verified: true, name: "User" };
  * const cleanedData = omitKey(readonlyData, "email_verified");
  */
+export type Prettify<T> = {
+  [K in keyof T]: T[K];
+} & {}; // The empty intersection trick forces TypeScript to expand the type
+
+export type MakeOptional<T, K extends keyof T> = Omit<T, K> &
+  Partial<Pick<T, K>>;
+
 export function omitKey<T extends object, K extends keyof T>(
   obj: T | Readonly<T>,
   key: K

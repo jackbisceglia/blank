@@ -95,15 +95,16 @@ const assertAccessTokenPresent = (tokens: Partial<Tokens>) => {
     : ok({ access: tokens.access, refresh: tokens.refresh });
 };
 
-// mostly just wraps the authenticate function to read and write cookies
-export const authenticateRPC = createServerFn().handler(async () => {
+export function authenticateInternal() {
   const Tokens = TokenUtils();
 
-  const verified = await Tokens.getFromCookies()
+  return Tokens.getFromCookies()
     .asyncAndThen(authenticate)
     .andTee((v) => v.tokens && Tokens.setToCookies(v.tokens));
+}
 
-  return serverResult(verified);
+export const authenticateRPC = createServerFn().handler(async () => {
+  return serverResult(await authenticateInternal());
 });
 
 // NOTE: no neverthrow
@@ -154,15 +155,14 @@ export const logoutRPC = createServerFn().handler(() => {
 });
 
 export const getAuthenticatedUserRPC = createServerFn().handler(async () => {
-  const Tokens = TokenUtils();
-  const tokens = Tokens.getFromCookies();
+  const tokens = TokenUtils().getFromCookies();
 
-  const user = await tokens
-    .asyncAndThen(authenticate)
+  const user = await authenticateInternal()
     .andThen((openauth) =>
       users.getAuthenticatedUser(openauth.subject.properties.userID)
     )
-    .andThen((user) => (user ? ok(user) : Errors.User.NotFound.neverthrow()));
+    .andThen((user) => (user ? ok(user) : Errors.User.NotFound.neverthrow()))
+    .orTee(console.error);
 
   return serverResult(
     Result.combine([
@@ -170,6 +170,17 @@ export const getAuthenticatedUserRPC = createServerFn().handler(async () => {
       tokens.andThen(assertAccessTokenPresent).map((t) => t.access),
     ])
   );
+  // if (user.isErr()) {
+  //   throw redirect({ to: "/landing" }); // this isn't getting used for some reason
+  // } else {
+  //   return serverResult(
+  //     Result.combine([
+  //       ok(user.value),
+  //       user,
+  //       tokens.andThen(assertAccessTokenPresent).map((t) => t.access),
+  //     ])
+  //   );
+  // }
 });
 
 export default openauth;

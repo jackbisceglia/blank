@@ -2,6 +2,7 @@ import {
   ANYONE_CAN_DO_ANYTHING,
   createSchema,
   definePermissions,
+  enumeration,
   number,
   PermissionsConfig,
   relationships,
@@ -26,10 +27,10 @@ const expense = table("expense")
   .columns({
     id: string(),
     groupId: string(),
-    payerId: string(),
     amount: number(),
     date: string(),
     description: string(),
+    createdAt: number().optional(),
   })
   .primaryKey("id");
 
@@ -58,6 +59,8 @@ const expenseMember = table("expenseMember")
     expenseId: string(),
     groupId: string(),
     userId: string(),
+    role: enumeration<"payer" | "participant">(),
+    split: number(),
   })
   .primaryKey("expenseId", "groupId", "userId");
 
@@ -81,7 +84,7 @@ const groupRelationships = relationships(group, ({ one, many }) => ({
 }));
 
 const memberRelationships = relationships(member, ({ one }) => ({
-  groups: one({
+  group: one({
     sourceField: ["groupId"],
     destSchema: group,
     destField: ["id"],
@@ -89,7 +92,7 @@ const memberRelationships = relationships(member, ({ one }) => ({
 }));
 
 const expenseRelationships = relationships(expense, ({ one, many }) => ({
-  groups: one({
+  group: one({
     sourceField: ["groupId"],
     destSchema: group,
     destField: ["id"],
@@ -98,6 +101,14 @@ const expenseRelationships = relationships(expense, ({ one, many }) => ({
     sourceField: ["id"],
     destSchema: expenseMember,
     destField: ["expenseId"],
+  }),
+}));
+
+const expenseMemberRelationships = relationships(expenseMember, ({ one }) => ({
+  member: one({
+    sourceField: ["groupId", "userId"],
+    destSchema: member,
+    destField: ["groupId", "userId"],
   }),
 }));
 
@@ -114,6 +125,7 @@ export const schema = createSchema({
     groupRelationships,
     memberRelationships,
     expenseRelationships,
+    expenseMemberRelationships,
   ],
 });
 

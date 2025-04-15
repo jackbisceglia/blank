@@ -14,6 +14,7 @@ export * from "./group.schema";
 export * from "./member.schema";
 export * from "./preference.schema";
 export * from "./expense.schema";
+export * from "./expense";
 
 const {
   host: dbHost,
@@ -32,5 +33,5 @@ const schemas = {
 
 export const db = drizzle(
   neon(`postgresql://${dbUser}:${dbPassword}@${dbHost}/${dbDatabase}`),
-  { schema: schemas },
+  { schema: schemas }
 );
