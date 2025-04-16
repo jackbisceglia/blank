@@ -11,6 +11,7 @@
   },
   "dependencies": {
     "@blank/auth": "workspace:*",
+    "@blank/api": "workspace:*",
     "@blank/core": "workspace:*",
     "@blank/zero": "workspace:*",
     "@openauthjs/openauth": "0.3.7",

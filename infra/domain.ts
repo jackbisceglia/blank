@@ -1,6 +1,6 @@
 export const domain = "withblank.com";
 
-type DomainType = "sub" | "root";
+type DomainType = "sub-domain" | "root-domain";
 type Stage = "production" | string;
 
 type MakeDomainConfigOpts = {
@@ -8,10 +8,10 @@ type MakeDomainConfigOpts = {
   stage: Stage;
 } & (
   | {
-      type: "root";
+      type: "root-domain";
     }
   | {
-      type: "sub";
+      type: "sub-domain";
       name: string;
       fallback?: string;
     }
@@ -45,7 +45,7 @@ type MakeDomainConfigOpts = {
 export const getDomainConfig = (opts: MakeDomainConfigOpts) => {
   const name = (() => {
     switch (opts.type) {
-      case "sub":
+      case "sub-domain":
         const isProduction = opts.stage === "production";
 
         const subdomain = [!isProduction && opts.stage, opts.name]
@@ -53,7 +53,7 @@ export const getDomainConfig = (opts: MakeDomainConfigOpts) => {
           .join("-");
 
         return `${subdomain}.${domain}`;
-      case "root":
+      case "root-domain":
       default:
         return domain;
     }
