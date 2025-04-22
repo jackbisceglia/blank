@@ -45,6 +45,6 @@
   "dependencies": {
     "@rocicorp/zero": "0.17",
     "neverthrow": "^8.2.0",
-    "sst": "3.9.44"
+    "sst": "3.13.10"
   }
 }

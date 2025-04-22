@@ -1,7 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { constants } from "@/lib/utils";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
-import { useAuthentication } from "@/lib/auth/client";
+import { useAuthentication } from "@/lib/auth.provider";
 import { PrimaryHeading } from "@/components/prose";
 import * as v from "valibot";
 

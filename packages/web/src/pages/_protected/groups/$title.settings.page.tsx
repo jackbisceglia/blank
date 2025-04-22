@@ -4,8 +4,8 @@ import { useDeleteGroup, useGetGroupBySlug } from "./@data";
 import { Button } from "@/components/ui/button";
 import { useState } from "react";
 import { err, ok, okAsync } from "neverthrow";
-import { useAuthentication } from "@/lib/auth/client";
 import { States } from "./$title.layout";
+import { useAuthentication } from "@/lib/auth.provider";
 
 function SettingsRoute() {
   const navigate = useNavigate();
@@ -71,7 +71,7 @@ function SettingsRoute() {
   );
 }
 
-export const Route = createFileRoute("/_protected/groups/$title/settings")({
+export const Route = createFileRoute("/_protected/groups/$title/settings/")({
   component: SettingsRoute,
   ssr: false,
   loader: () => ({ crumb: "Settings" }),

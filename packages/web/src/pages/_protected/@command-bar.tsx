@@ -12,7 +12,7 @@ import { createPreventDefault, fn, keyboard } from "@/lib/utils";
 import { Link, useNavigate } from "@tanstack/react-router";
 import { GlobalSearchParams } from "./layout";
 import { useGetGroupsList } from "./groups/@data";
-import { useAuthentication } from "@/lib/auth/client";
+import { useAuthentication } from "@/lib/auth.provider";
 import { GlobalDialogProps, useDialogFromUrl } from "@/lib/dialog";
 
 // type CommandBarProps = {

@@ -12,6 +12,15 @@ declare module "sst" {
       "openaiApiKey": string
       "type": "sst.sst.Linkable"
     }
+    "Api": {
+      "name": string
+      "type": "sst.aws.Function"
+      "url": string
+    }
+    "ApiRouter": {
+      "type": "sst.aws.Router"
+      "url": string
+    }
     "Auth": {
       "type": "sst.aws.Auth"
       "url": string

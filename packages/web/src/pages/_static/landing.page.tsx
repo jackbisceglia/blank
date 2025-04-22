@@ -1,5 +1,5 @@
 import { Button } from "@/components/ui/button";
-import { loginRPC } from "@/rpc/auth.server";
+import { loginRPC } from "@/server/auth/route";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { useEffect, useState, useRef } from "react";
@@ -244,6 +244,6 @@ function LandingRoute() {
   );
 }
 
-export const Route = createFileRoute("/_static/landing")({
+export const Route = createFileRoute("/_static/landing/")({
   component: LandingRoute,
 });

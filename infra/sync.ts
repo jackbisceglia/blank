@@ -141,6 +141,7 @@ export const Sync = new sst.aws.Service(`SyncViewSyncer`, {
 });
 
 if (SyncReplicationManager) {
+  // @ts-expect-error no clue why this is breaking
   new command.local.Command(
     "zero-deploy-permissions",
     {

@@ -42,11 +42,7 @@ function removeTrailingSlash(str: string): string {
 
 export const constants = {
   zero_ttl: "1h",
-  authServer: removeTrailingSlash(
-    import.meta.env.VITE_AUTH_SERVER_URL as string
-  ),
   syncServer: import.meta.env.VITE_SYNC_SERVER_URL as string,
-  authClientId: "blank-auth-web",
   googleThumbnailSuffix: "=s96-c",
 } as const;
 
@@ -81,6 +77,27 @@ export const keyboard = {
 };
 
 export const fn = <T>(fn: () => T): T => fn();
+
+/**
+ * Executes an immediately invoked function expression (IIFE) for improved readability
+ * @param fn - The function to be executed immediately
+ * @returns The result of executing the function
+ * @example
+ * // Instead of:
+ * const callback = (() => {
+ *   const host = getHeader("host");
+ *   return `${host?.includes("localhost") ? "http" : "https"}://${host}/api/callback`;
+ * })();
+ *
+ * // You can use:
+ * const callback = evaluate(() => {
+ *   const host = getHeader("host");
+ *   return `${host?.includes("localhost") ? "http" : "https"}://${host}/api/callback`;
+ * });
+ */
+export function evaluate<T>(fn: () => T): T {
+  return fn();
+}
 
 export function createPreventDefault(fn: () => void, e: KeyboardEvent) {
   return () => {
