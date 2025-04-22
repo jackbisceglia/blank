@@ -1,4 +1,3 @@
-import { User } from "@blank/core/db";
 import {
   createContext,
   useContext,
@@ -6,11 +5,11 @@ import {
   useReducer,
   type ReactNode,
 } from "react";
-import { hydrateAsyncServerResult } from "@/lib/neverthrow/serialize";
+import { hydrateAsyncServerResult } from "@blank/core/utils";
 import { Navigate } from "@tanstack/react-router";
 import { Loading } from "@/components/loading";
 import * as v from "valibot";
-import { getAuthenticatedUserRPC } from "@/rpc/auth.server";
+import { meRPC } from "@/server/auth/route";
 
 export const Tokens = v.object({
   access: v.string(),
@@ -23,6 +22,13 @@ export type AccessToken = v.InferOutput<typeof AccessToken>;
 
 const RefreshToken = Tokens.entries.refresh;
 export type RefreshToken = v.InferOutput<typeof RefreshToken>;
+
+type User = {
+  name: string;
+  id: string;
+  email: string;
+  image: string;
+};
 
 // --------------------------------
 type AuthState =
@@ -75,8 +81,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     void (async () => {
       dispatch({ type: "fetching" });
-      const getAuthenticationData = () =>
-        hydrateAsyncServerResult(getAuthenticatedUserRPC);
+      const getAuthenticationData = () => hydrateAsyncServerResult(meRPC);
 
       // need to redirect based on the error we've received
       await getAuthenticationData().match(

@@ -5,7 +5,6 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { useDialogFromUrl } from "@/lib/dialog";
-import { CreateGroupSearchParams } from "../groups";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import * as v from "valibot";
@@ -15,6 +14,7 @@ import { useState } from "react";
 import { slug } from "@/lib/utils";
 import { Label } from "@/components/ui/label";
 import { CreateGroupDerivedOpts } from "./@data";
+import { CreateGroupSearchParams } from "./page";
 
 const invalidCharactersMessage =
   "Title must only contain letters, numbers, and spaces";

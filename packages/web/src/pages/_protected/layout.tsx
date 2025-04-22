@@ -91,10 +91,12 @@ function ProtectedLayout() {
 
 export const Route = createFileRoute("/_protected")({
   ssr: false,
-  component: () => (
-    <ProtectedLayoutProviders>
-      <ProtectedLayout />
-    </ProtectedLayoutProviders>
-  ),
+  component: () => {
+    return (
+      <ProtectedLayoutProviders>
+        <ProtectedLayout />
+      </ProtectedLayoutProviders>
+    );
+  },
   validateSearch: GlobalSearchParams,
 });

@@ -22,6 +22,7 @@ export default defineConfig({
     generatedRouteTree: "./src/routes.generated.ts",
     routeFileIgnorePrefix: "@",
     routeToken: "layout",
+    indexToken: "page",
     quoteStyle: "single",
   },
 });

@@ -1,11 +1,10 @@
-import { TokenUtils } from "@/lib/auth/server";
-import openauth from "@/rpc/auth.server";
+import { openauth } from "@/server/auth/core";
+import { AuthTokens } from "@/server/utils";
 import { json } from "@tanstack/react-start";
 import { createAPIFileRoute } from "@tanstack/react-start/api";
 
 export const APIRoute = createAPIFileRoute("/api/auth/callback")({
   GET: async ({ request }) => {
-    const tokens = TokenUtils();
     const url = new URL(request.url);
     const code = url.searchParams.get("code");
 
@@ -20,7 +19,7 @@ export const APIRoute = createAPIFileRoute("/api/auth/callback")({
 
     if (exchanged.err) return json(exchanged.err, { status: 400 });
 
-    tokens.setToCookies(exchanged.tokens);
+    AuthTokens.cookies.set(exchanged.tokens);
 
     return new Response(null, {
       status: 302,
