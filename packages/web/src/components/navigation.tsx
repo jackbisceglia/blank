@@ -13,14 +13,14 @@ import {
 } from "@/components/ui/sidebar";
 import { Link, LinkOptions } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
-import { logoutRPC } from "@/rpc/auth.server";
 import { ChevronFirst, ChevronRight, Plus } from "lucide-react";
 import { underline_defaults } from "./ui/utils";
 import { cn, PropsWithClassname } from "@/lib/utils";
 import { Group } from "@blank/zero";
 import { useGetGroupsList } from "@/pages/_protected/groups/@data";
-import { useAuthentication } from "@/lib/auth/client";
-import { QueryStatus } from "@/lib/zero";
+import { useAuthentication } from "@/lib/auth.provider";
+import { QueryStatus } from "@/lib/zero.provider";
+import { logoutRPC } from "@/server/auth/route";
 // import { Loading } from "./loading";
 
 // TODO: FIX TYPESAFETY IN THIS FILE
@@ -189,10 +189,7 @@ export function GlobalSidebar(props: SideNavigationProps) {
               asChild
               className="data-[state=open]:bg-sidebar-accent data-[state=open]:text-sidebar-accent-foreground hover:no-underline"
             >
-              <Link
-                to="/"
-                search={(prev) => ({ cmd: prev.cmd, action: undefined })}
-              >
+              <Link to="/">
                 <div
                   className="flex aspect-square size-[30px] items-center justify-center rounded-lg bg-blank-theme text-primary-foreground font-bold text-base "
                   aria-hidden="true"

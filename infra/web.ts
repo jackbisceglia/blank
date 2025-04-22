@@ -4,7 +4,7 @@ import { Database } from "./database";
 import { getDomainConfig } from "./domain";
 import { Sync } from "./sync";
 
-export const Web = new sst.aws.TanstackStart("Web", {
+export const Web = new sst.aws.TanStackStart("Web", {
   path: "packages/web",
   dev: {
     command: "pnpm dev",
@@ -15,7 +15,7 @@ export const Web = new sst.aws.TanstackStart("Web", {
     VITE_SYNC_SERVER_URL: $interpolate`${Sync.url}`,
   },
   domain: getDomainConfig({
-    type: "root",
+    type: "root-domain",
     stage: $app.stage,
   }),
   link: [Database, AI],

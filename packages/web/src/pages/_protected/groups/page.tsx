@@ -13,7 +13,7 @@ import { Button } from "@/components/ui/button";
 import { PageHeader, PageHeaderRow } from "@/components/layouts";
 import { CreateGroupDialog } from "./@create-group";
 import * as v from "valibot";
-import { useAuthentication } from "@/lib/auth/client";
+import { useAuthentication } from "@/lib/auth.provider";
 
 type GroupListProps = {
   groups: Group[];

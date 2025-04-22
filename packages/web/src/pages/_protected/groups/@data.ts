@@ -3,7 +3,7 @@ import {
   computeRecordQueryStatus,
   useZero,
   Zero,
-} from "@/lib/zero";
+} from "@/lib/zero.provider";
 import { constants, slug } from "@/lib/utils";
 import { Group } from "@blank/zero";
 

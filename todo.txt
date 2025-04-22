@@ -1,15 +1,43 @@
+[[next up]]
+[ ] implement custom mutators
+    + this will enable avoiding ugly permissions and reuse abstractions everywhere but write
+    + enables actually iterating on core crud functionality
+    + will also scaffold the api layer which lets us do the auth work
+[ ] rewrite client data loading to utilize tanstack loaders
+    + this will make iteration much easier; stops us from repeatedly opening zero queries everywhere, can just hit context for nested data
+[ ] solve dialog pattern
+    + need an ergonomic way to easily trigger dialog opens from wherever is allowed. options are:
+        a. tie this to the router. this gives us a structure to follow from the start as the router is well defined/typed
+        b. lift this to context or atoms/signals. this is super easy and ergonomic, but state doesn't persist, and also makes it much easier to mistakenly open dialogs from places it's not allowed
+            i. we also would probably need to tie this into the router anyway, to navigate before open in some cases
+
 [[FEATURES]]
 
 --SYNC--
-    [ ] zero init/scaffolding
-        [ ] setup schema in zero package
-        [ ] get infra working with schema
-        [ ] init zero instance in react after authentication
-        [ ] zero instance working with auth jwt/jwks from openauth
+    [x] zero init/scaffolding
+        [x] setup schema in zero package
+        [x] get infra working with schema
+        [x] init zero instance in react after authentication
+        [x] zero instance working with auth jwt/jwks from openauth
+    [ ] migrate to custom mutators
+        [ ] figure out monorepo structure for this
+        [ ] migrate existing functionality
+    [ ] move reads into tanstack loaders 
+        [ ] add useZero into router context
+        [ ] move duplicate calls to hit layout context(s)
+
+--AUTHENTICATION--
+    [ ] migrate from tanstack server functions to hono api for auth proxy
+    [ ] cache auth state with tanstack query -> quicker load states
+    [ ] global provider -> atoms
+
+--ERROR HANDLING--
+    [ ] explore effect tagged errors
+    [ ] completely overhaul entire error stack on server and client
     
 --UI--
-    [ ] modal/drawer/route for mutations?
-        [ ] tie url state to open state for relevant ui
+    [x] modal/drawer/route for mutations?
+        [x] tie url state to open state for relevant ui
     [ ] dashboard
         [ ] what to show here other than username
     [ ] account page
@@ -29,41 +57,12 @@
 --KEYBOARD SHORTCUTS--
     [ ]
 
---NATIVE LLMs--
+--LLMs--
     [ ] 
 
 --INFRA--
     [ ] autodeploy from push (setup via sst)
-    [ ] spot instances to lower cost for now
-    [ ] migrate from neon ? 
-        + some issues recently
-        + not in same aws region
-        + still stuck on postgres via zero
+    [ ] spot instances
+    [ ] migrate from neon 
 
 [[OPEN BUGS]]
-
---ERROR HANDLING--
-[SOLVED]
-    [x] i have a weird mix of neverthrow and regular error handling because wrapping everything is *really* annoying
-        + this is lower priority than others
-        [solution]
-        -> this is not too bad now. the solution is:
-            -> user neverthrow WHEREVER possible
-            -> at network boundaries, if possible, use serializable neverthrow solution
-            -> at framework/library boundaries (eg. hooking into tanstack start), unwrap and throw when necessary
-
-    [ ] neverthrow utils in /web that might need to be shared
-
---AUTHENTICATION--
-    [SOLVED]
-    [x] i hit the server on *every* request
-        + this is a natural limitation of `beforeLoad` in tanstack
-        options
-            -> just forget about loaders/beforeLoad and do this in a useEffect (can cache with reactQuery). this would make me do:
-                -> useEffect auth&zero
-                -> react query for auth status
-        [solution]
-        -> this is in an *ok* state
-            -> i've simply moved the fetch of auth state into a use effect. this will work for now
-                -> there's no request aborting and unmount logic which is a potential problem
-                -> this can be moved into a layout loader likely and then just logic handled in an effect

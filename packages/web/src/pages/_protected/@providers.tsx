@@ -1,7 +1,7 @@
 import { SIDEBAR_COOKIE_NAME } from "@/components/ui/sidebar";
 import { SidebarProvider } from "@/components/ui/sidebar";
-import { AuthProvider } from "@/lib/auth/client";
-import { ZeroProvider } from "@/lib/zero/react";
+import { AuthProvider } from "@/lib/auth.provider";
+import { ZeroProvider } from "@/lib/zero.provider";
 import { getCookie as getCookieTanstackStart } from "@tanstack/react-start/server";
 import { PropsWithChildren } from "react";
 

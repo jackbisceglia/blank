@@ -12,11 +12,11 @@ export const GoogleOAuth = new sst.Linkable("GoogleOAuth", {
 
 export const Auth = new sst.aws.Auth("Auth", {
   issuer: {
-    handler: "packages/auth/src/index.default",
-    link: [Database, GoogleOAuth, AI], // TODO: should not need AI, need to fix dep graph issue
+    handler: "packages/server/auth/src/index.default",
+    link: [Database, GoogleOAuth, AI], // TODO: treeshaking issue, need to include ai
   },
   domain: getDomainConfig({
-    type: "sub",
+    type: "sub-domain",
     name: "auth",
     stage: $app.stage,
   }),

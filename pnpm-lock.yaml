@@ -15,8 +15,8 @@ importers:
         specifier: ^8.2.0
         version: 8.2.0
       sst:
-        specifier: 3.9.44
-        version: 3.9.44
+        specifier: 3.13.10
+        version: 3.13.10
     devDependencies:
       '@anthropic-ai/sdk':
         specifier: ^0.22.0
@@ -109,30 +109,6 @@ importers:
         specifier: ^5.1.4
         version: 5.1.4(typescript@5.8.2)(vite@6.2.1(@types/node@22.13.10)(jiti@2.4.2)(lightningcss@1.29.2)(terser@5.39.0)(tsx@4.19.3)(yaml@2.7.1))
 
-  packages/auth:
-    dependencies:
-      '@blank/core':
-        specifier: workspace:*
-        version: link:../core
-      '@openauthjs/openauth':
-        specifier: 0.3.7
-        version: 0.3.7(arctic@2.3.4)(hono@4.7.4)
-      effect:
-        specifier: ^3.13.10
-        version: 3.13.10
-      hono:
-        specifier: ^4.6.20
-        version: 4.7.4
-      jose:
-        specifier: ^6.0.6
-        version: 6.0.10
-      typescript:
-        specifier: ^5.0.0
-        version: 5.8.2
-      valibot:
-        specifier: ^1.0.0
-        version: 1.0.0(typescript@5.8.2)
-
   packages/core:
     dependencies:
       '@ai-sdk/google':
@@ -181,11 +157,40 @@ importers:
         specifier: ^1.0.0
         version: 1.0.0(typescript@5.8.2)
 
+  packages/server/api: {}
+
+  packages/server/auth:
+    dependencies:
+      '@blank/core':
+        specifier: workspace:*
+        version: link:../../core
+      '@openauthjs/openauth':
+        specifier: 0.3.7
+        version: 0.3.7(arctic@2.3.4)(hono@4.7.4)
+      effect:
+        specifier: ^3.13.10
+        version: 3.13.10
+      hono:
+        specifier: ^4.6.20
+        version: 4.7.4
+      jose:
+        specifier: ^6.0.6
+        version: 6.0.10
+      typescript:
+        specifier: ^5.0.0
+        version: 5.8.2
+      valibot:
+        specifier: ^1.0.0
+        version: 1.0.0(typescript@5.8.2)
+
   packages/web:
     dependencies:
+      '@blank/api':
+        specifier: workspace:*
+        version: link:../server/api
       '@blank/auth':
         specifier: workspace:*
-        version: link:../auth
+        version: link:../server/auth
       '@blank/core':
         specifier: workspace:*
         version: link:../core
@@ -6224,33 +6229,33 @@ packages:
     resolution: {integrity: sha512-UcjcJOWknrNkF6PLX83qcHM6KHgVKNkV62Y8a5uYDVv9ydGQVwAHMKqHdJje1VTWpljG0WYpCDhrCdAOYH4TWg==}
     engines: {node: '>= 10.x'}
 
-  sst-darwin-arm64@3.9.44:
-    resolution: {integrity: sha512-51B0GO+otlE2lOvvh3u4yL6RLc64yoaZv37d6rpCKQ9lb7IWacTwjDbAHffB2bWYE9n+heU/8H66UEhOUGy/9A==}
+  sst-darwin-arm64@3.13.10:
+    resolution: {integrity: sha512-fEH72tZU+sE+BIJZt0IFlnOC0eQoSF1grsmn9rWa0PPCq5l9ruP88B5qLFTzirKJpsyoGr4AYneQXSovIYKw/Q==}
     cpu: [arm64]
     os: [darwin]
 
-  sst-darwin-x64@3.9.44:
-    resolution: {integrity: sha512-t6hKJbtrM2U6X3x93CkoG2r/SSEZQ9azSvRejnKf1zgy5rj/JFgrrnGseJbvU5a1AwWCeYg1J5GQWQGSW2ACxA==}
+  sst-darwin-x64@3.13.10:
+    resolution: {integrity: sha512-HFsVDUg0IwLON+E9wE5Qh6cyhUWqxGDXvJ0WP6uRj+/lgDAn4adNuqjt52s+GILW1lzE4JoHt/11FngXD0aUBg==}
     cpu: [x64]
     os: [darwin]
 
-  sst-linux-arm64@3.9.44:
-    resolution: {integrity: sha512-MUzSWd63s86P2v5gD4b5jMrbl0fuY+g981oseFc8tnjuR8f1zD6KTPsdCDDnaAPAFheKSnv7cHHIk4cnNXSpJA==}
+  sst-linux-arm64@3.13.10:
+    resolution: {integrity: sha512-FdrndGFupoiKmlDE0Ng6mfHp+AS2Z1L586ewmfDGt2gchws2m6/wxmnnvHgi7YTM41D2O94TBYgGrFQqTkEleg==}
     cpu: [arm64]
     os: [linux]
 
-  sst-linux-x64@3.9.44:
-    resolution: {integrity: sha512-cvHpJVzlruJzo8uoQW7tA1WLHMPmE1DbgTSdESqTKvGu84Ou5zwY8QkZRg8+DLxM3TJhsvp5e5cEnoxPSMzo9w==}
+  sst-linux-x64@3.13.10:
+    resolution: {integrity: sha512-97RdiM4xI/SWJ0cpEEx1gZM6dFos3AecN2uNIMjlRPcGA1Qr4zkTfD0WLx/Oa+m/dH6g1hjxmsPkGwx0jIuN+Q==}
     cpu: [x64]
     os: [linux]
 
-  sst-linux-x86@3.9.44:
-    resolution: {integrity: sha512-1S5ly2uS1QaLVoaQXsRE03yMooDjUFKGrzK1ArtleqQUKvLEEEH859UunND2skf4VCenbuofw9bACrPsUqh7Ew==}
+  sst-linux-x86@3.13.10:
+    resolution: {integrity: sha512-a2wV4KUQcwfDqQKQO8342qEhDjVpyjGxUQ8nqQ75uT36+3Nvo247AX3THn8M6pJNnmHOBNHLBErGkm8DN1l1YQ==}
     cpu: [x86]
     os: [linux]
 
-  sst@3.9.44:
-    resolution: {integrity: sha512-jCUbx/isaoPCez+YwStt12RRWz17AHNLMTYGu5DJKQzlfp4ZpvRFD6T77K/nJ4kVdmGKp/5LUKIh8Udxi42hiA==}
+  sst@3.13.10:
+    resolution: {integrity: sha512-QUCJtbU1EMZ27NsrjFnOJGjGXjbKS8xfYA8VJgeDxrELCdoODR8t3hz7IbticsxLMJTQuUOnfOQCI2XRHeNHXA==}
     hasBin: true
 
   sswr@2.2.0:
@@ -13608,22 +13613,22 @@ snapshots:
 
   split2@4.2.0: {}
 
-  sst-darwin-arm64@3.9.44:
+  sst-darwin-arm64@3.13.10:
     optional: true
 
-  sst-darwin-x64@3.9.44:
+  sst-darwin-x64@3.13.10:
     optional: true
 
-  sst-linux-arm64@3.9.44:
+  sst-linux-arm64@3.13.10:
     optional: true
 
-  sst-linux-x64@3.9.44:
+  sst-linux-x64@3.13.10:
     optional: true
 
-  sst-linux-x86@3.9.44:
+  sst-linux-x86@3.13.10:
     optional: true
 
-  sst@3.9.44:
+  sst@3.13.10:
     dependencies:
       aws-sdk: 2.1692.0
       aws4fetch: 1.0.18
@@ -13631,11 +13636,11 @@ snapshots:
       opencontrol: 0.0.6
       openid-client: 5.6.4
     optionalDependencies:
-      sst-darwin-arm64: 3.9.44
-      sst-darwin-x64: 3.9.44
-      sst-linux-arm64: 3.9.44
-      sst-linux-x64: 3.9.44
-      sst-linux-x86: 3.9.44
+      sst-darwin-arm64: 3.13.10
+      sst-darwin-x64: 3.13.10
+      sst-linux-arm64: 3.13.10
+      sst-linux-x64: 3.13.10
+      sst-linux-x86: 3.13.10
     transitivePeerDependencies:
       - supports-color
 
