@@ -30,6 +30,7 @@ declare module "sst" {
       "value": string
     }
     "Database": {
+      "connection": string
       "database": string
       "host": string
       "password": string

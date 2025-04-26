@@ -22,11 +22,11 @@ export default $config({
     await import("./infra/database");
     await import("./infra/domain");
     const { Sync } = await import("./infra/sync");
-    const { Web } = await import("./infra/web");
+    await import("./infra/web");
 
     return {
       api: ApiRouter.url,
-      web: Web.url,
+      // web: Web.url,
       auth: Auth.url,
       syncViewSyncer: Sync.url,
     };

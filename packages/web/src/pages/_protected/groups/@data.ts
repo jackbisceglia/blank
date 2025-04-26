@@ -4,14 +4,16 @@ import {
   useZero,
   Zero,
 } from "@/lib/zero.provider";
-import { constants, slug } from "@/lib/utils";
-import { Group } from "@blank/zero";
-
-export type CreateGroupDerivedOpts = Pick<Group, "title" | "description">;
-export type DeleteGroupDerivedOpts = Pick<Group, "id" | "ownerId">;
+import { constants } from "@/lib/utils";
+import { CreateGroupOptions, DeleteGroupOptions } from "@/lib/data.mutators";
 
 export const groupBySlugQuery = (z: Zero, slug: string) =>
-  z.query.group.where("slug", slug).one();
+  z.query.group
+    .where("slug", slug)
+    .one()
+    .related("members")
+    .related("owner")
+    .related("expenses");
 
 export function useGetGroupBySlug({ slug }: { slug: string }) {
   const { z, useQuery } = useZero();
@@ -44,45 +46,50 @@ export function useGetGroupsList(userId: string) {
   } as const;
 }
 
-export function useCreateGroup(userId: string, username: string) {
-  const { z } = useZero();
+export const getGroupByIdQuery = (z: Zero, groupId: string) =>
+  z.query.group
+    .where("id", groupId)
+    .related("members")
+    .related("owner")
+    .related("owner");
 
-  return async (opts: CreateGroupDerivedOpts) => {
-    const groupId = crypto.randomUUID();
-    await z.mutate.group.insert({
-      id: groupId,
-      title: opts.title,
-      slug: slug(opts.title).encode(),
-      description: opts.description,
-      ownerId: userId,
-      createdAt: Date.now(),
-    });
+export function useGetGroupById(groupId: string) {
+  const { z, useQuery } = useZero();
+  const query = getGroupByIdQuery(z, groupId);
 
-    await z.mutate.member.insert({
-      groupId,
-      userId,
-      nickname: username,
-    });
-  };
+  const [data, status] = useQuery(query, { ttl: constants.zero_ttl });
+
+  return {
+    data,
+    // TODO: we can improve the typescript so that data narrows to non-nullish when status === 'success'
+    status: computeListQueryStatus(status.type, data),
+  } as const;
+}
+
+export const groupMembersListQuery = (z: Zero, groupId: string) =>
+  z.query.group.where("id", groupId).related("members");
+
+export function useGetGroupMembers(groupId: string) {
+  const { z, useQuery } = useZero();
+  const query = groupMembersListQuery(z, groupId);
+
+  const [data, status] = useQuery(query, { ttl: constants.zero_ttl });
+
+  return {
+    data,
+    // TODO: we can improve the typescript so that data narrows to non-nullish when status === 'success'
+    status: computeListQueryStatus(status.type, data),
+  } as const;
+}
+
+export function useCreateGroup() {
+  const client = useZero();
+
+  return (opts: CreateGroupOptions) => client.z.mutate.group.create(opts);
 }
 
 export function useDeleteGroup() {
-  const { z } = useZero();
+  const client = useZero();
 
-  return async (opts: DeleteGroupDerivedOpts) => {
-    // TODO: if any members have this group in preferences, then we need to remove from there as well
-    await z.mutate.group.delete({ id: opts.id });
-
-    await z.mutate.member.delete({ groupId: opts.id, userId: opts.ownerId });
-
-    // NOTE: this is not the right way to do this, will be fixed w/ custom mutators
-    // const expenses = (
-    //   await z.query.expense.where("groupId", opts.id).run()
-    // ).map((e) => e.id);
-    // for (const expenseId of expenses) {
-    //   await z.mutate.expense.delete({ id: expenseId });
-    // }
-
-    return { success: true };
-  };
+  return (options: DeleteGroupOptions) => client.z.mutate.group.delete(options);
 }

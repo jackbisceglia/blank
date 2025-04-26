@@ -58,24 +58,20 @@ function GroupLayout() {
   return (
     <>
       <PageHeader>
-        <PageHeaderRow className="h-8">
+        <PageHeaderRow className="h-8 mt-2">
           <PrimaryHeading>{data?.title ?? fallback}</PrimaryHeading>
           <GroupNavigation title={data?.title ?? fallback} />
         </PageHeaderRow>
-        <PageHeaderRow className={cn(!data?.description && "py-1")}>
+        {/* <PageHeaderRow className={cn(!data?.description && "py-1")}>
           {data?.description ? (
             <SubHeading> {data.description} </SubHeading>
           ) : (
             <Skeleton className="h-4 w-1/5 min-w-40 max-w-60 my-auto" />
           )}
-        </PageHeaderRow>
+        </PageHeaderRow> */}
       </PageHeader>
       {status === "loading" && <States.Loading />}
-      {status === "success" && (
-        <div className="py-2">
-          <Outlet />
-        </div>
-      )}
+      {status === "success" && <Outlet />}
     </>
   );
 }

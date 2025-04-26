@@ -48,19 +48,30 @@ function GroupsRoute() {
   const search = Route.useSearch();
   const { user } = useAuthentication();
   const { data, status } = useGetGroupsList(user.id);
-  const createGroup = useCreateGroup(user.id, user.name);
-
-  // if (status === "loading") return <States.Loading />;
+  const createGroup = useCreateGroup();
 
   return (
     <>
       <CreateGroupDialog
-        onSubmit={createGroup}
+        onSubmit={async (title, description) => {
+          try {
+            await createGroup({
+              description,
+              title,
+              userId: user.id,
+              username: user.name,
+            });
+          } catch (e) {
+            if (e instanceof Error) {
+              window.alert(`Could not create group: ${e.message}`);
+            }
+          }
+        }}
         searchKey="action"
         searchValue={search.action}
       />
       <PageHeader>
-        <PageHeaderRow className="h-8">
+        <PageHeaderRow className="h-8 mt-2">
           <PrimaryHeading>Your Groups</PrimaryHeading>
           <Button asChild size="sm" variant="theme" className="ml-auto">
             <Link to="." search={{ action: "new-group" }}>

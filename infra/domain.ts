@@ -64,3 +64,25 @@ export const getDomainConfig = (opts: MakeDomainConfigOpts) => {
     dns: sst.cloudflare.dns(),
   };
 };
+
+export const domains = {
+  web: getDomainConfig({
+    type: "root-domain",
+    stage: $app.stage,
+  }),
+  api: getDomainConfig({
+    type: "sub-domain",
+    name: "api",
+    stage: $app.stage,
+  }),
+  auth: getDomainConfig({
+    type: "sub-domain",
+    name: "auth",
+    stage: $app.stage,
+  }),
+  sync: getDomainConfig({
+    type: "sub-domain",
+    name: "sync",
+    stage: $app.stage,
+  }),
+};

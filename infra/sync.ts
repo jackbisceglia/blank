@@ -2,11 +2,8 @@ import { Database } from "./database";
 import { Cluster } from "./cluster";
 import { execSync } from "child_process";
 import { getAuthJwksUrl } from "./auth";
-import {
-  DevelopmentOnly,
-  NonDevelopmentOnly,
-  ProductionStageOnly,
-} from "./utils";
+import { NonDevelopmentOnly, ProductionStageOnly } from "./utils";
+import { domains } from "./domain";
 
 const SyncReplicationBucket = new sst.aws.Bucket(`SyncReplicationBucket`);
 
@@ -17,20 +14,21 @@ const getZeroVersion = () =>
     .toString()
     .trim();
 
-const getDatabaseConnection = () => {
-  const { user, password, host, database } = Database.properties;
+const getPushUrl = () => {
+  const protocol = $dev ? "http://" : "https://";
+  const host = $dev ? "localhost:3000/" : domains.web.name;
 
-  const url = $interpolate`postgresql://${user}:${password}@${host}/${database}?sslmode=require`;
-  return url;
+  return $interpolate`${protocol}${host}/api/sync/push}`;
 };
 
 const commonEnvironmentVariables = {
-  ZERO_UPSTREAM_DB: getDatabaseConnection(),
-  ZERO_CVR_DB: getDatabaseConnection(),
-  ZERO_CHANGE_DB: getDatabaseConnection(),
+  ZERO_UPSTREAM_DB: Database.properties.connection,
+  ZERO_CVR_DB: Database.properties.connection,
+  ZERO_CHANGE_DB: Database.properties.connection,
   ZERO_AUTH_JWKS_URL: getAuthJwksUrl(),
   ZERO_REPLICA_FILE: "sync-replica.db",
   ZERO_IMAGE_URL: `rocicorp/zero:${getZeroVersion()}`,
+  ZERO_PUSH_URL: getPushUrl(),
   ZERO_CVR_MAX_CONNS: "10",
   ZERO_UPSTREAM_MAX_CONNS: "10",
   ...ProductionStageOnly(() => ({
@@ -112,8 +110,11 @@ export const Sync = new sst.aws.Service(`SyncViewSyncer`, {
     retention: "1 month",
   },
   loadBalancer: {
-    public: true,
-    rules: [{ listen: "80/http", forward: "4848/http" }],
+    domain: domains.sync,
+    rules: [
+      { listen: "443/https", forward: "4848/http" },
+      { listen: "80/http", forward: "4848/http" },
+    ],
   },
   transform: {
     target: {

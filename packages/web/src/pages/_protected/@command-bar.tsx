@@ -7,7 +7,6 @@ import {
   CommandList,
 } from "@/components/ui/command";
 import { useEffect } from "react";
-// import { Route } from "./layout";
 import { createPreventDefault, fn, keyboard } from "@/lib/utils";
 import { Link, useNavigate } from "@tanstack/react-router";
 import { GlobalSearchParams } from "./layout";

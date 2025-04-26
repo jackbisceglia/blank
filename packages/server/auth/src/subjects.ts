@@ -7,4 +7,4 @@ export const subjects = createSubjects({
   }),
 });
 
-export type OpenAuthUser = typeof subjects.user;
+export type OpenAuthToken = v.InferOutput<typeof subjects.user>;
