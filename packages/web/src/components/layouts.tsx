@@ -15,7 +15,7 @@ export function PageHeaderRow(
   props: PropsWithChildren<{ className?: string }>
 ) {
   return (
-    <div className={cn("w-full flex items-center", props.className)}>
+    <div className={cn("w-full flex items-end", props.className)}>
       {props.children}
     </div>
   );

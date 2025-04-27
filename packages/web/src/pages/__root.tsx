@@ -2,11 +2,12 @@ import {
   HeadContent,
   Outlet as Children,
   Scripts,
-  createRootRoute,
+  createRootRouteWithContext,
 } from "@tanstack/react-router";
 import { TanStackRouterDevtools } from "@tanstack/router-devtools";
 import appCss from "@/styles/app.css?url";
 import { seo } from "@/lib/seo";
+import { QueryClient } from "@tanstack/react-query";
 
 function Document() {
   return (
@@ -16,14 +17,21 @@ function Document() {
       </head>
       <body className="dark">
         <Children />
-        {/* <TanStackRouterDevtools position="bottom-right" /> */}
+        <TanStackRouterDevtools position="bottom-right" />
         <Scripts />
       </body>
     </html>
   );
 }
 
-export const Route = createRootRoute({
+export function useQueryClient() {
+  const context = Route.useRouteContext();
+
+  return context.queryClient;
+}
+export const Route = createRootRouteWithContext<{
+  queryClient: QueryClient;
+}>()({
   head: () => ({
     meta: [
       //   {
@@ -61,7 +69,5 @@ export const Route = createRootRoute({
       // { rel: "icon", href: "/favicon.ico" },
     ],
   }),
-  // errorComponent: () => <div>error</div>,
-  // notFoundComponent: () => <NotFound />,
   component: () => <Document />,
 });

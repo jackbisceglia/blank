@@ -36,10 +36,6 @@ export function match<T>(fn: () => T): T {
 
 export const isClient = () => typeof window !== "undefined";
 
-function removeTrailingSlash(str: string): string {
-  return str.endsWith("/") ? str.slice(0, -1) : str;
-}
-
 export const constants = {
   zero_ttl: "1h",
   syncServer: import.meta.env.VITE_SYNC_SERVER_URL as string,
