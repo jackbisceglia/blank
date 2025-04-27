@@ -1,9 +1,8 @@
 import * as React from "react";
 import { Slot } from "@radix-ui/react-slot";
 import { VariantProps, cva } from "class-variance-authority";
-import { ChevronLeft, ChevronRight, PanelLeft, PanelRight } from "lucide-react";
+import { PanelLeft, PanelRight } from "lucide-react";
 
-import { useIsMobile } from "@/lib/use-mobile";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -22,7 +21,30 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
-import { Route } from "@/pages/_protected/page";
+import { useEffect, useState } from "react";
+import { useNavigate } from "@tanstack/react-router";
+
+const MOBILE_BREAKPOINT = 768;
+
+export function useIsMobile() {
+  const [isMobile, setIsMobile] = useState<boolean | undefined>(undefined);
+
+  useEffect(() => {
+    const mql = window.matchMedia(
+      `(max-width: ${(MOBILE_BREAKPOINT - 1).toString()}px)`
+    );
+    const onChange = () => {
+      setIsMobile(window.innerWidth < MOBILE_BREAKPOINT);
+    };
+    mql.addEventListener("change", onChange);
+    setIsMobile(window.innerWidth < MOBILE_BREAKPOINT);
+    return () => {
+      mql.removeEventListener("change", onChange);
+    };
+  }, []);
+
+  return !!isMobile;
+}
 
 export const SIDEBAR_COOKIE_NAME = "sidebar_state";
 const SIDEBAR_COOKIE_MAX_AGE = 60 * 60 * 24 * 7;
@@ -176,7 +198,7 @@ function Sidebar({
   variant?: "sidebar" | "floating" | "inset";
   collapsible?: "offcanvas" | "icon" | "none";
 }) {
-  const r = Route.useNavigate();
+  const r = useNavigate();
   const { isMobile, state, openMobile, setOpenMobile, toggleSidebar, setOpen } =
     useSidebar();
   const sidebarRef = React.useRef<HTMLDivElement>(null);

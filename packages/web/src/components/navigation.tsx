@@ -12,7 +12,6 @@ import {
   SidebarRail,
 } from "@/components/ui/sidebar";
 import { Link, LinkOptions } from "@tanstack/react-router";
-import { useServerFn } from "@tanstack/react-start";
 import { ChevronFirst, ChevronRight, Plus } from "lucide-react";
 import { underline_defaults } from "./ui/utils";
 import { cn, PropsWithClassname } from "@/lib/utils";
@@ -20,10 +19,7 @@ import { Group } from "@blank/zero";
 import { useGetGroupsList } from "@/pages/_protected/groups/@data";
 import { useAuthentication } from "@/lib/auth.provider";
 import { QueryStatus } from "@/lib/zero.provider";
-import { logoutRPC } from "@/server/auth/route";
-// import { Loading } from "./loading";
-
-// TODO: FIX TYPESAFETY IN THIS FILE
+import { useLogout } from "@/lib/auth.provider";
 
 function createExpense() {}
 
@@ -97,11 +93,11 @@ type QuickActionsProps = {
 function QuickActions(props: QuickActionsProps) {
   const quickActions: SidebarItemChunk[] = [
     { type: "link", title: "Home", opts: { to: "/" } },
-    {
-      type: "fn",
-      title: "New Expense",
-      function: createExpense,
-    },
+    // {
+    //   type: "fn",
+    //   title: "New Expense",
+    //   function: createExpense,
+    // },
     { type: "link", title: "Account", opts: { to: "/account" } },
   ];
 
@@ -175,7 +171,7 @@ type SideNavigationProps = React.ComponentProps<typeof Sidebar> & {
 // TODO: FIX NAVIGATION TO GROUPS
 export function GlobalSidebar(props: SideNavigationProps) {
   const { user } = useAuthentication();
-  const logout = useServerFn(logoutRPC);
+  const logout = useLogout();
 
   const groups = useGetGroupsList(user.id);
 
@@ -232,20 +228,14 @@ export function GlobalSidebar(props: SideNavigationProps) {
         <SidebarMenu>
           <SidebarMenuItem>
             <SidebarMenuButton
-              onClick={() => void logout()}
+              onClick={() => void logout.fn()}
               size="lg"
-              asChild
               className="data-[state=open]:bg-sidebar-accent data-[state=open]:text-sidebar-accent-foreground hover:no-underline"
             >
-              <Link
-                to="/"
-                search={(prev) => ({ cmd: prev.cmd, action: undefined })}
-              >
-                <div className="flex aspect-square size-[30px] items-center justify-center rounded-lg text-base ">
-                  <ChevronFirst />
-                </div>
-                <span className="uppercase mx-1">Logout</span>
-              </Link>
+              <div className="flex aspect-square size-[30px] items-center justify-center rounded-lg text-base ">
+                <ChevronFirst />
+              </div>
+              <span className="uppercase mx-1">Logout</span>
             </SidebarMenuButton>
           </SidebarMenuItem>
         </SidebarMenu>

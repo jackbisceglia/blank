@@ -1,10 +1,9 @@
 import { createFileRoute, Link, Outlet } from "@tanstack/react-router";
-import { PrimaryHeading, SubHeading } from "@/components/prose";
-import { useGetGroupBySlug } from "./@data";
+import { PrimaryHeading } from "@/components/prose";
+import { useGetGroup } from "./@data";
 import { PageHeader, PageHeaderRow } from "@/components/layouts";
 import { underline_defaults } from "@/components/ui/utils";
-import { build, cn, slug } from "@/lib/utils";
-import { Skeleton } from "@/components/ui/skeleton";
+import { build, slug } from "@/lib/utils";
 
 export const States = {
   Loading: () => null,
@@ -49,33 +48,24 @@ function GroupNavigation(props: GroupNavigationProps) {
 }
 
 function GroupLayout() {
-  const { title: titleSlug } = Route.useParams();
-  const { data, status } = useGetGroupBySlug({ slug: titleSlug });
-  const fallback = slug(titleSlug).decode();
+  const params = Route.useParams();
+  const group = useGetGroup(params.title, "slug");
 
-  if (status === "not-found") return <States.NotFound title={titleSlug} />;
+  const fallbackTitle = slug(params.title).decode();
+
+  if (group.status === "not-found")
+    return <States.NotFound title={fallbackTitle} />;
 
   return (
     <>
       <PageHeader>
-        <PageHeaderRow className="h-8">
-          <PrimaryHeading>{data?.title ?? fallback}</PrimaryHeading>
-          <GroupNavigation title={data?.title ?? fallback} />
-        </PageHeaderRow>
-        <PageHeaderRow className={cn(!data?.description && "py-1")}>
-          {data?.description ? (
-            <SubHeading> {data.description} </SubHeading>
-          ) : (
-            <Skeleton className="h-4 w-1/5 min-w-40 max-w-60 my-auto" />
-          )}
+        <PageHeaderRow className="h-8 mt-2">
+          <PrimaryHeading>{group.data?.title ?? fallbackTitle}</PrimaryHeading>
+          <GroupNavigation title={group.data?.title ?? fallbackTitle} />
         </PageHeaderRow>
       </PageHeader>
-      {status === "loading" && <States.Loading />}
-      {status === "success" && (
-        <div className="py-2">
-          <Outlet />
-        </div>
-      )}
+      {group.status === "loading" && <States.Loading />}
+      {group.status === "success" && <Outlet />}
     </>
   );
 }

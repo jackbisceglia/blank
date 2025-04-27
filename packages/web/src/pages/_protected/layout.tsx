@@ -5,7 +5,11 @@ import {
   BreadcrumbLink,
   BreadcrumbSeparator,
 } from "@/components/ui/breadcrumb";
-import { SidebarTrigger } from "@/components/ui/sidebar";
+import {
+  SIDEBAR_COOKIE_NAME,
+  SidebarProvider,
+  SidebarTrigger,
+} from "@/components/ui/sidebar";
 import { cn } from "@/lib/utils";
 import {
   createFileRoute,
@@ -15,9 +19,28 @@ import {
   useMatches,
 } from "@tanstack/react-router";
 import { Fragment } from "react/jsx-runtime";
-import { ProtectedLayoutProviders } from "./@providers";
 import { GlobalCommandBar } from "./@command-bar";
 import * as v from "valibot";
+import { ZeroProvider } from "@/lib/zero.provider";
+import { authenticationQueryOptions, AuthProvider } from "@/lib/auth.provider";
+import { getCookie as getCookieTanstackStart } from "@tanstack/react-start/server";
+import { PropsWithChildren } from "react";
+
+function getCookie(name: string, fallback?: string) {
+  const getCookieOnServer = getCookieTanstackStart;
+  const getCookieOnClient = (name: string) => {
+    const all = document.cookie.split(";").map((c) => c.trim().split("="));
+
+    const [, cookieValue] = all.find(([key]) => key === name) ?? [];
+
+    return cookieValue;
+  };
+
+  return (
+    (import.meta.env.SSR ? getCookieOnServer : getCookieOnClient)(name) ??
+    fallback
+  );
+}
 
 const data = {
   groups: [
@@ -78,7 +101,7 @@ function ProtectedLayout() {
     <>
       <GlobalSidebar groups={data.groups} collapsible="icon" />
       <GlobalCommandBar searchKey={"cmd"} searchValue={search.cmd} />
-      <main className="w-full flex flex-col items-start gap-4 py-3 pl-10 pr-14 min-h-full relative">
+      <main className="w-full flex flex-col items-start gap-3 py-3 px-6 md:pl-10 md:pr-14 min-h-full relative">
         <header className="flex items-center gap-2 text-sm w-full">
           <SidebarTrigger />
           <Breadcrumbs />
@@ -89,14 +112,30 @@ function ProtectedLayout() {
   );
 }
 
+function Providers(props: PropsWithChildren) {
+  return (
+    <AuthProvider>
+      <ZeroProvider>
+        <SidebarProvider
+          className="flex flex-col sm:flex-row"
+          defaultOpen={getCookie(SIDEBAR_COOKIE_NAME, "true") === "true"}
+        >
+          {props.children}
+        </SidebarProvider>
+      </ZeroProvider>
+    </AuthProvider>
+  );
+}
+
 export const Route = createFileRoute("/_protected")({
   ssr: false,
-  component: () => {
-    return (
-      <ProtectedLayoutProviders>
-        <ProtectedLayout />
-      </ProtectedLayoutProviders>
-    );
+  loader: (opts) => {
+    void opts.context.queryClient.ensureQueryData(authenticationQueryOptions());
   },
+  component: () => (
+    <Providers>
+      <ProtectedLayout />
+    </Providers>
+  ),
   validateSearch: GlobalSearchParams,
 });

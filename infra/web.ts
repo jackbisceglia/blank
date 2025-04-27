@@ -1,7 +1,7 @@
 import { AI } from "./ai";
 import { Auth } from "./auth";
 import { Database } from "./database";
-import { getDomainConfig } from "./domain";
+import { domains, getDomainConfig } from "./domain";
 import { Sync } from "./sync";
 
 export const Web = new sst.aws.TanStackStart("Web", {
@@ -14,9 +14,6 @@ export const Web = new sst.aws.TanStackStart("Web", {
     VITE_AUTH_SERVER_URL: Auth.url,
     VITE_SYNC_SERVER_URL: $interpolate`${Sync.url}`,
   },
-  domain: getDomainConfig({
-    type: "root-domain",
-    stage: $app.stage,
-  }),
+  domain: domains.web,
   link: [Database, AI],
 });

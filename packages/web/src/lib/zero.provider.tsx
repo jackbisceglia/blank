@@ -1,15 +1,14 @@
 import { Zero as ZeroInternal } from "@rocicorp/zero";
-import { schema } from "@blank/zero";
+import { Schema, schema } from "@blank/zero";
 import { constants } from "@/lib/utils";
 import {
-  useQuery,
-  useZero as useZeroInternal,
+  createUseZero,
+  useQuery as useZeroQuery,
   ZeroProvider as ZeroProviderInternal,
 } from "@rocicorp/zero/react";
-import { hydrateAsyncServerResult } from "@blank/core/utils";
 import { useAuthentication } from "./auth.provider";
 import { PropsWithChildren, useEffect, useState } from "react";
-import { meRPC } from "@/server/auth/route";
+import { ClientMutators, createClientMutators } from "./data.mutators";
 
 export const CACHE = {
   NONE: { ttl: "none" },
@@ -43,54 +42,43 @@ export const computeRecordQueryStatus = function (type: Type, data: Data) {
   return "success";
 };
 
+const useZeroInternal = createUseZero<Schema, ClientMutators>();
+
 export function useZero() {
-  const client = useZeroInternal<typeof schema>();
+  const client = useZeroInternal();
 
   return {
     z: client,
-    useQuery,
+    useQuery: useZeroQuery,
   } as const;
 }
 
 export type Zero = ReturnType<typeof useZero>["z"];
 
-export function createZero(userId: string) {
-  const retryAccessToken = async () => {
-    return await hydrateAsyncServerResult(meRPC)
-      .map(([_, token]) => token)
-      .unwrapOr(undefined);
-  };
-
+export function createZero(userId: string, getToken: () => Promise<string>) {
   return new ZeroInternal({
     userID: userId,
-    auth: retryAccessToken,
+    auth: getToken,
     server: constants.syncServer,
     schema,
     kvStore: "idb",
-    // kvStore: "mem",
+    mutators: createClientMutators({
+      userID: userId,
+    }),
   });
 }
 
 export type ZeroInstance = ReturnType<typeof createZero>;
 
-const CAN_NOT_INSTANTIATE_ZERO = Symbol("CAN_NOT_INSTANTIATE_ZERO");
-type CanNotInstantiateZero = typeof CAN_NOT_INSTANTIATE_ZERO;
-
 export const ZeroProvider = (props: PropsWithChildren) => {
   const auth = useAuthentication();
-  const [zero, setZero] = useState<ZeroInstance | CanNotInstantiateZero | null>(
-    null
-  );
+  const [zero, setZero] = useState<ZeroInstance | null>(null);
 
   useEffect(() => {
-    setZero(createZero(auth.user.id));
-  }, []);
+    setZero(createZero(auth.user.id, auth.getAccessToken));
+  }, [auth.user.id, auth.getAccessToken]);
 
-  if (zero === null) {
-    return null;
-  }
-
-  if (zero === CAN_NOT_INSTANTIATE_ZERO) {
+  if (!zero) {
     return <div>Issue syncing data, please try again later</div>;
   }
 
