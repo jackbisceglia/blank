@@ -71,6 +71,8 @@ export function createClientMutators(_auth: OpenAuthToken | undefined) {
     group: {
       create: async (tx, opts: CreateGroupOptions) => {
         await assertUserCanCreateAndJoinGroup(tx, opts.userId);
+        const location = import.meta.env.SSR ? "server" : "client";
+        console.log(`running on ${location}: `, opts.userId);
 
         const groupId = crypto.randomUUID();
 
@@ -83,6 +85,7 @@ export function createClientMutators(_auth: OpenAuthToken | undefined) {
           createdAt: Date.now(),
         });
 
+        // NOTE: we can call a helper and/or member function here to be re-usable
         await tx.mutate.member.insert({
           groupId,
           userId: opts.userId,

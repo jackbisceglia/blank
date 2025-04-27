@@ -14,7 +14,6 @@ import { useState } from "react";
 import { slug } from "@/lib/utils";
 import { Label } from "@/components/ui/label";
 import { CreateGroupSearchParams } from "./page";
-import { CreateGroupOptions } from "@/lib/data.mutators";
 
 const invalidCharactersMessage =
   "Title must only contain letters, numbers, and spaces";
@@ -146,7 +145,8 @@ export function CreateGroupDialog<T extends keyof CreateGroupSearchParams>(
             type="submit"
             variant="theme"
             size="xs"
-            className="mb-auto col-start-1 -col-end-2 w-full py-3"
+            // className="mb-auto w-full py-2.5"
+            className="col-start-1 -col-end-2 mb-auto py-2.5 w-full"
           >
             create
           </Button>
@@ -155,7 +155,7 @@ export function CreateGroupDialog<T extends keyof CreateGroupSearchParams>(
             onClick={view.close}
             variant="destructive"
             size="xs"
-            className="col-span-1 mb-auto py-3 w-full"
+            className="col-span-1 mb-auto py-2.5 w-full"
           >
             cancel
           </Button>

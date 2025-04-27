@@ -7,12 +7,8 @@ import {
   ZeroProvider as ZeroProviderInternal,
 } from "@rocicorp/zero/react";
 import { useAuthentication } from "./auth.provider";
-import { PropsWithChildren } from "react";
+import { PropsWithChildren, useEffect, useState } from "react";
 import { ClientMutators, createClientMutators } from "./data.mutators";
-import {
-  queryOptions,
-  useQuery as useQueryTanstack,
-} from "@tanstack/react-query";
 
 export const CACHE = {
   NONE: { ttl: "none" },
@@ -74,31 +70,19 @@ export function createZero(userId: string, getToken: () => Promise<string>) {
 
 export type ZeroInstance = ReturnType<typeof createZero>;
 
-const zeroQueryOptions = (userId: string, getToken: () => Promise<string>) =>
-  queryOptions({
-    queryKey: ["zero"],
-    queryFn: () => {
-      return createZero(userId, getToken);
-    },
-  });
-
 export const ZeroProvider = (props: PropsWithChildren) => {
   const auth = useAuthentication();
-  const zeroQuery = useQueryTanstack(
-    zeroQueryOptions(auth.user.id, auth.getAccessToken)
-  );
+  const [zero, setZero] = useState<ZeroInstance | null>(null);
 
-  if (zeroQuery.status === "pending") {
-    return null;
-  }
+  useEffect(() => {
+    setZero(createZero(auth.user.id, auth.getAccessToken));
+  }, [auth.user.id, auth.getAccessToken]);
 
-  if (zeroQuery.status === "error") {
+  if (!zero) {
     return <div>Issue syncing data, please try again later</div>;
   }
 
   return (
-    <ZeroProviderInternal zero={zeroQuery.data}>
-      {props.children}
-    </ZeroProviderInternal>
+    <ZeroProviderInternal zero={zero}>{props.children}</ZeroProviderInternal>
   );
 };

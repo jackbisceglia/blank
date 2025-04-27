@@ -93,11 +93,11 @@ type QuickActionsProps = {
 function QuickActions(props: QuickActionsProps) {
   const quickActions: SidebarItemChunk[] = [
     { type: "link", title: "Home", opts: { to: "/" } },
-    {
-      type: "fn",
-      title: "New Expense",
-      function: createExpense,
-    },
+    // {
+    //   type: "fn",
+    //   title: "New Expense",
+    //   function: createExpense,
+    // },
     { type: "link", title: "Account", opts: { to: "/account" } },
   ];
 

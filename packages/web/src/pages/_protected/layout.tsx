@@ -16,15 +16,15 @@ import {
   isMatch,
   Link,
   Outlet,
-  redirect,
   useMatches,
 } from "@tanstack/react-router";
 import { Fragment } from "react/jsx-runtime";
 import { GlobalCommandBar } from "./@command-bar";
 import * as v from "valibot";
-import { ZeroProvider, zeroQueryOptions } from "@/lib/zero.provider";
+import { ZeroProvider } from "@/lib/zero.provider";
 import { authenticationQueryOptions, AuthProvider } from "@/lib/auth.provider";
 import { getCookie as getCookieTanstackStart } from "@tanstack/react-start/server";
+import { PropsWithChildren } from "react";
 
 function getCookie(name: string, fallback?: string) {
   const getCookieOnServer = getCookieTanstackStart;
@@ -101,7 +101,7 @@ function ProtectedLayout() {
     <>
       <GlobalSidebar groups={data.groups} collapsible="icon" />
       <GlobalCommandBar searchKey={"cmd"} searchValue={search.cmd} />
-      <main className="w-full flex flex-col items-start gap-3 py-3 pl-10 pr-14 min-h-full relative">
+      <main className="w-full flex flex-col items-start gap-3 py-3 px-6 md:pl-10 md:pr-14 min-h-full relative">
         <header className="flex items-center gap-2 text-sm w-full">
           <SidebarTrigger />
           <Breadcrumbs />
@@ -112,24 +112,30 @@ function ProtectedLayout() {
   );
 }
 
+function Providers(props: PropsWithChildren) {
+  return (
+    <AuthProvider>
+      <ZeroProvider>
+        <SidebarProvider
+          className="flex flex-col sm:flex-row"
+          defaultOpen={getCookie(SIDEBAR_COOKIE_NAME, "true") === "true"}
+        >
+          {props.children}
+        </SidebarProvider>
+      </ZeroProvider>
+    </AuthProvider>
+  );
+}
+
 export const Route = createFileRoute("/_protected")({
   ssr: false,
   loader: (opts) => {
     void opts.context.queryClient.ensureQueryData(authenticationQueryOptions());
   },
-  component: () => {
-    return (
-      <AuthProvider>
-        <ZeroProvider>
-          <SidebarProvider
-            className="flex flex-col sm:flex-row"
-            defaultOpen={getCookie(SIDEBAR_COOKIE_NAME, "true") === "true"}
-          >
-            <ProtectedLayout />
-          </SidebarProvider>
-        </ZeroProvider>
-      </AuthProvider>
-    );
-  },
+  component: () => (
+    <Providers>
+      <ProtectedLayout />
+    </Providers>
+  ),
   validateSearch: GlobalSearchParams,
 });

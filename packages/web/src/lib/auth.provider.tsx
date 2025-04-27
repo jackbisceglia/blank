@@ -49,17 +49,23 @@ export function useLogout() {
 export const authenticationQueryOptions = () =>
   queryOptions({
     queryKey: ["authentication"],
-    queryFn: async () => hydrateAsyncServerResult(meRPC).unwrapOr(null),
+    queryFn: async () => {
+      console.log("querying auth");
+      return hydrateAsyncServerResult(meRPC).unwrapOr(null);
+    },
   });
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const queryClient = useQueryClient();
   const query = useQuery(authenticationQueryOptions());
 
-  if (query.status === "pending")
+  if (query.status === "pending") {
     return <Loading className="min-h-screen" whatIsLoading="workspace" />;
-  if (query.status === "error" || !query.data)
+  }
+  if (query.status === "error" || (!query.data && !query.isFetching)) {
+    console.log("navigating to landing page");
     return <Navigate to="/landing" />;
+  }
 
   async function getAccessToken() {
     const token = query.data?.[1];
