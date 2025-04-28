@@ -1,7 +1,6 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useDeleteGroup, useGetGroupBySlug } from "../@data";
-import { cn } from "@/lib/utils";
-import { PageHeaderRow } from "@/components/layouts";
+import { GroupBody, SecondaryRow } from "./layout";
 import { SubHeading } from "@/components/prose";
 import { useConfirmDialog } from "@/components/confirm-dialog";
 import { Button } from "@/components/ui/button";
@@ -34,11 +33,10 @@ function SettingsRoute() {
 
   return (
     <>
-      <PageHeaderRow className={cn(!group.data?.description && "py-1", "mb-2")}>
+      <SecondaryRow>
         <SubHeading>Manage group settings</SubHeading>
-      </PageHeaderRow>
-
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6 w-full">
+      </SecondaryRow>
+      <GroupBody className="grid grid-cols-1 xl:grid-cols-2 gap-6">
         <div className="border rounded-md p-4">
           <h3 className="text-lg font-medium mb-2 uppercase">Danger Zone</h3>
           <p className="text-sm text-muted-foreground mb-4">
@@ -52,7 +50,7 @@ function SettingsRoute() {
             Delete Group
           </Button>
         </div>
-      </div>
+      </GroupBody>
       <confirmDelete.dialog />
     </>
   );

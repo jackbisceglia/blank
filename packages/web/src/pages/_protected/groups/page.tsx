@@ -10,7 +10,7 @@ import { Group } from "@blank/zero";
 import { useGetGroupsList } from "./@data";
 import { Loading } from "@/components/loading";
 import { Button } from "@/components/ui/button";
-import { PageHeader, PageHeaderRow } from "@/components/layouts";
+import { PageHeaderRow } from "@/components/layouts";
 import { useAuthentication } from "@/lib/auth.provider";
 import { SearchParams } from "../@search-params";
 
@@ -48,21 +48,19 @@ function GroupsRoute() {
 
   return (
     <>
-      <PageHeader>
-        <PageHeaderRow className="h-8 mt-2">
-          <PrimaryHeading>Your Groups</PrimaryHeading>
-          <Button asChild size="sm" variant="theme" className="ml-auto">
-            <Link
-              to="."
-              search={(prev) => ({
-                action: ["new-group", ...(prev.action ?? [])],
-              })}
-            >
-              Create Group
-            </Link>
-          </Button>
-        </PageHeaderRow>
-      </PageHeader>
+      <PageHeaderRow className="h-8">
+        <PrimaryHeading>Your Groups</PrimaryHeading>
+        <Button asChild size="sm" variant="theme" className="ml-auto">
+          <Link
+            to="."
+            search={(prev) => ({
+              action: ["new-group", ...(prev.action ?? [])],
+            })}
+          >
+            Create Group
+          </Link>
+        </Button>
+      </PageHeaderRow>
       {groups.status === "empty" ? (
         <States.Empty />
       ) : (

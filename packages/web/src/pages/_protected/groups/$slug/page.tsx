@@ -4,6 +4,7 @@ import { cn } from "@/lib/utils";
 import { SubHeading } from "@/components/prose";
 import { useGetGroupBySlug } from "../@data";
 import { Button } from "@/components/ui/button";
+import { GroupBody, SecondaryRow } from "./layout";
 
 function GroupRoute() {
   const params = Route.useParams();
@@ -15,7 +16,7 @@ function GroupRoute() {
 
   return (
     <>
-      <PageHeaderRow className={cn("mb-2")}>
+      <SecondaryRow>
         <SubHeading> {group.data?.description} </SubHeading>
         <Button asChild size="sm" variant="theme" className="ml-auto">
           <Link
@@ -27,8 +28,8 @@ function GroupRoute() {
             New Expense
           </Link>
         </Button>
-      </PageHeaderRow>
-      <div>
+      </SecondaryRow>
+      <GroupBody>
         {(group.data?.expenses ?? []).length > 0 ? (
           group.data?.expenses.map((expense) => {
             return (
@@ -41,7 +42,7 @@ function GroupRoute() {
         ) : (
           <p>No expenses found</p>
         )}
-      </div>
+      </GroupBody>
     </>
   );
 }

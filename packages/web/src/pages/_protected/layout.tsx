@@ -98,7 +98,7 @@ function ProtectedLayout() {
       <GlobalCommandBar />
       <CreateExpenseDialog />
       <CreateGroupDialog />
-      <main className="w-full flex flex-col items-start gap-3 py-3 px-6 md:pl-10 md:pr-14 min-h-full relative">
+      <main className="w-full flex flex-col items-start gap-3.5 py-3 px-6 md:pl-10 md:pr-14 min-h-full relative">
         <header className="flex items-center gap-2 text-sm w-full">
           <SidebarTrigger />
           <Breadcrumbs />

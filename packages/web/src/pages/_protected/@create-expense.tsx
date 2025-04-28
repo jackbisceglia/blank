@@ -53,24 +53,22 @@ export function CreateExpenseDialog() {
             e.preventDefault();
             handleSubmit(e);
           }}
-          className="grid grid-rows-4 grid-cols-6 focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[1.5px] items-center gap-2.5 p-2 border-[1.5px] border-none bg-transparent [&>div>input]:h-6 h-fit"
+          className="grid grid-rows-3 grid-cols-6 focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[1.5px] items-center gap-2.5 p-2 border-[1.5px] border-none bg-transparent [&>div>input]:h-6 h-fit"
         >
-          <div className="px-3 py-2 w-full bg-popover space-y-0.5 col-span-full">
-            <Label
-              className="lowercase font-base text-xs"
-              htmlFor={formKeys.expense}
-            >
-              Expense Description
-            </Label>
-            <Input
-              aria-errormessage="error-message"
-              min={1}
-              id={formKeys.expense}
-              name={formKeys.expense}
-              className="bg-transparent border-0 p-0 focus-visible:ring-0 placeholder:text-muted-foreground/60 flex-1"
-              placeholder="enter expense description"
-            />
-          </div>
+          <Label
+            className="lowercase font-base text-xs col-span-full mt-auto"
+            htmlFor={formKeys.expense}
+          >
+            Expense Description
+          </Label>
+          <Input
+            aria-errormessage="error-message"
+            min={1}
+            id={formKeys.expense}
+            name={formKeys.expense}
+            className="sm:px-3 sm:py-2 w-full bg-popover space-y-0.5 col-span-full border-0 p-0 focus-visible:ring-0 placeholder:text-muted-foreground/60 flex-1"
+            placeholder="enter expense description"
+          />
           <Button
             type="submit"
             variant="theme"

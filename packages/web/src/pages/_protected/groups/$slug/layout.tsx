@@ -1,9 +1,10 @@
 import { createFileRoute, Link, Outlet } from "@tanstack/react-router";
 import { PrimaryHeading } from "@/components/prose";
-import { PageHeader, PageHeaderRow } from "@/components/layouts";
+import { PageHeaderRow } from "@/components/layouts";
 import { underline_defaults } from "@/components/ui/utils";
-import { build, slugify } from "@/lib/utils";
+import { build, cn, slugify } from "@/lib/utils";
 import { useGetGroupBySlug } from "../@data";
+import { PropsWithChildren } from "react";
 
 export const States = {
   Loading: () => null,
@@ -47,6 +48,22 @@ function GroupNavigation(props: GroupNavigationProps) {
   );
 }
 
+export function SecondaryRow(props: PropsWithChildren<{ className?: string }>) {
+  return (
+    <PageHeaderRow className={cn("min-h-8 items-start", props.className)}>
+      {props.children}
+    </PageHeaderRow>
+  );
+}
+
+export function GroupBody(props: PropsWithChildren<{ className?: string }>) {
+  return (
+    <div className={cn("flex flex-col gap-4 w-full", props.className)}>
+      {props.children}
+    </div>
+  );
+}
+
 function GroupLayout() {
   const params = Route.useParams();
   const group = useGetGroupBySlug(params.slug);
@@ -57,12 +74,10 @@ function GroupLayout() {
 
   return (
     <>
-      <PageHeader>
-        <PageHeaderRow className="h-8 mt-2">
-          <PrimaryHeading>{title}</PrimaryHeading>
-          <GroupNavigation title={title} />
-        </PageHeaderRow>
-      </PageHeader>
+      <PageHeaderRow>
+        <PrimaryHeading>{title}</PrimaryHeading>
+        <GroupNavigation title={title} />
+      </PageHeaderRow>
       {group.status === "loading" && <States.Loading />}
       {group.status === "success" && <Outlet />}
     </>

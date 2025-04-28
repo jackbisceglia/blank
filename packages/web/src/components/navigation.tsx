@@ -67,7 +67,7 @@ function SidebarMenuItemChunk(props: SidebarMenuItemChunkProps) {
           {props.item.type === "link" ? (
             <Link
               activeOptions={{
-                exact: true,
+                exact: false,
                 includeSearch: props.matchOnSearch,
               }}
               activeProps={{ className: `${underline_defaults} text-primary` }}

@@ -1,9 +1,8 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { PageHeaderRow } from "@/components/layouts";
 import { SubHeading } from "@/components/prose";
-import { cn } from "@/lib/utils";
 import { useAuthentication } from "@/lib/auth.provider";
 import { useGetGroupBySlug } from "../@data";
+import { GroupBody, SecondaryRow } from "./layout";
 
 function MembersRoute() {
   const auth = useAuthentication();
@@ -14,11 +13,14 @@ function MembersRoute() {
 
   return (
     <>
-      <PageHeaderRow className={cn(!group.data?.description && "py-1", "mb-2")}>
+      <SecondaryRow>
         <SubHeading>
           view {isOwner && "and manage"} the members of this group
         </SubHeading>
-      </PageHeaderRow>
+      </SecondaryRow>
+      <GroupBody>
+        <p>dis is allada members</p>
+      </GroupBody>
     </>
   );
 }
