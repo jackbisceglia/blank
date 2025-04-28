@@ -15,7 +15,6 @@ const assertPresent =
     value ? ok(value) : err(message);
 
 export const authenticateRPC = createServerFn().handler(async function () {
-  console.log("rpc called?");
   return authenticate({ cookies: AuthTokens.cookies });
 });
 

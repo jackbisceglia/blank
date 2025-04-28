@@ -17,9 +17,6 @@ const getZeroVersion = () =>
 const getPushUrl = () => {
   const protocol = $dev ? "http://" : "https://";
   const host = $dev ? "localhost:3000" : domains.web.name;
-  console.log(domains.api.name);
-
-  console.log("syncer: ", `${protocol}${host}/api/sync/push`);
   return $interpolate`${protocol}${host}/api/sync/push`;
 };
 
