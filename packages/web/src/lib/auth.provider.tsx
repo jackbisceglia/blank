@@ -50,7 +50,6 @@ export const authenticationQueryOptions = () =>
   queryOptions({
     queryKey: ["authentication"],
     queryFn: async () => {
-      console.log("querying auth");
       return hydrateAsyncServerResult(meRPC).unwrapOr(null);
     },
   });
@@ -62,8 +61,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   if (query.status === "pending") {
     return <Loading className="min-h-screen" whatIsLoading="workspace" />;
   }
-  if (query.status === "error" || (!query.data && !query.isFetching)) {
-    console.log("navigating to landing page");
+  if (
+    query.status === "error" ||
+    (!query.data && !query.isFetching) ||
+    !query.data
+  ) {
     return <Navigate to="/landing" />;
   }
 
@@ -79,7 +81,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const payload = decode();
 
     if (payload.isErr() && payload.error instanceof JWTExpired) {
-      console.log("JWT expired, invalidating query");
       await queryClient.invalidateQueries({ queryKey: ["authentication"] });
     }
 

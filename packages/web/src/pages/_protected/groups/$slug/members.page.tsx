@@ -3,12 +3,12 @@ import { PageHeaderRow } from "@/components/layouts";
 import { SubHeading } from "@/components/prose";
 import { cn } from "@/lib/utils";
 import { useAuthentication } from "@/lib/auth.provider";
-import { useGetGroup } from "./@data";
+import { useGetGroupBySlug } from "../@data";
 
 function MembersRoute() {
-  const params = Route.useParams();
   const auth = useAuthentication();
-  const group = useGetGroup(params.title, "slug");
+  const params = Route.useParams();
+  const group = useGetGroupBySlug(params.slug);
 
   const isOwner = group.data?.owner?.userId === auth.user.id;
 
@@ -23,7 +23,7 @@ function MembersRoute() {
   );
 }
 
-export const Route = createFileRoute("/_protected/groups/$title/members/")({
+export const Route = createFileRoute("/_protected/groups/$slug/members/")({
   component: MembersRoute,
   ssr: false,
   loader: () => ({ crumb: "Members" }),

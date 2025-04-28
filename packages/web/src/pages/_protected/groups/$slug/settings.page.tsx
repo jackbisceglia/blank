@@ -1,27 +1,25 @@
-import {
-  createFileRoute,
-  getRouteApi,
-  useNavigate,
-} from "@tanstack/react-router";
-import { useDeleteGroup, useGetGroup } from "./@data";
-import { States } from "./$title.layout";
+import { createFileRoute, useNavigate } from "@tanstack/react-router";
+import { useDeleteGroup, useGetGroupBySlug } from "../@data";
 import { cn } from "@/lib/utils";
 import { PageHeaderRow } from "@/components/layouts";
 import { SubHeading } from "@/components/prose";
 import { useConfirmDialog } from "@/components/confirm-dialog";
 import { Button } from "@/components/ui/button";
+import { States } from "./layout";
 
 function SettingsRoute() {
   const navigate = useNavigate();
-  const route = getRouteApi("/_protected/groups/$title");
-  const params = route.useParams();
+  const params = Route.useParams();
 
-  const group = useGetGroup(params.title, "slug");
+  const group = useGetGroupBySlug(params.slug);
+
+  if (group.status === "not-found")
+    return <States.NotFound title={params.slug} />;
+
   const deleteGroup = useDeleteGroup();
-
   const confirmDelete = useConfirmDialog({
     title: "Are you absolutely sure?",
-    description: `This will permanently delete the group "${group.data?.title ?? "Unknown"}", along with all of its associated data. Be sure to backup your data before permanently deleting.`,
+    description: `This will permanently delete the group "${group.data?.title ?? "unknown"}", along with all of its associated data. Be sure to backup your data before permanently deleting.`,
     confirm: "Delete",
     cancel: "Cancel",
     async onSuccess() {
@@ -33,10 +31,6 @@ function SettingsRoute() {
       }
     },
   });
-
-  if (group.status === "loading") return <States.Loading />;
-  if (group.status === "not-found")
-    return <States.NotFound title={params.title} />;
 
   return (
     <>
@@ -64,7 +58,7 @@ function SettingsRoute() {
   );
 }
 
-export const Route = createFileRoute("/_protected/groups/$title/settings/")({
+export const Route = createFileRoute("/_protected/groups/$slug/settings/")({
   component: SettingsRoute,
   ssr: false,
   loader: () => ({ crumb: "Settings" }),

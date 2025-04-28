@@ -1,9 +1,10 @@
-import { Zero as ZeroInternal } from "@rocicorp/zero";
+import { Parameter, Query, Zero as ZeroInternal } from "@rocicorp/zero";
 import { Schema, schema } from "@blank/zero";
 import { constants } from "@/lib/utils";
 import {
   createUseZero,
-  useQuery as useZeroQuery,
+  useQuery,
+  UseQueryOptions,
   ZeroProvider as ZeroProviderInternal,
 } from "@rocicorp/zero/react";
 import { useAuthentication } from "./auth.provider";
@@ -32,6 +33,16 @@ export const computeListQueryStatus = function (type: Type, data: Data) {
   return "success";
 };
 
+export function useListQuery<
+  TSchema extends Schema,
+  TTable extends keyof TSchema["tables"] & string,
+  TReturn,
+>(query: Query<TSchema, TTable, TReturn>, options?: UseQueryOptions) {
+  const [data, status] = useQuery(query, options);
+
+  return { data, status: computeListQueryStatus(status.type, data) } as const;
+}
+
 export const computeRecordQueryStatus = function (type: Type, data: Data) {
   if (type === "unknown") {
     return "loading";
@@ -42,18 +53,31 @@ export const computeRecordQueryStatus = function (type: Type, data: Data) {
   return "success";
 };
 
-const useZeroInternal = createUseZero<Schema, ClientMutators>();
+export function useRecordQuery<
+  TSchema extends Schema,
+  TTable extends keyof TSchema["tables"] & string,
+  TReturn,
+>(query: Query<TSchema, TTable, TReturn>, options?: UseQueryOptions) {
+  const [data, status] = useQuery(query, options);
 
-export function useZero() {
-  const client = useZeroInternal();
-
-  return {
-    z: client,
-    useQuery: useZeroQuery,
-  } as const;
+  return { data, status: computeRecordQueryStatus(status.type, data) } as const;
 }
 
-export type Zero = ReturnType<typeof useZero>["z"];
+const useZeroInternal = createUseZero<Schema, ClientMutators>();
+
+// export function useZero() {
+//   const client = useZeroInternal();
+
+//   return {
+//     z: client,
+//     useQuery: useZeroQuery,
+//   } as const;
+// }
+export function useZero() {
+  return useZeroInternal();
+}
+
+export type Zero = ReturnType<typeof useZero>;
 
 export function createZero(userId: string, getToken: () => Promise<string>) {
   return new ZeroInternal({

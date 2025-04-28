@@ -11,10 +11,9 @@ import * as v from "valibot";
 import { ok, Result } from "neverthrow";
 import { fromParsed, ValidationError } from "@blank/core/utils";
 import { useState } from "react";
-import { slug } from "@/lib/utils";
+import { slugify } from "@/lib/utils";
 import { Label } from "@/components/ui/label";
-import { CreateGroupSearchParams } from "./page";
-
+import { useCreateGroup } from "./@data";
 const invalidCharactersMessage =
   "Title must only contain letters, numbers, and spaces";
 
@@ -24,12 +23,12 @@ const schemas = {
     v.minLength(1, "Title must not be empty"),
     v.maxLength(32, "Title must be at most 32 characters"),
     v.custom(
-      (value) => slug(value as string).isLossless(),
+      (value) => slugify(value as string).isLossless(),
       invalidCharactersMessage
     ),
-    v.transform((value) => slug(value).encode()),
+    v.transform((value) => slugify(value).encode()),
     v.slug(invalidCharactersMessage),
-    v.transform((value) => slug(value).decode())
+    v.transform((value) => slugify(value).decode())
   ),
   description: v.pipe(
     v.string(),
@@ -38,28 +37,27 @@ const schemas = {
   ),
 };
 
-export type CreateGroupDialogProps<T extends keyof CreateGroupSearchParams> = {
-  searchKey: T;
-  searchValue: CreateGroupSearchParams[T];
+export const CreateGroupSearchParams = v.object({
+  action: v.literal("new-group"),
+});
+export type CreateGroupSearchParams = v.InferOutput<
+  typeof CreateGroupSearchParams
+>;
+
+export type CreateGroupDialogProps = {
+  searchValue: string[];
   onSubmit: (title: string, description: string) => Promise<void>;
 };
 
-export function CreateGroupDialog<T extends keyof CreateGroupSearchParams>(
-  props: CreateGroupDialogProps<T>
-) {
+export function CreateGroupDialog() {
+  const createGroup = useCreateGroup();
   const formKeys = { title: "group-title", description: "group-description" };
-  const valueWhenOpen = "new-group";
+
   const [error, setError] = useState<string | null>(null);
-  const view = useDialogFromUrl({
-    search: {
-      key: props.searchKey,
-      value: props.searchValue,
-      valueWhenOpen,
-    },
-  });
+  const view = useDialogFromUrl({ schema: CreateGroupSearchParams });
 
   function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
-    const safeSubmitForm = Result.fromThrowable(props.onSubmit);
+    const safeSubmitForm = Result.fromThrowable(createGroup);
 
     event.preventDefault();
     setError(null);

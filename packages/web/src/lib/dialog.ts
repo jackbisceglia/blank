@@ -1,37 +1,60 @@
-import { GlobalSearchParams } from "@/pages/_protected/layout";
-import { useNavigate } from "@tanstack/react-router";
+import { SearchParamActionValues } from "@/pages/_protected/@search-params";
+import { useNavigate, useSearch } from "@tanstack/react-router";
+import * as v from "valibot";
 
-export type GlobalDialogProps<T extends keyof GlobalSearchParams> = {
-  searchKey: T;
-  searchValue: GlobalSearchParams[T];
+type State = "open" | "closed";
+
+export type DialogFromUrlProps<T extends object = object> = T & {
+  searchValue: string[] | undefined;
 };
 
+export function createActionSchema(literal: string) {
+  return v.object({
+    action: v.literal(literal),
+  });
+}
+
+export function addDialogSearchParam<T>(previous: T[], literal: string) {
+  return [...new Set([...previous, literal])] as T[];
+}
+
+export function removeDialogSearchParam<T>(previous: T[], literal: string) {
+  const filtered = previous.filter((action) => action !== literal);
+
+  return filtered.length ? filtered : undefined;
+}
+
 type useDialogOptions = {
-  search: {
-    key: string;
-    value: string | undefined;
-    valueWhenOpen: string;
-  };
+  schema: ReturnType<typeof createActionSchema>;
 };
 
 export function useDialogFromUrl(opts: useDialogOptions) {
-  type State = "open" | "closed";
-
+  const search = useSearch({ strict: false });
   const navigate = useNavigate();
+
+  const literal = opts.schema.entries.action.literal as SearchParamActionValues;
 
   const setViewState = (state: State) => {
     void navigate({
       to: ".",
-      search: {
-        [opts.search.key]:
-          state === "open" ? opts.search.valueWhenOpen : undefined,
+      search: (prev) => {
+        const actions = [...(prev.action ?? [])];
+
+        const actionValues =
+          state === "open"
+            ? addDialogSearchParam(actions, literal)
+            : removeDialogSearchParam(actions, literal);
+
+        return {
+          ...prev,
+          action: actionValues,
+        };
       },
     });
   };
 
   return {
-    state: () =>
-      opts.search.value === opts.search.valueWhenOpen ? "open" : "closed",
+    state: () => (search.action?.includes(literal) ? "open" : "closed"),
     open: () => {
       setViewState("open");
     },

@@ -1,52 +1,66 @@
 import {
   computeListQueryStatus,
-  computeRecordQueryStatus,
+  useListQuery,
+  useRecordQuery,
   useZero,
+  Zero,
 } from "@/lib/zero.provider";
 import { constants } from "@/lib/utils";
-import { CreateGroupOptions, DeleteGroupOptions } from "@/lib/data.mutators";
+import { DeleteGroupOptions } from "@/lib/data.mutators";
+import { useAuthentication } from "@/lib/auth.provider";
 
-export function useGetGroup(identifier: string, type?: "slug" | "id") {
-  const { z, useQuery } = useZero();
-
-  const query = z.query.group
-    .where(type ?? "id", identifier)
+const groupByProperty = (key: "slug" | "id", value: string, z: Zero) =>
+  z.query.group
+    .where(key, value)
     .one()
     .related("expenses")
     .related("members")
     .related("owner");
 
-  const [data, status] = useQuery(query, { ttl: constants.zero_ttl });
+export function useGetGroupBySlug(slug: string) {
+  const z = useZero();
+  const query = groupByProperty("slug", slug, z);
 
-  return {
-    data,
-    status: computeRecordQueryStatus(status.type, data),
-  } as const;
+  const result = useRecordQuery(query, { ttl: constants.zero_ttl });
+
+  return result;
+}
+
+export function useGetGroupById(id: string) {
+  const z = useZero();
+  const query = groupByProperty("id", id, z);
+
+  const result = useRecordQuery(query, { ttl: constants.zero_ttl });
+
+  return result;
 }
 
 export function useGetGroupsList(userId: string) {
-  const { z, useQuery } = useZero();
+  const z = useZero();
   const query = z.query.group
     .whereExists("members", (members) => members.where("userId", userId))
     .orderBy("createdAt", "desc");
 
-  const [data, status] = useQuery(query, { ttl: constants.zero_ttl });
+  const result = useListQuery(query, { ttl: constants.zero_ttl });
 
-  return {
-    data,
-    // TODO: we can improve the typescript so that data narrows to non-nullish when status === 'success'
-    status: computeListQueryStatus(status.type, data),
-  } as const;
+  return result;
 }
 
 export function useCreateGroup() {
-  const client = useZero();
+  const auth = useAuthentication();
+  const z = useZero();
 
-  return (opts: CreateGroupOptions) => client.z.mutate.group.create(opts);
+  return (title: string, description: string) =>
+    z.mutate.group.create({
+      description,
+      title,
+      userId: auth.user.id,
+      username: auth.user.name,
+    });
 }
 
 export function useDeleteGroup() {
-  const client = useZero();
+  const z = useZero();
 
-  return (options: DeleteGroupOptions) => client.z.mutate.group.delete(options);
+  return (options: DeleteGroupOptions) => z.mutate.group.delete(options);
 }

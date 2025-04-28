@@ -1,9 +1,9 @@
 import { createFileRoute, Link, Outlet } from "@tanstack/react-router";
 import { PrimaryHeading } from "@/components/prose";
-import { useGetGroup } from "./@data";
 import { PageHeader, PageHeaderRow } from "@/components/layouts";
 import { underline_defaults } from "@/components/ui/utils";
-import { build, slug } from "@/lib/utils";
+import { build, slugify } from "@/lib/utils";
+import { useGetGroupBySlug } from "../@data";
 
 export const States = {
   Loading: () => null,
@@ -23,7 +23,7 @@ function GroupNavigation(props: GroupNavigationProps) {
   const links = ["dashboard", "members", "settings"] as const;
 
   const buildTo = (l: (typeof links)[number]) =>
-    build("/")("groups", "$title", l !== "dashboard" && l);
+    build("/")("groups", "$slug", l !== "dashboard" && l);
 
   return (
     <div className="ml-auto uppercase text-sm flex items-center gap-6">
@@ -49,19 +49,18 @@ function GroupNavigation(props: GroupNavigationProps) {
 
 function GroupLayout() {
   const params = Route.useParams();
-  const group = useGetGroup(params.title, "slug");
+  const group = useGetGroupBySlug(params.slug);
 
-  const fallbackTitle = slug(params.title).decode();
+  const title = group.data?.title ?? slugify(params.slug).decode();
 
-  if (group.status === "not-found")
-    return <States.NotFound title={fallbackTitle} />;
+  if (group.status === "not-found") return <States.NotFound title={title} />;
 
   return (
     <>
       <PageHeader>
         <PageHeaderRow className="h-8 mt-2">
-          <PrimaryHeading>{group.data?.title ?? fallbackTitle}</PrimaryHeading>
-          <GroupNavigation title={group.data?.title ?? fallbackTitle} />
+          <PrimaryHeading>{title}</PrimaryHeading>
+          <GroupNavigation title={title} />
         </PageHeaderRow>
       </PageHeader>
       {group.status === "loading" && <States.Loading />}
@@ -70,13 +69,13 @@ function GroupLayout() {
   );
 }
 
-export const Route = createFileRoute("/_protected/groups/$title")({
+export const Route = createFileRoute("/_protected/groups/$slug")({
   component: GroupLayout,
   ssr: false,
-  loader: ({ params }) => ({ crumb: slug(params.title).decode() }),
+  loader: (context) => ({ crumb: slugify(context.params.slug).decode() }),
   params: {
     stringify: (params) => ({
-      title: slug(params.title).encode(),
+      slug: slugify(params.slug).encode(),
     }),
   },
 });
