@@ -65,14 +65,6 @@ export function useRecordQuery<
 
 const useZeroInternal = createUseZero<Schema, ClientMutators>();
 
-// export function useZero() {
-//   const client = useZeroInternal();
-
-//   return {
-//     z: client,
-//     useQuery: useZeroQuery,
-//   } as const;
-// }
 export function useZero() {
   return useZeroInternal();
 }

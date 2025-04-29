@@ -73,7 +73,6 @@ export function CreateExpenseDialog() {
             type="submit"
             variant="theme"
             size="xs"
-            // className="mb-auto w-full py-2.5"
             className="col-start-1 -col-end-2 mb-auto py-2.5 w-full"
           >
             create
