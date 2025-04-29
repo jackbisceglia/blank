@@ -55,9 +55,11 @@ export namespace expenses {
           );
 
           const user = parsed.members.find((m) => m.name === USER);
+
           if (!user) {
             return err(new Error("Current user not present in parsed expense"));
           }
+
           const otherExpenseMembers = parsed.members
             .filter((m) => m.name !== USER)
             .map((parsedMember) => ({

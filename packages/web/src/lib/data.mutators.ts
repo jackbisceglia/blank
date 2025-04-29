@@ -3,7 +3,7 @@ import {
   CustomMutatorDefs,
   Transaction as TransactionInternal,
 } from "@rocicorp/zero";
-import { slug } from "./utils";
+import { slugify } from "./utils";
 import { OpenAuthToken } from "@blank/auth/subjects";
 
 const CONSTRAINTS = {
@@ -79,7 +79,7 @@ export function createClientMutators(_auth: OpenAuthToken | undefined) {
         await tx.mutate.group.insert({
           id: groupId,
           title: opts.title,
-          slug: slug(opts.title).encode(),
+          slug: slugify(opts.title).encode(),
           description: opts.description,
           ownerId: opts.userId,
           createdAt: Date.now(),

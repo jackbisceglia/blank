@@ -29,7 +29,7 @@ export const createFromDescriptionServerFn = createServerFn()
         expenses.createFromDescription({
           userId: subject.userID,
           groupId: ctx.data.groupId,
-          description: ctx.data.groupId,
+          description: ctx.data.description,
         })
       )
       .map((value) => value)

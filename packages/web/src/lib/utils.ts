@@ -11,7 +11,7 @@ export function build(delimiter: string) {
     args.filter((arg) => !!arg).join(delimiter);
 }
 
-export function slug(str: string) {
+export function slugify(str: string) {
   const encode = (s: string) => s.toLowerCase().replaceAll(" ", "-");
   const decode = (s: string) => s.replaceAll("-", " ");
 

@@ -18,7 +18,6 @@ export const APIRoute = createAPIFileRoute("/api/sync/push")({
         );
         return json(result);
       } catch (error) {
-        console.log("erroring in push");
         console.error(error);
         return json({ error: "Failed to process push" }, { status: 500 });
       }

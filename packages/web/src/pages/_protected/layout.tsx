@@ -20,11 +20,13 @@ import {
 } from "@tanstack/react-router";
 import { Fragment } from "react/jsx-runtime";
 import { GlobalCommandBar } from "./@command-bar";
-import * as v from "valibot";
 import { ZeroProvider } from "@/lib/zero.provider";
 import { authenticationQueryOptions, AuthProvider } from "@/lib/auth.provider";
 import { getCookie as getCookieTanstackStart } from "@tanstack/react-start/server";
 import { PropsWithChildren } from "react";
+import { SearchParams } from "./@search-params";
+import { CreateExpenseDialog } from "./@create-expense";
+import { CreateGroupDialog } from "./groups/@create-group";
 
 function getCookie(name: string, fallback?: string) {
   const getCookieOnServer = getCookieTanstackStart;
@@ -74,7 +76,7 @@ function Breadcrumbs() {
                 }}
                 search={(prev) => ({
                   ...prev,
-                  cmd: prev.cmd,
+                  action: prev.action,
                 })}
                 from={match.fullPath}
               >
@@ -89,19 +91,14 @@ function Breadcrumbs() {
   );
 }
 
-export const GlobalSearchParams = v.object({
-  cmd: v.optional(v.literal("open")),
-});
-export type GlobalSearchParams = v.InferOutput<typeof GlobalSearchParams>;
-
 function ProtectedLayout() {
-  const search = Route.useSearch();
-
   return (
     <>
       <GlobalSidebar groups={data.groups} collapsible="icon" />
-      <GlobalCommandBar searchKey={"cmd"} searchValue={search.cmd} />
-      <main className="w-full flex flex-col items-start gap-3 py-3 px-6 md:pl-10 md:pr-14 min-h-full relative">
+      <GlobalCommandBar />
+      <CreateExpenseDialog />
+      <CreateGroupDialog />
+      <main className="w-full flex flex-col items-start gap-3.5 py-3 px-6 md:pl-10 md:pr-14 min-h-full relative">
         <header className="flex items-center gap-2 text-sm w-full">
           <SidebarTrigger />
           <Breadcrumbs />
@@ -137,5 +134,5 @@ export const Route = createFileRoute("/_protected")({
       <ProtectedLayout />
     </Providers>
   ),
-  validateSearch: GlobalSearchParams,
+  validateSearch: SearchParams,
 });

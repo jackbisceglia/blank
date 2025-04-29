@@ -8,37 +8,29 @@ import {
 } from "@/components/ui/command";
 import { useEffect } from "react";
 import { createPreventDefault, fn, keyboard } from "@/lib/utils";
-import { Link, useNavigate } from "@tanstack/react-router";
-import { GlobalSearchParams } from "./layout";
+import { Link, LinkOptions, useNavigate } from "@tanstack/react-router";
 import { useGetGroupsList } from "./groups/@data";
 import { useAuthentication } from "@/lib/auth.provider";
-import { GlobalDialogProps, useDialogFromUrl } from "@/lib/dialog";
+import { useDialogFromUrl } from "@/lib/dialog";
+import * as v from "valibot";
 
-// type CommandBarProps = {
-//   groups: Group[];
-// };
+export const GlobalSearchParams = v.object({
+  action: v.literal("command"),
+});
+export type GlobalSearchParams = v.InferOutput<typeof GlobalSearchParams>;
 
-export function GlobalCommandBar<T extends keyof GlobalSearchParams>(
-  // props: GlobalDialogProps<T> & CommandBarProps
-  props: GlobalDialogProps<T>
-) {
+export function GlobalCommandBar() {
   const navigate = useNavigate();
   const { user } = useAuthentication();
-  const _groups = useGetGroupsList(user.id);
+  const groups = useGetGroupsList(user.id);
 
-  const view = useDialogFromUrl({
-    search: {
-      key: props.searchKey,
-      value: props.searchValue,
-      valueWhenOpen: "open",
-    },
-  });
+  const view = useDialogFromUrl({ schema: GlobalSearchParams });
 
   const commands = {
     home: fn(() => {
       const opts = {
         to: "/",
-      };
+      } as const;
       return {
         hotkey: "h",
         title: "home",
@@ -51,7 +43,7 @@ export function GlobalCommandBar<T extends keyof GlobalSearchParams>(
     groups: fn(() => {
       const opts = {
         to: "/groups",
-      };
+      } as const;
       return {
         hotkey: "g",
         title: "groups",
@@ -61,37 +53,23 @@ export function GlobalCommandBar<T extends keyof GlobalSearchParams>(
         },
       };
     }),
-    // newExpense: fn(() => {
-    //   const opts = {
-    //     to: ".",
-    //   } as const;
-    //   return {
-    //     hotkey: "e",
-    //     title: "create expense",
-    //     opts,
-    //     go: () => {
-    //       void navigate(opts);
-    //     },
-    //   };
-    // }),
-    // TODO: TEMPORARY
-    // newGroup: fn(() => {
-    //   const opts = {
-    //     to: "/groups",
-    //     search: {
-    //       cmd: undefined,
-    //       action: "new-group",
-    //     },
-    //   } as const;
-    //   return {
-    //     hotkey: "G",
-    //     title: "create group",
-    //     opts,
-    //     go: () => {
-    //       void navigate(opts);
-    //     },
-    //   };
-    // }),
+    newExpense: fn(() => {
+      const opts = {
+        to: ".",
+        search: () => ({
+          action: ["new-expense"],
+        }),
+      } satisfies LinkOptions;
+
+      return {
+        hotkey: "e",
+        title: "create expense",
+        opts,
+        go: () => {
+          void navigate(opts);
+        },
+      };
+    }),
   };
 
   useEffect(() => {
@@ -125,11 +103,14 @@ export function GlobalCommandBar<T extends keyof GlobalSearchParams>(
     };
   }, [view.state]);
 
-  const groups = _groups.data.map((g) => ({
-    type: "link",
-    title: g.title,
-    opts: { to: `/groups/$title`, params: { title: g.title } },
-  }));
+  const groupCommands = groups.data.map(
+    (group) =>
+      ({
+        type: "link",
+        title: group.title,
+        opts: { to: `/groups/$slug`, params: { slug: group.slug } },
+      }) as const
+  );
 
   return (
     <CommandDialog
@@ -159,7 +140,7 @@ export function GlobalCommandBar<T extends keyof GlobalSearchParams>(
           ))}
         </CommandGroup>
         <CommandGroup heading="Your Groups">
-          {groups.map((group) => (
+          {groupCommands.map((group) => (
             <CommandItem
               onSelect={() => {
                 void navigate(group.opts);

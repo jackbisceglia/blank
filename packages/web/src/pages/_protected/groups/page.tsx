@@ -7,13 +7,12 @@ import {
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { PrimaryHeading, SecondaryHeading } from "@/components/prose";
 import { Group } from "@blank/zero";
-import { useCreateGroup, useGetGroupsList } from "./@data";
+import { useGetGroupsList } from "./@data";
 import { Loading } from "@/components/loading";
 import { Button } from "@/components/ui/button";
-import { PageHeader, PageHeaderRow } from "@/components/layouts";
-import { CreateGroupDialog } from "./@create-group";
-import * as v from "valibot";
+import { PageHeaderRow } from "@/components/layouts";
 import { useAuthentication } from "@/lib/auth.provider";
+import { SearchParams } from "../@search-params";
 
 type GroupListProps = {
   groups: Group[];
@@ -21,7 +20,7 @@ type GroupListProps = {
 
 function GroupList(props: GroupListProps) {
   return props.groups.map((group) => (
-    <Link key={group.id} to={`/groups/$title`} params={{ title: group.title }}>
+    <Link key={group.id} to={`/groups/$slug`} params={{ slug: group.slug }}>
       <Card className="hover:bg-card/50 duration-0 h-full">
         <CardHeader>
           <CardTitle className="uppercase">{group.title}</CardTitle>
@@ -43,65 +42,39 @@ const States = {
     </SecondaryHeading>
   ),
 };
-
 function GroupsRoute() {
-  const search = Route.useSearch();
   const { user } = useAuthentication();
-  const { data, status } = useGetGroupsList(user.id);
-  const createGroup = useCreateGroup();
+  const groups = useGetGroupsList(user.id);
 
   return (
     <>
-      <CreateGroupDialog
-        onSubmit={async (title, description) => {
-          try {
-            await createGroup({
-              description,
-              title,
-              userId: user.id,
-              username: user.name,
-            });
-          } catch (e) {
-            if (e instanceof Error) {
-              window.alert(`Could not create group: ${e.message}`);
-            }
-          }
-        }}
-        searchKey="action"
-        searchValue={search.action}
-      />
-      <PageHeader>
-        <PageHeaderRow className="h-8 mt-2">
-          <PrimaryHeading>Your Groups</PrimaryHeading>
-          <Button asChild size="sm" variant="theme" className="ml-auto">
-            <Link to="." search={{ action: "new-group" }}>
-              New Group
-            </Link>
-          </Button>
-        </PageHeaderRow>
-      </PageHeader>
-      {status === "empty" ? (
+      <PageHeaderRow className="h-8">
+        <PrimaryHeading>Your Groups</PrimaryHeading>
+        <Button asChild size="sm" variant="theme" className="ml-auto">
+          <Link
+            to="."
+            search={(prev) => ({
+              action: ["new-group", ...(prev.action ?? [])],
+            })}
+          >
+            Create Group
+          </Link>
+        </Button>
+      </PageHeaderRow>
+      {groups.status === "empty" ? (
         <States.Empty />
       ) : (
         <div className="w-full grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 py-2">
-          <GroupList groups={data} />
+          <GroupList groups={groups.data} />
         </div>
       )}
     </>
   );
 }
 
-export const CreateGroupSearchParams = v.object({
-  action: v.optional(v.literal("new-group")),
-});
-
-export type CreateGroupSearchParams = v.InferOutput<
-  typeof CreateGroupSearchParams
->;
-
 export const Route = createFileRoute("/_protected/groups/")({
   component: GroupsRoute,
   ssr: false,
   loader: () => ({ crumb: "" }), // no crumb- this is handled in the layout for nesting
-  validateSearch: CreateGroupSearchParams,
+  validateSearch: SearchParams,
 });
