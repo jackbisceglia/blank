@@ -10,8 +10,5 @@
     "dev": "zero-deploy-permissions && zero-cache",
     "lint": "eslint .",
     "lint:fix": "eslint . --fix"
-  },
-  "peerDependencies": {
-    "typescript": "^5.0.0"
   }
 }

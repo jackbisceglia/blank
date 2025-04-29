@@ -97,7 +97,7 @@ importers:
         specifier: ^1.0.7
         version: 1.0.7(tailwindcss@4.1.4)
       typescript:
-        specifier: ^5.7.3
+        specifier: 5.8.3
         version: 5.8.3
       typescript-eslint:
         specifier: ^8.26.1
@@ -122,7 +122,7 @@ importers:
         version: 1.3.9(zod@3.24.2)
       '@ai-sdk/valibot':
         specifier: ^0.1.16
-        version: 0.1.16(@valibot/to-json-schema@1.0.0(valibot@1.0.0(typescript@5.8.2)))(react@19.0.0)(valibot@1.0.0(typescript@5.8.2))(zod@3.24.2)
+        version: 0.1.16(@valibot/to-json-schema@1.0.0(valibot@1.0.0(typescript@5.8.3)))(react@19.0.0)(valibot@1.0.0(typescript@5.8.3))(zod@3.24.2)
       '@lmnr-ai/lmnr':
         specifier: ^0.5.0
         version: 0.5.0
@@ -137,25 +137,22 @@ importers:
         version: 0.0.127
       braintrust:
         specifier: ^0.0.197
-        version: 0.0.197(openai@4.95.1(ws@8.18.1)(zod@3.24.2))(react@19.0.0)(solid-js@1.9.5)(sswr@2.2.0(svelte@5.26.2))(svelte@5.26.2)(vue@3.5.13(typescript@5.8.2))(zod@3.24.2)
+        version: 0.0.197(openai@4.95.1(ws@8.18.1)(zod@3.24.2))(react@19.0.0)(solid-js@1.9.5)(sswr@2.2.0(svelte@5.26.2))(svelte@5.26.2)(vue@3.5.13(typescript@5.8.3))(zod@3.24.2)
       drizzle-orm:
         specifier: ^0.39.0
         version: 0.39.3(@neondatabase/serverless@0.10.4)(@opentelemetry/api@1.9.0)(@types/pg@8.11.6)(pg@8.14.0)(postgres@3.4.5)
       drizzle-valibot:
         specifier: ^0.4.1
-        version: 0.4.1(drizzle-orm@0.39.3(@neondatabase/serverless@0.10.4)(@opentelemetry/api@1.9.0)(@types/pg@8.11.6)(pg@8.14.0)(postgres@3.4.5))(valibot@1.0.0(typescript@5.8.2))
+        version: 0.4.1(drizzle-orm@0.39.3(@neondatabase/serverless@0.10.4)(@opentelemetry/api@1.9.0)(@types/pg@8.11.6)(pg@8.14.0)(postgres@3.4.5))(valibot@1.0.0(typescript@5.8.3))
       neverthrow:
         specifier: ^8.2.0
         version: 8.2.0
       postgres:
         specifier: ^3.4.5
         version: 3.4.5
-      typescript:
-        specifier: ^5.0.0
-        version: 5.8.2
       valibot:
         specifier: ^1.0.0
-        version: 1.0.0(typescript@5.8.2)
+        version: 1.0.0(typescript@5.8.3)
 
   packages/server/api: {}
 
@@ -176,12 +173,9 @@ importers:
       jose:
         specifier: ^6.0.6
         version: 6.0.10
-      typescript:
-        specifier: ^5.0.0
-        version: 5.8.2
       valibot:
         specifier: ^1.0.0
-        version: 1.0.0(typescript@5.8.2)
+        version: 1.0.0(typescript@5.8.3)
 
   packages/web:
     dependencies:
@@ -313,11 +307,7 @@ importers:
         specifier: ^3.0.6
         version: 3.0.6
 
-  packages/zero:
-    dependencies:
-      typescript:
-        specifier: ^5.0.0
-        version: 5.8.2
+  packages/zero: {}
 
 packages:
 
@@ -6629,11 +6619,6 @@ packages:
       eslint: ^8.57.0 || ^9.0.0
       typescript: '>=4.8.4 <5.9.0'
 
-  typescript@5.8.2:
-    resolution: {integrity: sha512-aJn6wq13/afZp/jT9QZmwEjDqqvSGp1VT5GVg+f/t6/oVyrgXM6BY1h9BRh/O5p3PlUPAe+WuiEZOmb/49RqoQ==}
-    engines: {node: '>=14.17'}
-    hasBin: true
-
   typescript@5.8.3:
     resolution: {integrity: sha512-p1diW6TqL9L07nNxvRMM7hMMw4c5XOo/1ibL4aAIGmSAt9slTE1Xgw5KWuof2uTOvCg9BY7ZRi+GaF+7sfgPeQ==}
     engines: {node: '>=14.17'}
@@ -7219,22 +7204,22 @@ snapshots:
       zod: 3.24.2
       zod-to-json-schema: 3.24.3(zod@3.24.2)
 
-  '@ai-sdk/valibot@0.1.16(@valibot/to-json-schema@1.0.0(valibot@1.0.0(typescript@5.8.2)))(react@19.0.0)(valibot@1.0.0(typescript@5.8.2))(zod@3.24.2)':
+  '@ai-sdk/valibot@0.1.16(@valibot/to-json-schema@1.0.0(valibot@1.0.0(typescript@5.8.3)))(react@19.0.0)(valibot@1.0.0(typescript@5.8.3))(zod@3.24.2)':
     dependencies:
-      '@valibot/to-json-schema': 1.0.0(valibot@1.0.0(typescript@5.8.2))
+      '@valibot/to-json-schema': 1.0.0(valibot@1.0.0(typescript@5.8.3))
       ai: 4.3.4(react@19.0.0)(zod@3.24.2)
-      valibot: 1.0.0(typescript@5.8.2)
+      valibot: 1.0.0(typescript@5.8.3)
     transitivePeerDependencies:
       - react
       - zod
 
-  '@ai-sdk/vue@0.0.59(vue@3.5.13(typescript@5.8.2))(zod@3.24.2)':
+  '@ai-sdk/vue@0.0.59(vue@3.5.13(typescript@5.8.3))(zod@3.24.2)':
     dependencies:
       '@ai-sdk/provider-utils': 1.0.22(zod@3.24.2)
       '@ai-sdk/ui-utils': 0.0.50(zod@3.24.2)
-      swrv: 1.1.0(vue@3.5.13(typescript@5.8.2))
+      swrv: 1.1.0(vue@3.5.13(typescript@5.8.3))
     optionalDependencies:
-      vue: 3.5.13(typescript@5.8.2)
+      vue: 3.5.13(typescript@5.8.3)
     transitivePeerDependencies:
       - zod
 
@@ -10451,9 +10436,9 @@ snapshots:
       '@typescript-eslint/types': 8.31.0
       eslint-visitor-keys: 4.2.0
 
-  '@valibot/to-json-schema@1.0.0(valibot@1.0.0(typescript@5.8.2))':
+  '@valibot/to-json-schema@1.0.0(valibot@1.0.0(typescript@5.8.3))':
     dependencies:
-      valibot: 1.0.0(typescript@5.8.2)
+      valibot: 1.0.0(typescript@5.8.3)
 
   '@vercel/functions@1.6.0': {}
 
@@ -10553,11 +10538,11 @@ snapshots:
       '@vue/shared': 3.5.13
       csstype: 3.1.3
 
-  '@vue/server-renderer@3.5.13(vue@3.5.13(typescript@5.8.2))':
+  '@vue/server-renderer@3.5.13(vue@3.5.13(typescript@5.8.3))':
     dependencies:
       '@vue/compiler-ssr': 3.5.13
       '@vue/shared': 3.5.13
-      vue: 3.5.13(typescript@5.8.2)
+      vue: 3.5.13(typescript@5.8.3)
 
   '@vue/shared@3.5.13': {}
 
@@ -10590,7 +10575,7 @@ snapshots:
     dependencies:
       humanize-ms: 1.2.1
 
-  ai@3.4.33(openai@4.95.1(ws@8.18.1)(zod@3.24.2))(react@19.0.0)(solid-js@1.9.5)(sswr@2.2.0(svelte@5.26.2))(svelte@5.26.2)(vue@3.5.13(typescript@5.8.2))(zod@3.24.2):
+  ai@3.4.33(openai@4.95.1(ws@8.18.1)(zod@3.24.2))(react@19.0.0)(solid-js@1.9.5)(sswr@2.2.0(svelte@5.26.2))(svelte@5.26.2)(vue@3.5.13(typescript@5.8.3))(zod@3.24.2):
     dependencies:
       '@ai-sdk/provider': 0.0.26
       '@ai-sdk/provider-utils': 1.0.22(zod@3.24.2)
@@ -10598,7 +10583,7 @@ snapshots:
       '@ai-sdk/solid': 0.0.54(solid-js@1.9.5)(zod@3.24.2)
       '@ai-sdk/svelte': 0.0.57(svelte@5.26.2)(zod@3.24.2)
       '@ai-sdk/ui-utils': 0.0.50(zod@3.24.2)
-      '@ai-sdk/vue': 0.0.59(vue@3.5.13(typescript@5.8.2))(zod@3.24.2)
+      '@ai-sdk/vue': 0.0.59(vue@3.5.13(typescript@5.8.3))(zod@3.24.2)
       '@opentelemetry/api': 1.9.0
       eventsource-parser: 1.1.2
       json-schema: 0.4.0
@@ -10885,13 +10870,13 @@ snapshots:
     dependencies:
       fill-range: 7.1.1
 
-  braintrust@0.0.197(openai@4.95.1(ws@8.18.1)(zod@3.24.2))(react@19.0.0)(solid-js@1.9.5)(sswr@2.2.0(svelte@5.26.2))(svelte@5.26.2)(vue@3.5.13(typescript@5.8.2))(zod@3.24.2):
+  braintrust@0.0.197(openai@4.95.1(ws@8.18.1)(zod@3.24.2))(react@19.0.0)(solid-js@1.9.5)(sswr@2.2.0(svelte@5.26.2))(svelte@5.26.2)(vue@3.5.13(typescript@5.8.3))(zod@3.24.2):
     dependencies:
       '@ai-sdk/provider': 1.1.2
       '@braintrust/core': 0.0.84
       '@next/env': 14.2.28
       '@vercel/functions': 1.6.0
-      ai: 3.4.33(openai@4.95.1(ws@8.18.1)(zod@3.24.2))(react@19.0.0)(solid-js@1.9.5)(sswr@2.2.0(svelte@5.26.2))(svelte@5.26.2)(vue@3.5.13(typescript@5.8.2))(zod@3.24.2)
+      ai: 3.4.33(openai@4.95.1(ws@8.18.1)(zod@3.24.2))(react@19.0.0)(solid-js@1.9.5)(sswr@2.2.0(svelte@5.26.2))(svelte@5.26.2)(vue@3.5.13(typescript@5.8.3))(zod@3.24.2)
       argparse: 2.0.1
       chalk: 4.1.2
       cli-progress: 3.12.0
@@ -11310,10 +11295,10 @@ snapshots:
       pg: 8.14.0
       postgres: 3.4.5
 
-  drizzle-valibot@0.4.1(drizzle-orm@0.39.3(@neondatabase/serverless@0.10.4)(@opentelemetry/api@1.9.0)(@types/pg@8.11.6)(pg@8.14.0)(postgres@3.4.5))(valibot@1.0.0(typescript@5.8.2)):
+  drizzle-valibot@0.4.1(drizzle-orm@0.39.3(@neondatabase/serverless@0.10.4)(@opentelemetry/api@1.9.0)(@types/pg@8.11.6)(pg@8.14.0)(postgres@3.4.5))(valibot@1.0.0(typescript@5.8.3)):
     dependencies:
       drizzle-orm: 0.39.3(@neondatabase/serverless@0.10.4)(@opentelemetry/api@1.9.0)(@types/pg@8.11.6)(pg@8.14.0)(postgres@3.4.5)
-      valibot: 1.0.0(typescript@5.8.2)
+      valibot: 1.0.0(typescript@5.8.3)
 
   dunder-proto@1.0.1:
     dependencies:
@@ -13999,9 +13984,9 @@ snapshots:
 
   swrev@4.0.0: {}
 
-  swrv@1.1.0(vue@3.5.13(typescript@5.8.2)):
+  swrv@1.1.0(vue@3.5.13(typescript@5.8.3)):
     dependencies:
-      vue: 3.5.13(typescript@5.8.2)
+      vue: 3.5.13(typescript@5.8.3)
 
   synckit@0.11.4:
     dependencies:
@@ -14184,8 +14169,6 @@ snapshots:
     transitivePeerDependencies:
       - supports-color
 
-  typescript@5.8.2: {}
-
   typescript@5.8.3: {}
 
   typical@7.3.0: {}
@@ -14367,10 +14350,6 @@ snapshots:
 
   uuid@9.0.1: {}
 
-  valibot@1.0.0(typescript@5.8.2):
-    optionalDependencies:
-      typescript: 5.8.2
-
   valibot@1.0.0(typescript@5.8.3):
     optionalDependencies:
       typescript: 5.8.3
@@ -14502,15 +14481,15 @@ snapshots:
       tsx: 4.19.3
       yaml: 2.7.1
 
-  vue@3.5.13(typescript@5.8.2):
+  vue@3.5.13(typescript@5.8.3):
     dependencies:
       '@vue/compiler-dom': 3.5.13
       '@vue/compiler-sfc': 3.5.13
       '@vue/runtime-dom': 3.5.13
-      '@vue/server-renderer': 3.5.13(vue@3.5.13(typescript@5.8.2))
+      '@vue/server-renderer': 3.5.13(vue@3.5.13(typescript@5.8.3))
       '@vue/shared': 3.5.13
     optionalDependencies:
-      typescript: 5.8.2
+      typescript: 5.8.3
 
   web-streams-polyfill@3.3.3: {}
 
