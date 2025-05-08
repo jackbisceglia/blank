@@ -2,22 +2,22 @@ import { err, ok } from "neverthrow";
 import { db } from ".";
 import { DrizzleResult, fromDrizzleThrowable } from "./utils";
 import {
-  ExpenseMember,
-  ExpenseMemberInsert,
-  expenseMemberTable,
-} from "./expense-member.schema";
+  Participant,
+  ParticipantInsert,
+  participantTable,
+} from "./participant.schema";
 
 const Errors = {
   UnexpectedInsertCount: (ct: number) =>
     new Error(`Expected 1 expense to be inserted, but got ${ct.toString()}`),
 };
 
-export namespace expenseMembers {
+export namespace participants {
   export function create(
-    expenseMember: ExpenseMemberInsert
-  ): DrizzleResult<ExpenseMember> {
+    participant: ParticipantInsert
+  ): DrizzleResult<Participant> {
     const safelyInsertExpenseRecord = fromDrizzleThrowable(() =>
-      db.insert(expenseMemberTable).values(expenseMember).returning()
+      db.insert(participantTable).values(participant).returning()
     );
 
     return safelyInsertExpenseRecord().andThen((ids) =>
@@ -28,14 +28,14 @@ export namespace expenseMembers {
   }
 
   export function createMany(
-    expenseMembers: ExpenseMemberInsert[]
-  ): DrizzleResult<ExpenseMember[]> {
+    participants: ParticipantInsert[]
+  ): DrizzleResult<Participant[]> {
     const safelyInsertExpenseRecord = fromDrizzleThrowable(() =>
-      db.insert(expenseMemberTable).values(expenseMembers).returning()
+      db.insert(participantTable).values(participants).returning()
     );
 
     return safelyInsertExpenseRecord().andThen((ids) =>
-      ids.length === expenseMembers.length
+      ids.length === participants.length
         ? ok(ids)
         : err(Errors.UnexpectedInsertCount(ids.length))
     );

@@ -1,7 +1,7 @@
 import { groupTable } from "./group.schema";
 import { relations, sql } from "drizzle-orm";
 import { integer, pgTable, text, timestamp, uuid } from "drizzle-orm/pg-core";
-import { expenseMemberTable } from "./expense-member.schema";
+import { participantTable } from "./participant.schema";
 import { DrizzleModelTypes } from "./utils";
 import { createInsertSchema, createSelectSchema } from "drizzle-valibot";
 
@@ -17,7 +17,7 @@ export const expenseTable = pgTable("expense", {
 });
 
 export const expenseRelation = relations(expenseTable, ({ one, many }) => ({
-  expenseMembers: many(expenseMemberTable),
+  participants: many(participantTable),
   group: one(groupTable, {
     fields: [expenseTable.groupId],
     references: [groupTable.id],

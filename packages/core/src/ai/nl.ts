@@ -2,7 +2,7 @@ import { createSafeGenerateObject } from "./utils";
 import { ExpenseInsert } from "../db";
 import { valibotSchema } from "@ai-sdk/valibot";
 import * as v from "valibot";
-import { ExpenseMemberInsert } from "../db/expense-member.schema";
+import { ParticipantInsert } from "../db/participant.schema";
 import { DEFAULT, DEFAULT_FAST, ModelKeys, models } from "./models";
 import { ResultAsync } from "neverthrow";
 
@@ -33,7 +33,7 @@ export namespace nl {
         expense: v.omit(ExpenseInsert, ["groupId", "id", "createdAt", "date"]),
         members: v.array(
           v.object({
-            ...v.omit(ExpenseMemberInsert, ["expenseId", "groupId", "userId"])
+            ...v.omit(ParticipantInsert, ["expenseId", "groupId", "userId"])
               .entries,
             name: v.pipe(v.string(), v.minLength(1)),
             split: v.pipe(v.number(), v.minValue(0), v.maxValue(1)),

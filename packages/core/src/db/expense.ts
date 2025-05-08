@@ -7,7 +7,7 @@ import { DrizzleError } from "drizzle-orm";
 import { AISDKError } from "ai";
 import { groups } from "./group";
 import { findClosestMatch } from "../utils/string-similarity";
-import { expenseMembers } from "./expense-member";
+import { participants } from "./participant";
 
 const USER = "USER";
 
@@ -60,7 +60,7 @@ export namespace expenses {
             return err(new Error("Current user not present in parsed expense"));
           }
 
-          const otherExpenseMembers = parsed.members
+          const otherParticipants = parsed.members
             .filter((m) => m.name !== USER)
             .map((parsedMember) => ({
               role: parsedMember.role,
@@ -83,12 +83,12 @@ export namespace expenses {
           ): members is Array<{ userId: string }> =>
             members.every((m) => m.userId !== null);
 
-          if (!hasNonNullUserIds(otherExpenseMembers)) {
+          if (!hasNonNullUserIds(otherParticipants)) {
             return err(new Error("No matching member found"));
           }
 
           const mergedMembers = [
-            ...otherExpenseMembers,
+            ...otherParticipants,
             {
               role: user.role,
               split: user.split,
@@ -106,7 +106,7 @@ export namespace expenses {
         return expenses
           .create({ ...normalized.expense, groupId: opts.groupId })
           .andThen((created) => {
-            return expenseMembers.createMany(
+            return participants.createMany(
               normalized.members.map((m) => ({
                 ...m,
                 groupId: opts.groupId,

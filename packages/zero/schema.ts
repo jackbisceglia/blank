@@ -54,7 +54,7 @@ const member = table("member")
   })
   .primaryKey("groupId", "userId");
 
-const expenseMember = table("expenseMember")
+const participant = table("participant")
   .columns({
     expenseId: string(),
     groupId: string(),
@@ -97,14 +97,14 @@ const expenseRelationships = relationships(expense, ({ one, many }) => ({
     destSchema: group,
     destField: ["id"],
   }),
-  expenseMembers: many({
+  participants: many({
     sourceField: ["id"],
-    destSchema: expenseMember,
     destField: ["expenseId"],
+    destSchema: participant,
   }),
 }));
 
-const expenseMemberRelationships = relationships(expenseMember, ({ one }) => ({
+const participantRelationships = relationships(participant, ({ one }) => ({
   member: one({
     sourceField: ["groupId", "userId"],
     destSchema: member,
@@ -120,12 +120,12 @@ export type Member = Row<typeof schema.tables.member>;
 // schema
 export type Schema = typeof schema;
 export const schema = createSchema({
-  tables: [preference, group, member, expense, expenseMember],
+  tables: [preference, group, member, expense, participant],
   relationships: [
     groupRelationships,
     memberRelationships,
     expenseRelationships,
-    expenseMemberRelationships,
+    participantRelationships,
   ],
 });
 
@@ -136,6 +136,6 @@ export const permissions = definePermissions<AuthData, Schema>(schema, () => {
     group: ANYONE_CAN_DO_ANYTHING,
     member: ANYONE_CAN_DO_ANYTHING,
     expense: ANYONE_CAN_DO_ANYTHING,
-    expenseMember: ANYONE_CAN_DO_ANYTHING,
+    participant: ANYONE_CAN_DO_ANYTHING,
   } satisfies PermissionsConfig<AuthData, Schema>;
 });
