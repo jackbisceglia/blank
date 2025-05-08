@@ -1,40 +1,111 @@
-import { Button } from "@/components/ui/button";
 import {
   Dialog,
   DialogContent,
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { Input } from "@/components/ui/input";
 import { useDialogFromUrl } from "@/lib/dialog";
-import { Label } from "@radix-ui/react-label";
 import * as v from "valibot";
 import { useCreateExpense } from "./@data";
+import { ok } from "neverthrow";
+import { toast } from "sonner";
+import { FieldsErrors, useAppForm } from "@/lib/form";
+import { useStore } from "@tanstack/react-form";
+import { unwrapOrThrow } from "@blank/core/utils";
 
 export const CreateExpenseSearchParams = v.object({
   action: v.literal("new-expense"),
 });
+
 export type CreateExpenseSearchParams = v.InferOutput<
   typeof CreateExpenseSearchParams
 >;
 
-export function CreateExpenseDialog() {
-  const createExpense = useCreateExpense();
-  const formKeys = { expense: "expense-description" };
+const schema = v.object({
+  description: v.pipe(
+    v.string("Description is required"),
+    v.minLength(1, `Description is required`),
+    v.maxLength(180, `Description must be at most 180 characters`)
+  ),
+});
 
-  const view = useDialogFromUrl({ schema: CreateExpenseSearchParams });
+type CreateExpenseFormProps = {
+  closeDialog: () => void;
+  createExpense: ReturnType<typeof useCreateExpense>;
+};
 
-  function handleSubmit(_event: React.FormEvent<HTMLFormElement>) {
-    const form = new FormData(_event.target as HTMLFormElement);
-    // TODO: validate
-    const description = form.get(formKeys.expense) as string;
-    void createExpense(description);
-    view.close();
+function CreateExpenseForm(props: CreateExpenseFormProps) {
+  const form = useAppForm({
+    defaultValues: { description: "" },
+    onSubmit: (fields) => handleSubmit(fields.value.description),
+    validators: { onChange: schema },
+  });
+
+  const meta = useStore(form.store, (store) => store.fieldMeta);
+
+  function handleSubmit(value: string) {
+    const creatingExpense = ok(value)
+      .andTee(props.closeDialog)
+      .asyncAndThen((description) => {
+        return props.createExpense(description);
+      });
+
+    toast.promise(unwrapOrThrow(creatingExpense), {
+      loading: "Creating expense...",
+      success: {
+        type: "success",
+        message: "Expense created successfully",
+      },
+      error: (error: unknown) => ({
+        type: "error",
+        message: "Unable to create expense",
+        description:
+          error instanceof Error ? error.message : "Unknown error occurred",
+      }),
+    });
   }
 
   return (
+    <form
+      className="grid grid-rows-3 grid-cols-6 focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[1.5px] items-center gap-2.5 p-2 border-[1.5px] border-none bg-transparent [&>div>input]:h-6 h-fit"
+      onSubmit={(e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        void form.handleSubmit();
+      }}
+    >
+      <form.AppField
+        name="description"
+        children={(field) => (
+          <field.TextField
+            label="Description"
+            labelProps={{}}
+            inputProps={{
+              placeholder: "enter description",
+            }}
+          />
+        )}
+      />
+      <form.AppForm>
+        <form.SubmitButton>Submit</form.SubmitButton>
+        <form.CancelButton onClick={props.closeDialog}>
+          Cancel
+        </form.CancelButton>
+
+        <FieldsErrors className="col-span-full" metas={Object.values(meta)} />
+      </form.AppForm>
+    </form>
+  );
+}
+
+export function CreateExpenseDialog() {
+  const createExpense = useCreateExpense();
+  const view = useDialogFromUrl({ schema: CreateExpenseSearchParams });
+  const isOpen = view.state() === "open";
+
+  return (
     <Dialog
-      open={view.state() === "open"}
+      open={isOpen}
       onOpenChange={(bool) => {
         (bool ? view.open : view.close)();
       }}
@@ -45,48 +116,12 @@ export function CreateExpenseDialog() {
       <DialogContent
         aria-describedby={undefined}
         omitCloseButton
-        className="bg-transparent border-none shadow-none sm:max-w-2xl"
+        className="bg-transparent border-none shadow-none sm:max-w-2xl outline-none"
       >
-        {/* TODO: convert to form w/ tanstack form */}
-        <form
-          onSubmit={(e) => {
-            e.preventDefault();
-            handleSubmit(e);
-          }}
-          className="grid grid-rows-3 grid-cols-6 focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[1.5px] items-center gap-2.5 p-2 border-[1.5px] border-none bg-transparent [&>div>input]:h-6 h-fit"
-        >
-          <Label
-            className="lowercase font-base text-xs col-span-full mt-auto"
-            htmlFor={formKeys.expense}
-          >
-            Expense Description
-          </Label>
-          <Input
-            aria-errormessage="error-message"
-            min={1}
-            id={formKeys.expense}
-            name={formKeys.expense}
-            className="sm:px-3 sm:py-2 w-full bg-popover space-y-0.5 col-span-full border-0 p-0 focus-visible:ring-0 placeholder:text-muted-foreground/60 flex-1"
-            placeholder="enter expense description"
-          />
-          <Button
-            type="submit"
-            variant="theme"
-            size="xs"
-            className="col-start-1 -col-end-2 mb-auto py-2.5 w-full"
-          >
-            create
-          </Button>
-          <Button
-            type="button"
-            onClick={view.close}
-            variant="destructive"
-            size="xs"
-            className="col-span-1 mb-auto py-2.5 w-full"
-          >
-            cancel
-          </Button>
-        </form>
+        <CreateExpenseForm
+          closeDialog={view.close}
+          createExpense={createExpense}
+        />
       </DialogContent>
     </Dialog>
   );

@@ -21,8 +21,8 @@ export type GlobalSearchParams = v.InferOutput<typeof GlobalSearchParams>;
 
 export function GlobalCommandBar() {
   const navigate = useNavigate();
-  const { user } = useAuthentication();
-  const groups = useGetGroupsList(user.id);
+  const auth = useAuthentication();
+  const groups = useGetGroupsList(auth.user.id);
 
   const view = useDialogFromUrl({ schema: GlobalSearchParams });
 

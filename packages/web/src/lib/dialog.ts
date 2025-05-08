@@ -29,15 +29,20 @@ type useDialogOptions = {
 };
 
 export function useDialogFromUrl(opts: useDialogOptions) {
-  const search = useSearch({ strict: false });
-  const navigate = useNavigate();
-
   const literal = opts.schema.entries.action.literal as SearchParamActionValues;
+  const search = useSearch({
+    strict: false,
+    select: (state) =>
+      state.action?.includes(literal) ? state.action : undefined,
+    structuralSharing: true,
+  });
+  const navigate = useNavigate();
 
   const setViewState = (state: State) => {
     void navigate({
       to: ".",
       search: (prev) => {
+        // TODO: pull into middleware that will handle dedup/filter logic when simply adding to search
         const actions = [...(prev.action ?? [])];
 
         const actionValues =
@@ -54,7 +59,7 @@ export function useDialogFromUrl(opts: useDialogOptions) {
   };
 
   return {
-    state: () => (search.action?.includes(literal) ? "open" : "closed"),
+    state: () => (search?.includes(literal) ? "open" : "closed"),
     open: () => {
       setViewState("open");
     },

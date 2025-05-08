@@ -1,6 +1,4 @@
-import { PageHeaderRow } from "@/components/layouts";
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { cn } from "@/lib/utils";
 import { SubHeading } from "@/components/prose";
 import { useGetGroupBySlug } from "../@data";
 import { Button } from "@/components/ui/button";

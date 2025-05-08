@@ -17,7 +17,7 @@ function Document() {
       </head>
       <body className="dark">
         <Children />
-        <TanStackRouterDevtools position="bottom-right" />
+        {/* <TanStackRouterDevtools position="bottom-right" /> */}
         <Scripts />
       </body>
     </html>

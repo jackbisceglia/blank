@@ -5,6 +5,7 @@ import { useGetGroupBySlug } from "./groups/@data";
 import { useRecordQuery, useZero } from "@/lib/zero.provider";
 import { constants } from "@/lib/utils";
 import { useAuthentication } from "@/lib/auth.provider";
+import { errAsync } from "neverthrow";
 
 function useGetUserDefaultGroup(userId: string) {
   const z = useZero();
@@ -21,22 +22,16 @@ export function useCreateExpense() {
 
   return (description: string) => {
     if (!groupId) {
-      throw new Error("Could not find group");
+      const message =
+        group.data?.id && userPreferences.data?.defaultGroupId
+          ? "No default group found"
+          : "Could not find group to insert";
+
+      return errAsync(new Error(message));
     }
 
     return hydrateAsyncServerResult(() =>
       createFromDescriptionServerFn({ data: { description, groupId } })
-    ).match(
-      function success(result) {
-        return result;
-      },
-      function error(error) {
-        if (error === "Could not find user") {
-          return error;
-        }
-
-        return error.message;
-      }
     );
   };
 }

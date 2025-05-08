@@ -1,5 +1,4 @@
 import {
-  computeListQueryStatus,
   useListQuery,
   useRecordQuery,
   useZero,
@@ -13,7 +12,11 @@ const groupByProperty = (key: "slug" | "id", value: string, z: Zero) =>
   z.query.group
     .where(key, value)
     .one()
-    .related("expenses")
+    .related("expenses", (expenses) =>
+      expenses
+        .related("expenseMembers", (em) => em.related("member"))
+        .orderBy("createdAt", "desc")
+    )
     .related("members")
     .related("owner");
 

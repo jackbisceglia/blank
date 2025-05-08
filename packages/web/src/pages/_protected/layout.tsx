@@ -27,6 +27,7 @@ import { PropsWithChildren } from "react";
 import { SearchParams } from "./@search-params";
 import { CreateExpenseDialog } from "./@create-expense";
 import { CreateGroupDialog } from "./groups/@create-group";
+import { Toaster } from "@/components/ui/sonner";
 
 function getCookie(name: string, fallback?: string) {
   const getCookieOnServer = getCookieTanstackStart;
@@ -60,9 +61,9 @@ function Breadcrumbs() {
   return (
     <Breadcrumb>
       <BreadcrumbList>
+        <BreadcrumbSeparator />
         {breadcrumbs.map((match, index) => (
           <Fragment key={match.id}>
-            {index === 0 && <BreadcrumbSeparator />}
             <BreadcrumbLink
               asChild
               className={cn(
@@ -95,9 +96,6 @@ function ProtectedLayout() {
   return (
     <>
       <GlobalSidebar groups={data.groups} collapsible="icon" />
-      <GlobalCommandBar />
-      <CreateExpenseDialog />
-      <CreateGroupDialog />
       <main className="w-full flex flex-col items-start gap-3.5 py-3 px-6 md:pl-10 md:pr-14 min-h-full relative">
         <header className="flex items-center gap-2 text-sm w-full">
           <SidebarTrigger />
@@ -105,6 +103,11 @@ function ProtectedLayout() {
         </header>
         <Outlet />
       </main>
+      <GlobalCommandBar />
+
+      <CreateExpenseDialog />
+      <CreateGroupDialog />
+      <Toaster />
     </>
   );
 }
@@ -127,6 +130,7 @@ function Providers(props: PropsWithChildren) {
 export const Route = createFileRoute("/_protected")({
   ssr: false,
   loader: (opts) => {
+    // TODO: could i just check auth here?
     void opts.context.queryClient.ensureQueryData(authenticationQueryOptions());
   },
   component: () => (
