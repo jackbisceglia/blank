@@ -49,11 +49,8 @@ export function useAuthentication() {
     throw new Error("useAuth must be used beneath the AuthProvider");
   }
 
-  const user = query.data[0];
-  const token = query.data[1];
-
   return {
-    user,
-    token,
+    user: query.data[0],
+    token: query.data[1],
   };
 }
