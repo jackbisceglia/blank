@@ -10,6 +10,18 @@ import {
 } from "@tanstack/react-form";
 import { cn } from "./utils";
 
+export const prevented = <
+  E extends { preventDefault: () => void; stopPropagation: () => void },
+>(
+  callback?: (e: E) => unknown
+) => {
+  return (e: E) => {
+    e.preventDefault();
+    e.stopPropagation();
+    callback?.(e);
+  };
+};
+
 type FieldsErrorsProps = {
   metas: AnyFieldMeta[];
   className?: string;
@@ -74,7 +86,7 @@ export const SubmitButton = (props: SubmitButtonProps) => {
       variant="theme"
       size="xs"
       className={cn("col-start-1 -col-end-2 mb-auto py-2.5 w-full", className)}
-      disabled={isSubmitting}
+      disabled={isSubmitting && !canSubmit}
       aria-disabled={!canSubmit || isSubmitting}
       {...rest}
     />
