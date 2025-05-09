@@ -3,6 +3,7 @@ import { SubHeading } from "@/components/prose";
 import { useAuthentication } from "@/lib/auth.provider";
 import { useGetGroupBySlug } from "../@data";
 import { GroupBody, SecondaryRow } from "./layout";
+import { Badge } from "@/components/ui/badge";
 
 function MembersRoute() {
   const auth = useAuthentication();
@@ -20,6 +21,18 @@ function MembersRoute() {
       </SecondaryRow>
       <GroupBody>
         <p>dis is allada members</p>
+        <ul className="space-y-2">
+          {group.data?.members.map((member) => (
+            <li key={member.userId}>
+              <Badge
+                variant={member.userId === auth.user.id ? "theme" : "secondary"}
+              >
+                {member.nickname}
+                {member.userId === auth.user.id && " (you)"}
+              </Badge>
+            </li>
+          ))}
+        </ul>
       </GroupBody>
     </>
   );
