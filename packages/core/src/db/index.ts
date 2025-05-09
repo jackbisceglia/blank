@@ -27,7 +27,7 @@ const {
   database: dbDatabase,
 } = Resource.Database;
 
-const schemas = {
+export const schemas = {
   ...user,
   ...group,
   ...member,

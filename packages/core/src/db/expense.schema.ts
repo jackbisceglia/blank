@@ -11,9 +11,9 @@ export const expenseTable = pgTable("expense", {
     .primaryKey(), // update to make into ulid
   groupId: uuid().notNull(), // update to make into ulid
   amount: integer().notNull(),
-  date: timestamp().notNull().defaultNow(),
+  date: timestamp().defaultNow().notNull(),
   description: text().notNull(),
-  createdAt: timestamp().notNull().defaultNow(),
+  createdAt: timestamp().defaultNow().notNull(),
 });
 
 export const expenseRelation = relations(expenseTable, ({ one, many }) => ({

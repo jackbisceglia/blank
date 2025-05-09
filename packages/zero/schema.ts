@@ -28,7 +28,7 @@ const expense = table("expense")
     id: string(),
     groupId: string(),
     amount: number(),
-    date: string(),
+    date: number(),
     description: string(),
     createdAt: number().optional(),
   })
