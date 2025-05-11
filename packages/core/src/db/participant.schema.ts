@@ -12,8 +12,8 @@ import { memberTable } from "./member.schema";
 import { createSelectSchema, createInsertSchema } from "drizzle-valibot";
 import { DrizzleModelTypes } from "./utils";
 
-export const expenseMemberTable = pgTable(
-  "expenseMember",
+export const participantTable = pgTable(
+  "participant",
   {
     expenseId: uuid().notNull(), // TODO: update to make into ulid
     groupId: uuid().notNull(), // TODO: update to make into ulid
@@ -27,24 +27,21 @@ export const expenseMemberTable = pgTable(
   ]
 );
 
-export const expenseMemberRelation = relations(
-  expenseMemberTable,
-  ({ one }) => ({
-    expense: one(expenseTable, {
-      fields: [expenseMemberTable.expenseId],
-      references: [expenseTable.id],
-    }),
-    member: one(memberTable, {
-      fields: [expenseMemberTable.groupId, expenseMemberTable.userId],
-      references: [memberTable.groupId, memberTable.userId],
-    }),
-  })
-);
+export const participantRelation = relations(participantTable, ({ one }) => ({
+  expense: one(expenseTable, {
+    fields: [participantTable.expenseId],
+    references: [expenseTable.id],
+  }),
+  member: one(memberTable, {
+    fields: [participantTable.groupId, participantTable.userId],
+    references: [memberTable.groupId, memberTable.userId],
+  }),
+}));
 
-type ExpenseMemberTypes = DrizzleModelTypes<typeof expenseMemberTable>;
+type ParticipantTypes = DrizzleModelTypes<typeof participantTable>;
 
-export type ExpenseMember = ExpenseMemberTypes["Select"];
-export const ExpenseMember = createSelectSchema(expenseMemberTable);
+export type Participant = ParticipantTypes["Select"];
+export const Participant = createSelectSchema(participantTable);
 
-export type ExpenseMemberInsert = ExpenseMemberTypes["Insert"];
-export const ExpenseMemberInsert = createInsertSchema(expenseMemberTable);
+export type ParticipantInsert = ParticipantTypes["Insert"];
+export const ParticipantInsert = createInsertSchema(participantTable);

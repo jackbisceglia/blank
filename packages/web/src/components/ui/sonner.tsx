@@ -6,13 +6,18 @@ const Toaster = ({ ...props }: ToasterProps) => {
 
   return (
     <Sonner
+      position="bottom-right"
       theme={theme as ToasterProps["theme"]}
       className="toaster group"
       toastOptions={{
         classNames: {
+          title: "uppercase",
+          success: "!bg-blank-theme-background !border-blank-theme",
+          error: "!bg-destructive-background !border-destructive",
+          loading: "!bg-secondary !border-border ",
           toast:
-            "group toast group-[.toaster]:bg-background group-[.toaster]:text-foreground group-[.toaster]:border-border group-[.toaster]:shadow-lg",
-          description: "group-[.toast]:text-muted-foreground",
+            "!rounded-none group toast group-[.toaster]:text-foreground group-[.toaster]:border-border group-[.toaster]:shadow-lg",
+          description: "lowercase group-[.toast]:text-muted-foreground",
           actionButton:
             "group-[.toast]:bg-primary group-[.toast]:text-primary-foreground font-medium",
           cancelButton:
@@ -25,3 +30,5 @@ const Toaster = ({ ...props }: ToasterProps) => {
 };
 
 export { Toaster };
+
+//

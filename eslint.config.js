@@ -47,6 +47,7 @@ export default tseslint.config(
       ],
       "@typescript-eslint/no-explicit-any": "warn",
       "@typescript-eslint/explicit-module-boundary-types": "off",
+      "@typescript-eslint/no-confusing-void-expression": "off",
     },
     languageOptions: {
       parserOptions: {
