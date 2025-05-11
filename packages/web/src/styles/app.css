@@ -52,12 +52,11 @@
   --muted-alt: hsl(224, 35%, 90%, 0.5);
   --muted: hsl(224 3.7% 15.9%);
   --muted-foreground: hsl(224 5% 70%);
-  --accent: hsl(224 3.7% 15.9%);
+  --accent: hsl(224 15% 15% / 0.5);
   --accent-foreground: hsl(225, 35%, 90%);
   --destructive: hsl(0, 61%, 56%);
   --destructive-background: hsl(0, 61%, 9%);
   --destructive-foreground: hsl(225, 35%, 90%);
-  /* --border: hsl(224 3.7% %); */
   --border: hsl(224 5% 37.5%);
   --input: hsl(224 3.7% 15.9%);
   --ring: hsl(224 4.9% 83.9%);

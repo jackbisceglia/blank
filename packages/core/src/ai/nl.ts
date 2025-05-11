@@ -62,24 +62,23 @@ export namespace nl {
         - Always an integer in USD
 
         ### Members
+        - If no explicit payer is mentioned, assume "USER" is the payer
         - Always include "USER" (the person initiating the expense) unless clearly excluded
         - Omit anyone with a split of 0 (unless they're the payer)
-        - If no explicit payer is mentioned, assume "USER" is the payer
         - Total of all splits must equal 1.0
         - Default to equal splits when not specified
 
         ## Examples
 
-        Input: "I paid for lunch with Sarah and Tom yesterday, $30"
+        Input: "I paid for lunch with Jane Doe yesterday, $30"
         Output:
         \`\`\`json
         {
           "description": "Lunch",
           "amount": 30,
           "members": [
-            {"name": "USER", "split": 0.33, "role": "payer"},
-            {"name": "Sarah", "split": 0.33, "role": "participant"},
-            {"name": "Tom", "split": 0.34, "role": "participant"}
+            {"name": "USER", "split": 0.5, "role": "payer"},
+            {"name": "Jane Doe", "split": 0.5, "role": "participant"},
           ]
         }
         \`\`\`

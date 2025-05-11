@@ -11,6 +11,7 @@
   "scripts": {
     "db": "pnpm dlx sst shell drizzle-kit",
     "db:reset": "pnpm dlx sst shell tsx src/db/seed/reset.ts",
+    "db:seed:expenses": "pnpm dlx sst shell tsx src/db/seed/expenses.ts",
     "ai:eval": "pnpm dlx sst shell braintrust eval ./src/ai/__tests__",
     "ai:eval:core": "pnpm dlx sst shell braintrust eval ./src/ai/__tests__/nl.expense.core.eval.ts",
     "test": "pnpm dlx sst shell pnpm test",

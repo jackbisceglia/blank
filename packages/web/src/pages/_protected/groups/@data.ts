@@ -17,7 +17,7 @@ const groupByProperty = (key: "slug" | "id", value: string, z: Zero) =>
         .related("participants", (participants) =>
           participants.related("member")
         )
-        .orderBy("createdAt", "asc")
+        .orderBy("date", "desc")
     )
     .related("members")
     .related("owner");

@@ -116,6 +116,7 @@ const participantRelationships = relationships(participant, ({ one }) => ({
 export type Expense = Row<typeof schema.tables.expense>;
 export type Group = Row<typeof schema.tables.group>;
 export type Member = Row<typeof schema.tables.member>;
+export type Participant = Row<typeof schema.tables.participant>;
 
 // schema
 export type Schema = typeof schema;

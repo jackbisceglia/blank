@@ -15,8 +15,9 @@ const providers = {
   }),
 } as const;
 
+// would like to use groq bc of inference speed, but gpt 4o/4.1 are performing vastly more consistently for now
 export const DEFAULT: ModelKeys = "pro.gpt-4.1";
-export const DEFAULT_FAST: ModelKeys = "mini.llama-scout";
+export const DEFAULT_FAST: ModelKeys = "mini.gpt-4.1-mini";
 
 export type ModelKeys = keyof typeof models;
 
@@ -39,10 +40,10 @@ export const models = {
   // llama
   "mini.llama-scout": () =>
     providers.groq("meta-llama/llama-4-scout-17b-16e-instruct"),
-  "mini.llama-3.1-instant": () =>
-    providers.groq("meta-llama/llama-4-scout-17b-16e-instruct"),
   "pro.llama-3.3": () =>
     providers.groq("meta-llama/llama-4-scout-17b-16e-instruct"),
+  "pro.llama-maverick": () =>
+    providers.groq("meta-llama/llama-4-maverick-17b-128e-instruct"),
 
   // deepseek
   "reasoning.deepseek-r1-llama": () =>

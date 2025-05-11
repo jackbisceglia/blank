@@ -35,7 +35,8 @@ export namespace expenses {
     groupId: string;
     description: string;
     userId: string;
-  };
+  } & Partial<ExpenseInsert>;
+
   export function createFromDescription(
     opts: CreateFromNlOpts
   ): DrizzleResult<Pick<Expense, "id">, DrizzleError | AISDKError> {
@@ -104,7 +105,11 @@ export namespace expenses {
       )
       .andThen((normalized) => {
         return expenses
-          .create({ ...normalized.expense, groupId: opts.groupId })
+          .create({
+            ...normalized.expense,
+            groupId: opts.groupId,
+            date: opts.date,
+          })
           .andThen((created) => {
             return participants.createMany(
               normalized.members.map((m) => ({
