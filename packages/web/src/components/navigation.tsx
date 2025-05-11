@@ -21,8 +21,6 @@ import { useAuthentication } from "@/lib/auth.provider";
 import { QueryStatus } from "@/lib/zero.provider";
 import { useLogout } from "@/lib/auth.provider";
 
-function createExpense() {}
-
 type SidebarItemChunk =
   | {
       type: "link";
@@ -41,6 +39,7 @@ type SidebarMenuItemChunkProps = PropsWithClassname<{
   item: SidebarItemChunk;
   nested?: boolean;
   index: number;
+  matchOnSearch?: boolean;
 }>;
 
 function SidebarMenuItemChunk(props: SidebarMenuItemChunkProps) {
@@ -67,7 +66,10 @@ function SidebarMenuItemChunk(props: SidebarMenuItemChunkProps) {
         >
           {props.item.type === "link" ? (
             <Link
-              activeOptions={{ exact: true, includeSearch: false }}
+              activeOptions={{
+                exact: false,
+                includeSearch: props.matchOnSearch,
+              }}
               activeProps={{ className: `${underline_defaults} text-primary` }}
               {...props.item.opts}
             >
@@ -91,13 +93,21 @@ type QuickActionsProps = {
 };
 
 function QuickActions(props: QuickActionsProps) {
-  const quickActions: SidebarItemChunk[] = [
+  const quickActions: (SidebarItemChunk & {
+    isSearchRelatedAction?: boolean;
+  })[] = [
     { type: "link", title: "Home", opts: { to: "/" } },
-    // {
-    //   type: "fn",
-    //   title: "New Expense",
-    //   function: createExpense,
-    // },
+    {
+      type: "link",
+      title: "New Expense",
+      isSearchRelatedAction: true,
+      opts: {
+        to: ".",
+        search: (prev) => ({
+          action: ["new-expense", ...(prev.action ?? [])],
+        }),
+      },
+    },
     { type: "link", title: "Account", opts: { to: "/account" } },
   ];
 
@@ -108,6 +118,7 @@ function QuickActions(props: QuickActionsProps) {
           key={item.title}
           item={item}
           index={props.position + index}
+          matchOnSearch={item.isSearchRelatedAction}
         />
       ))}
     </>
@@ -145,7 +156,7 @@ function Groups(props: GroupsProps) {
           item={{
             title: item.title,
             type: "link",
-            opts: { to: `/groups/$title`, params: { title: item.title } },
+            opts: { to: `/groups/$slug`, params: { slug: item.slug } },
           }}
           index={props.position + index}
           nested
@@ -185,7 +196,10 @@ export function GlobalSidebar(props: SideNavigationProps) {
               asChild
               className="data-[state=open]:bg-sidebar-accent data-[state=open]:text-sidebar-accent-foreground hover:no-underline"
             >
-              <Link to="/">
+              <Link
+                to="/"
+                // search={(previous) => ({ action: previous.action ?? [] })}
+              >
                 <div
                   className="flex aspect-square size-[30px] items-center justify-center rounded-lg bg-blank-theme text-primary-foreground font-bold text-base "
                   aria-hidden="true"
@@ -214,7 +228,7 @@ export function GlobalSidebar(props: SideNavigationProps) {
           >
             <Link
               to="/groups"
-              search={(prev) => ({ cmd: prev.cmd, action: undefined })}
+              search={(previous) => ({ action: previous.action })}
             >
               <span>Groups</span>
             </Link>

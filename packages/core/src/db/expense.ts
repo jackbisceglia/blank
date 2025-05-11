@@ -7,7 +7,7 @@ import { DrizzleError } from "drizzle-orm";
 import { AISDKError } from "ai";
 import { groups } from "./group";
 import { findClosestMatch } from "../utils/string-similarity";
-import { expenseMembers } from "./expense-member";
+import { participants } from "./participant";
 
 const USER = "USER";
 
@@ -35,7 +35,8 @@ export namespace expenses {
     groupId: string;
     description: string;
     userId: string;
-  };
+  } & Partial<ExpenseInsert>;
+
   export function createFromDescription(
     opts: CreateFromNlOpts
   ): DrizzleResult<Pick<Expense, "id">, DrizzleError | AISDKError> {
@@ -55,10 +56,12 @@ export namespace expenses {
           );
 
           const user = parsed.members.find((m) => m.name === USER);
+
           if (!user) {
             return err(new Error("Current user not present in parsed expense"));
           }
-          const otherExpenseMembers = parsed.members
+
+          const otherParticipants = parsed.members
             .filter((m) => m.name !== USER)
             .map((parsedMember) => ({
               role: parsedMember.role,
@@ -81,12 +84,12 @@ export namespace expenses {
           ): members is Array<{ userId: string }> =>
             members.every((m) => m.userId !== null);
 
-          if (!hasNonNullUserIds(otherExpenseMembers)) {
+          if (!hasNonNullUserIds(otherParticipants)) {
             return err(new Error("No matching member found"));
           }
 
           const mergedMembers = [
-            ...otherExpenseMembers,
+            ...otherParticipants,
             {
               role: user.role,
               split: user.split,
@@ -102,9 +105,13 @@ export namespace expenses {
       )
       .andThen((normalized) => {
         return expenses
-          .create({ ...normalized.expense, groupId: opts.groupId })
+          .create({
+            ...normalized.expense,
+            groupId: opts.groupId,
+            date: opts.date,
+          })
           .andThen((created) => {
-            return expenseMembers.createMany(
+            return participants.createMany(
               normalized.members.map((m) => ({
                 ...m,
                 groupId: opts.groupId,

@@ -12,7 +12,7 @@ export const groupTable = pgTable("group", {
   description: text().notNull(),
   ownerId: uuid().notNull(), // update to make into ulid
   invitationId: uuid(), // update to make into ulid
-  createdAt: timestamp().notNull().defaultNow(),
+  createdAt: timestamp().defaultNow().notNull(),
 });
 
 export const groupRelation = relations(groupTable, ({ many, one }) => ({

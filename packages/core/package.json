@@ -10,6 +10,8 @@
   },
   "scripts": {
     "db": "pnpm dlx sst shell drizzle-kit",
+    "db:reset": "pnpm dlx sst shell tsx src/db/seed/reset.ts",
+    "db:seed:expenses": "pnpm dlx sst shell tsx src/db/seed/expenses.ts",
     "ai:eval": "pnpm dlx sst shell braintrust eval ./src/ai/__tests__",
     "ai:eval:core": "pnpm dlx sst shell braintrust eval ./src/ai/__tests__/nl.expense.core.eval.ts",
     "test": "pnpm dlx sst shell pnpm test",
@@ -27,12 +29,10 @@
     "autoevals": "^0.0.127",
     "braintrust": "^0.0.197",
     "drizzle-orm": "^0.39.0",
+    "drizzle-seed": "^0.3.1",
     "drizzle-valibot": "^0.4.1",
     "neverthrow": "^8.2.0",
     "postgres": "^3.4.5",
     "valibot": "^1.0.0"
-  },
-  "peerDependencies": {
-    "typescript": "^5.0.0"
   }
 }

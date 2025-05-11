@@ -3,7 +3,7 @@ import {
   CustomMutatorDefs,
   Transaction as TransactionInternal,
 } from "@rocicorp/zero";
-import { slug } from "./utils";
+import { slugify } from "./utils";
 import { OpenAuthToken } from "@blank/auth/subjects";
 
 const CONSTRAINTS = {
@@ -25,6 +25,7 @@ export type CreateGroupOptions = {
 };
 
 export type DeleteGroupOptions = { groupId: string };
+export type DeleteExpenseOptions = { expenseId: string };
 
 const queries = {
   users: (tx: Transaction, userId: string) => {
@@ -41,6 +42,12 @@ const queries = {
       findAllExpenses: () => tx.query.expense.where("groupId", groupId).run(),
       findAllUserPreferences: () =>
         tx.query.preference.where("defaultGroupId", groupId).run(),
+    };
+  },
+  expenses: (tx: Transaction, expenseId: string) => {
+    return {
+      findAllParticipants: () =>
+        tx.query.participant.where("expenseId", expenseId).run(),
     };
   },
 };
@@ -68,8 +75,23 @@ const assertUserCanCreateAndJoinGroup = async (
 
 export function createClientMutators(_auth: OpenAuthToken | undefined) {
   return {
+    expense: {
+      async delete(tx, opts: DeleteExpenseOptions) {
+        const q = queries.expenses(tx, opts.expenseId);
+
+        await tx.mutate.expense.delete({ id: opts.expenseId });
+
+        for (const participant of await q.findAllParticipants()) {
+          await tx.mutate.participant.delete({
+            groupId: participant.groupId,
+            userId: participant.userId,
+            expenseId: participant.expenseId,
+          });
+        }
+      },
+    },
     group: {
-      create: async (tx, opts: CreateGroupOptions) => {
+      async create(tx, opts: CreateGroupOptions) {
         await assertUserCanCreateAndJoinGroup(tx, opts.userId);
         const location = import.meta.env.SSR ? "server" : "client";
         console.log(`running on ${location}: `, opts.userId);
@@ -79,7 +101,7 @@ export function createClientMutators(_auth: OpenAuthToken | undefined) {
         await tx.mutate.group.insert({
           id: groupId,
           title: opts.title,
-          slug: slug(opts.title).encode(),
+          slug: slugify(opts.title).encode(),
           description: opts.description,
           ownerId: opts.userId,
           createdAt: Date.now(),
@@ -92,7 +114,7 @@ export function createClientMutators(_auth: OpenAuthToken | undefined) {
           nickname: opts.username,
         });
       },
-      delete: async (tx, opts: DeleteGroupOptions) => {
+      async delete(tx, opts: DeleteGroupOptions) {
         const q = queries.groups(tx, opts.groupId);
 
         await tx.mutate.group.delete({ id: opts.groupId });

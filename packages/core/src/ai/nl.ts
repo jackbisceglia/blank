@@ -2,7 +2,7 @@ import { createSafeGenerateObject } from "./utils";
 import { ExpenseInsert } from "../db";
 import { valibotSchema } from "@ai-sdk/valibot";
 import * as v from "valibot";
-import { ExpenseMemberInsert } from "../db/expense-member.schema";
+import { ParticipantInsert } from "../db/participant.schema";
 import { DEFAULT, DEFAULT_FAST, ModelKeys, models } from "./models";
 import { ResultAsync } from "neverthrow";
 
@@ -33,7 +33,7 @@ export namespace nl {
         expense: v.omit(ExpenseInsert, ["groupId", "id", "createdAt", "date"]),
         members: v.array(
           v.object({
-            ...v.omit(ExpenseMemberInsert, ["expenseId", "groupId", "userId"])
+            ...v.omit(ParticipantInsert, ["expenseId", "groupId", "userId"])
               .entries,
             name: v.pipe(v.string(), v.minLength(1)),
             split: v.pipe(v.number(), v.minValue(0), v.maxValue(1)),
@@ -62,24 +62,23 @@ export namespace nl {
         - Always an integer in USD
 
         ### Members
+        - If no explicit payer is mentioned, assume "USER" is the payer
         - Always include "USER" (the person initiating the expense) unless clearly excluded
         - Omit anyone with a split of 0 (unless they're the payer)
-        - If no explicit payer is mentioned, assume "USER" is the payer
         - Total of all splits must equal 1.0
         - Default to equal splits when not specified
 
         ## Examples
 
-        Input: "I paid for lunch with Sarah and Tom yesterday, $30"
+        Input: "I paid for lunch with Jane Doe yesterday, $30"
         Output:
         \`\`\`json
         {
           "description": "Lunch",
           "amount": 30,
           "members": [
-            {"name": "USER", "split": 0.33, "role": "payer"},
-            {"name": "Sarah", "split": 0.33, "role": "participant"},
-            {"name": "Tom", "split": 0.34, "role": "participant"}
+            {"name": "USER", "split": 0.5, "role": "payer"},
+            {"name": "Jane Doe", "split": 0.5, "role": "participant"},
           ]
         }
         \`\`\`
