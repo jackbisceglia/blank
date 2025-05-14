@@ -2,60 +2,65 @@ import { db, userTable } from ".";
 
 import { eq } from "drizzle-orm";
 import { User, UserInsert } from "./user.schema";
-import { DrizzleResult, fromDrizzleThrowable } from "./utils";
-import { err, ok } from "neverthrow";
+import { TaggedError } from "./utils";
+import { Effect, pipe } from "effect";
 
-const Errors = {
-  UnexpectedInsertCount: (ct: number) =>
-    new Error(`Expected 1 user to be inserted, but got ${ct.toString()}`),
-};
-
-type MaybeUser = User | undefined;
-
-type Identifier =
-  | {
-      type: "email";
-      value: string;
-    }
-  | {
-      type: "id";
-      value: string;
-    };
-
-function getByIdentifier(
-  identifier: Identifier,
-  ...returning: (keyof (typeof userTable)["$inferSelect"])[]
-): DrizzleResult<MaybeUser> {
-  const columns = returning.reduce((a, c) => ({ ...a, [c]: true }), {});
-
-  const safeQuery = fromDrizzleThrowable(() =>
-    db.query.userTable.findFirst({
-      where: eq(userTable[identifier.type], identifier.value),
-      columns: returning.length ? columns : undefined,
-    })
-  );
-
-  return safeQuery();
-}
+class DatabaseReadError extends TaggedError("DatabaseReadError") {}
+class DatabaseWriteError extends TaggedError("DatabaseWriteError") {}
+class UserNotFoundError extends TaggedError("UserNotFoundError") {}
+class DuplicateUserError extends TaggedError("DuplicateUserError") {}
+class UserNotCreatedError extends TaggedError("UserNotCreatedError") {}
 
 export namespace users {
-  export function getByEmail(email: string): DrizzleResult<MaybeUser> {
-    return getByIdentifier({ type: "email", value: email }, "id");
-  }
+  export function getByEmail(email: string) {
+    const queryUserByEmail = Effect.tryPromise({
+      try: () =>
+        db.query.userTable.findFirst({ where: eq(userTable.email, email) }),
+      catch: (error) =>
+        new DatabaseReadError("Failed fetching user by email", error),
+    });
 
-  export function getAuthenticatedUser(id: string): DrizzleResult<MaybeUser> {
-    return getByIdentifier({ type: "id", value: id });
-  }
-
-  export function create(user: UserInsert): DrizzleResult<Pick<User, "id">> {
-    const safelyInsertUserRecord = fromDrizzleThrowable(() =>
-      db.insert(userTable).values(user).returning({ id: userTable.id })
+    const assertUserExists = Effect.filterOrFail(
+      (user): user is User => user !== undefined,
+      () => new UserNotFoundError("User not found")
     );
 
-    return safelyInsertUserRecord().andThen((ids) =>
-      ids.length === 1
-        ? ok(ids[0])
-        : err(Errors.UnexpectedInsertCount(ids.length))
+    return pipe(queryUserByEmail, assertUserExists);
+  }
+
+  export function getById(id: string) {
+    const queryUserById = Effect.tryPromise({
+      try: () => db.query.userTable.findFirst({ where: eq(userTable.id, id) }),
+      catch: (error) =>
+        new DatabaseReadError("Failed fetching user by id", error),
+    });
+
+    const assertUserExists = Effect.filterOrFail(
+      (user): user is User => user !== undefined,
+      () => new UserNotFoundError("User not found")
     );
+
+    return pipe(queryUserById, assertUserExists);
+  }
+
+  export function create(user: UserInsert) {
+    const insertedUser = Effect.tryPromise({
+      try: () =>
+        db.insert(userTable).values(user).returning({ id: userTable.id }),
+      catch: (error) => new DatabaseWriteError("Failed creating user", error),
+    });
+
+    const assertUserInserted = Effect.flatMap((rows: { id: string }[]) => {
+      switch (rows.length) {
+        case 0:
+          return Effect.fail(new UserNotCreatedError("User was not inserted"));
+        case 1:
+          return Effect.succeed(rows[0].id);
+        default:
+          return Effect.die(new DuplicateUserError("Duplicate user inserted"));
+      }
+    });
+
+    return pipe(insertedUser, assertUserInserted);
   }
 }
