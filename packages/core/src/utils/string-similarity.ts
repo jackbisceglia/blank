@@ -1,3 +1,5 @@
+export const MIN_MATCH_THRESHOLD = 0.5;
+
 /**
  * Calculates the Levenshtein distance between two strings
  * @param a First string

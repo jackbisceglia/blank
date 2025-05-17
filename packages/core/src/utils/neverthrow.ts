@@ -1,5 +1,6 @@
 import { err, ok, ResultAsync, type Result } from "neverthrow";
 import * as v from "valibot";
+import { Effect } from "effect";
 
 // this is useful when interoping with 3rd party libraries where they depend on promises throwing errors for control flow
 export async function unwrapOrThrow<T, E>(
@@ -50,6 +51,26 @@ export function fromParsed<T, R>(
   return result.success
     ? ok(result.output)
     : err(new ValidationError(result.issues));
+}
+
+export function fromParsedEffect<T, R>(
+  schema: v.GenericSchema<T, R>,
+  value: unknown
+) {
+  return Effect.try({
+    try: () => {
+      const result = v.safeParse(schema, value);
+
+      if (!result.success) throw new ValidationError(result.issues);
+
+      return result.output;
+    },
+    catch: (error) => {
+      if (error instanceof ValidationError) return error;
+
+      throw error;
+    },
+  });
 }
 
 export function orDefaultError<T>(

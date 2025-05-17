@@ -1,29 +1,39 @@
 import { eq } from "drizzle-orm";
-import { db, Member } from ".";
+import { db } from ".";
 import { groupTable } from "./group.schema";
-import { DrizzleResult, fromDrizzleThrowable } from "./utils";
-import { err, ok } from "neverthrow";
+import { DatabaseReadError, Transaction } from "./utils";
+import { Effect, pipe } from "effect";
+import { requireValueExists, requireManyElements, TaggedError } from "../utils";
 
-const Errors = {
-  NoMembersFound: () => new Error("No members found"),
-};
+class GroupNotFoundError extends TaggedError("GroupNotFoundError") {}
+class MembersNotFoundError extends TaggedError("MembersNotFoundError") {}
 
 export namespace groups {
-  export function getMembers(groupId: string): DrizzleResult<Member[]> {
-    const safelyInsertgroupRecord = fromDrizzleThrowable(() =>
-      db.query.groupTable.findFirst({
-        where: eq(groupTable.id, groupId),
-        with: {
-          members: true,
-        },
-        columns: {},
-      })
+  export function getMembers(groupId: string, tx?: Transaction) {
+    return pipe(
+      Effect.tryPromise(() =>
+        (tx ?? db).query.groupTable.findFirst({
+          where: eq(groupTable.id, groupId),
+          with: { members: true },
+          columns: {}, // TODO: check to keep/remove
+        })
+      ),
+      Effect.flatMap(
+        requireValueExists({
+          success: (group) => group.members,
+          error: () => new GroupNotFoundError("Group not found"),
+        })
+      ),
+      Effect.flatMap(
+        requireManyElements({
+          success: (members) => members,
+          empty: () => new MembersNotFoundError("Members not found"),
+        })
+      ),
+      Effect.catchTag(
+        "UnknownException",
+        (e) => new DatabaseReadError("Failed fetching members by group id", e)
+      )
     );
-
-    return safelyInsertgroupRecord().andThen((group) => {
-      return !group || group.members.length === 0
-        ? err(Errors.NoMembersFound())
-        : ok(group.members);
-    });
   }
 }

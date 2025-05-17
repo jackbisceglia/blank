@@ -7,11 +7,11 @@ import { subjects } from "./subjects";
 import { GoogleProvider } from "@openauthjs/openauth/provider/google";
 import { users } from "@blank/core/db";
 import { Select } from "@openauthjs/openauth/ui/select";
-import { ok, okAsync, Result } from "neverthrow";
 import * as jose from "jose";
 import { Resource } from "sst";
 import * as v from "valibot";
-import { fromParsed, orDefaultError } from "@blank/core/utils";
+import { fromParsedEffect } from "@blank/core/utils";
+import { Effect, pipe } from "effect";
 
 const Errors = {
   ProviderNotSupported: (provider: string) =>
@@ -41,30 +41,27 @@ const JwtPayload = v.pipe(
 );
 
 function decodeJwt(token: string) {
-  return Result.fromThrowable(jose.decodeJwt)(token).mapErr((e) => {
-    return orDefaultError(e as Error, (e) => {
-      // either return the error we expect, or if it's still a jose error, then return whatever matches, otherwise undefined to fallback to generic error
-      if (e instanceof jose.errors.JWTInvalid) {
-        return e;
-      }
+  return pipe(
+    Effect.try(() => jose.decodeJwt(token)),
+    Effect.mapError((e) => {
+      if (e instanceof jose.errors.JWTInvalid) return e;
 
       return (
         Object.values(jose.errors).find(
           (joseError) => e instanceof joseError
         ) ?? undefined
       );
-    });
-  });
+    })
+  );
 }
 
 function getOrCreateUser(payload: v.InferOutput<typeof JwtPayload>) {
-  return users.getByEmail(payload.email).andThen((user) => {
-    if (user) {
-      return okAsync(user);
-    }
+  const result = pipe(
+    users.getByEmail(payload.email),
+    Effect.catchTag("UserNotFoundError", () => users.create(payload))
+  );
 
-    return users.create(payload);
-  });
+  return result;
 }
 
 const app = issuer({
@@ -90,24 +87,25 @@ const app = issuer({
   success: async (ctx, value) => {
     switch (value.provider) {
       case "google":
-        const user = await ok(value.tokenset.raw.id_token)
-          .andThen((token) => fromParsed(Token, token))
-          .andThen(decodeJwt)
-          .andThen((decoded) => fromParsed(JwtPayload, decoded))
-          .asyncAndThen(getOrCreateUser);
-
-        return user.match(
-          function success(user) {
-            return ctx.subject(
-              "user",
-              { userID: user.id },
-              { subject: user.id }
-            );
-          },
-          function error(error) {
-            throw error;
-          }
+        const result = pipe(
+          Effect.succeed(value.tokenset.raw.id_token),
+          Effect.flatMap((token) => fromParsedEffect(Token, token)),
+          Effect.flatMap(decodeJwt),
+          Effect.flatMap((decoded) => fromParsedEffect(JwtPayload, decoded)),
+          Effect.flatMap(getOrCreateUser),
+          Effect.match({
+            onSuccess: (id) => {
+              return ctx.subject("user", { userID: id }, { subject: id });
+            },
+            onFailure: (err) => {
+              throw err instanceof Error
+                ? err
+                : new Error("Authentication Error", { cause: err });
+            },
+          })
         );
+
+        return Effect.runPromise(result);
       case "code":
       default:
         throw Errors.ProviderNotSupported(value.provider);

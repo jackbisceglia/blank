@@ -1,3 +1,4 @@
+import { Effect, pipe } from "effect";
 import { expenses } from "../expense";
 
 const name = ""; // can replace with whatever name of a user is in the group for testing
@@ -49,21 +50,27 @@ export async function seed() {
     "Paid for dance class with John Doe, $70",
   ].map((desc) => desc.replace(placeholder, name));
 
-  for (const description of descriptions) {
-    console.log(`Creating expense: ${description}`);
-    const result = await expenses.createFromDescription({
-      groupId,
-      description,
-      userId,
-      date: randomDateLast30Days(),
-    });
+  const result = Effect.forEach(descriptions, (description) => {
+    return pipe(
+      Effect.log(`Creating expense: ${description}`),
+      Effect.flatMap(() =>
+        expenses.createFromDescription({
+          groupId,
+          description,
+          userId,
+          date: randomDateLast30Days(),
+        })
+      ),
+      Effect.tapBoth({
+        onFailure: (error) =>
+          Effect.logError(`Failed creating expnse: ${error.message}`),
+        onSuccess: (result) =>
+          Effect.log(`Created expense: ${JSON.stringify(result, null, 2)}`),
+      })
+    );
+  });
 
-    if (result.isErr()) {
-      console.error(result.error);
-    } else {
-      console.log(`Created expense ${JSON.stringify(result.value, null, 2)}`);
-    }
-  }
+  return Effect.runPromise(result);
 }
 
 void seed();

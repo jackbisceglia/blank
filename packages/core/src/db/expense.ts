@@ -1,128 +1,161 @@
-import { err, ok } from "neverthrow";
-import { db } from ".";
-import { Expense, ExpenseInsert, expenseTable } from "./expense.schema";
-import { DrizzleResult, fromDrizzleThrowable } from "./utils";
+import { db, groups, Member, ParticipantInsert, participants } from ".";
 import { nl } from "../ai";
-import { DrizzleError } from "drizzle-orm";
-import { AISDKError } from "ai";
-import { groups } from "./group";
-import { findClosestMatch } from "../utils/string-similarity";
-import { participants } from "./participant";
+import { requireSingleElement, unwrapOrThrow } from "../utils";
+import { ExpenseInsert, expenseTable } from "./expense.schema";
+import { DatabaseWriteError, Transaction } from "./utils";
+import { TaggedError } from "../utils";
+import { Effect, Match, pipe } from "effect";
+import {
+  findClosestMatch,
+  MIN_MATCH_THRESHOLD,
+} from "../utils/string-similarity";
 
 const USER = "USER";
 
-const Errors = {
-  UnexpectedInsertCount: (ct: number) =>
-    new Error(`Expected 1 expense to be inserted, but got ${ct.toString()}`),
-};
+class ExpenseNotCreatedError extends TaggedError("ExpenseNotCreatedError") {}
+class DuplicateExpenseError extends TaggedError("DuplicateExpenseError") {}
+class ExpenseParsingError extends TaggedError("ExpenseParsingError") {}
+class UserMissingInParse extends TaggedError("UserMissingInParse") {}
+class NoMemberMatchFound extends TaggedError("NoMemberMatchFound") {}
+
+type Participant = Required<Omit<ParticipantInsert, "expenseId" | "groupId">>;
+type ParticipantParse = { role: string; split: number; name: string };
+
+function createMapping(member: ParticipantParse, userId: string) {
+  type Roles = "participant" | "payer";
+
+  return {
+    role: member.role as Roles,
+    split: member.split.toString(),
+    userId: userId,
+  } satisfies Participant;
+}
+
+function findClosestName(name: string, names: string[]) {
+  const [bestMatch, score] = findClosestMatch(name, names);
+
+  return Effect.if(score > MIN_MATCH_THRESHOLD, {
+    onTrue: () => Effect.succeed(bestMatch),
+    onFalse: () =>
+      Effect.fail(
+        new NoMemberMatchFound("Member from parse not found in group")
+      ),
+  });
+}
+
+function normalize(parsedMembers: ParticipantParse[], groupMembers: Member[]) {
+  const normalizeMember = (member: ParticipantParse) =>
+    Effect.gen(function* () {
+      const names = groupMembers.map((m) => m.nickname);
+
+      const closestName = yield* findClosestName(member.name, names);
+
+      const userId = groupMembers.find((m) => m.nickname === closestName)
+        ?.userId as string;
+
+      return createMapping(member, userId);
+    });
+
+  return Effect.forEach(parsedMembers, normalizeMember);
+}
 
 export namespace expenses {
-  export function create(
-    expense: ExpenseInsert
-  ): DrizzleResult<Pick<Expense, "id">> {
-    const safelyInsertExpenseRecord = fromDrizzleThrowable(() =>
-      db.insert(expenseTable).values(expense).returning({ id: expenseTable.id })
-    );
-
-    return safelyInsertExpenseRecord().andThen((ids) =>
-      ids.length === 1
-        ? ok(ids[0])
-        : err(Errors.UnexpectedInsertCount(ids.length))
+  export function create(expense: ExpenseInsert, tx?: Transaction) {
+    return pipe(
+      Effect.tryPromise(() =>
+        (tx ?? db)
+          .insert(expenseTable)
+          .values(expense)
+          .returning({ id: expenseTable.id })
+      ),
+      Effect.flatMap(
+        requireSingleElement({
+          empty: () => new ExpenseNotCreatedError("Expense not created"),
+          dup: () => new DuplicateExpenseError("Duplicate expense found"),
+        })
+      ),
+      Effect.catchTag(
+        "UnknownException",
+        (e) => new DatabaseWriteError("Failed creating expense", e)
+      )
     );
   }
 
-  type CreateFromNlOpts = {
+  type CreateFromDescriptionOptions = {
     groupId: string;
-    description: string;
     userId: string;
-  } & Partial<ExpenseInsert>;
+    description: string;
+    date?: Date;
+  };
 
-  export function createFromDescription(
-    opts: CreateFromNlOpts
-  ): DrizzleResult<Pick<Expense, "id">, DrizzleError | AISDKError> {
-    return nl.expense
-      .parse(opts.description)
-      .andThen((parsed) =>
-        groups.getMembers(opts.groupId).andThen((groupMembers) => {
-          const [mappings, names] = groupMembers.reduce<
-            [Record<string, string>, string[]]
-          >(
-            (acc, member) => {
-              acc[0][member.nickname] = member.userId;
-              acc[1].push(member.nickname);
-              return acc;
-            },
-            [{}, []]
-          );
+  export function createFromDescription(options: CreateFromDescriptionOptions) {
+    const create = Effect.gen(function* () {
+      const members = yield* groups.getMembers(options.groupId);
 
-          const user = parsed.members.find((m) => m.name === USER);
+      const generated = yield* Effect.tryPromise({
+        try: () => unwrapOrThrow(nl.expense.parse(options.description)), // TODO: remove after migrate
+        catch: (e) => new ExpenseParsingError("Failed parsing expense", e),
+      });
 
-          if (!user) {
-            return err(new Error("Current user not present in parsed expense"));
-          }
+      const user = generated.members.find((m) => m.name === USER);
 
-          const otherParticipants = parsed.members
-            .filter((m) => m.name !== USER)
-            .map((parsedMember) => ({
-              role: parsedMember.role,
-              split: parsedMember.split,
-              userId: (() => {
-                const minimumViableMatchScore = 0.5;
-                const [bestMatch, score] = findClosestMatch(
-                  parsedMember.name,
-                  names
-                );
+      if (!user) {
+        return yield* Effect.fail(
+          new UserMissingInParse("User omitted from parse")
+        );
+      }
 
-                return score > minimumViableMatchScore
-                  ? mappings[bestMatch]
-                  : null;
-              })(),
-            }));
+      const userMapped = createMapping(user, options.userId);
 
-          const hasNonNullUserIds = (
-            members: Array<{ userId: string | null }>
-          ): members is Array<{ userId: string }> =>
-            members.every((m) => m.userId !== null);
+      const restMapped = yield* normalize(
+        generated.members.filter((m) => m.name !== USER),
+        members
+      );
 
-          if (!hasNonNullUserIds(otherParticipants)) {
-            return err(new Error("No matching member found"));
-          }
+      const merged = [userMapped, ...restMapped];
 
-          const mergedMembers = [
-            ...otherParticipants,
-            {
-              role: user.role,
-              split: user.split,
-              userId: opts.userId,
-            },
-          ];
+      const newExpense = yield* expenses.create({
+        amount: generated.expense.amount,
+        description: generated.expense.description,
+        groupId: options.groupId,
+        date: options.date,
+      });
 
-          return ok({
-            ...parsed,
-            members: mergedMembers,
-          });
-        })
-      )
-      .andThen((normalized) => {
-        return expenses
-          .create({
-            ...normalized.expense,
-            groupId: opts.groupId,
-            date: opts.date,
-          })
-          .andThen((created) => {
-            return participants.createMany(
-              normalized.members.map((m) => ({
-                ...m,
-                groupId: opts.groupId,
-                userId: m.userId,
-                expenseId: created.id,
-                split: m.split.toString(), // lift out to schema
-                role: m.role as "payer" | "participant", // lift out to schema
-              }))
-            );
-          });
-      })
-      .map((entries) => ({ id: entries[0].expenseId }));
+      const newParticipants = yield* participants.createMany(
+        merged.map((m) => ({
+          groupId: options.groupId,
+          expenseId: newExpense.id,
+          ...m,
+        }))
+      );
+
+      return {
+        expense: newExpense,
+        participants: newParticipants,
+      };
+    });
+
+    function flatten(error: Effect.Effect.Error<typeof create>) {
+      return Effect.fail(
+        Match.value(error).pipe(
+          Match.tag(
+            "DatabaseReadError",
+            "DatabaseWriteError",
+            "ExpenseNotCreatedError",
+            "ParticipantsNotCreatedError",
+            () => new ExpenseNotCreatedError("Failed parsing expense", error)
+          ),
+          Match.tag(
+            "UserMissingInParse",
+            "NoMemberMatchFound",
+            "ExpenseParsingError",
+            () => new ExpenseParsingError("Failed parsing expense", error)
+          ),
+          Match.orElse((rest) => rest)
+        )
+      );
+    }
+
+    return pipe(create, Effect.catchAll(flatten));
   }
 }
