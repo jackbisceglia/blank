@@ -2,60 +2,80 @@ import { db, userTable } from ".";
 
 import { eq } from "drizzle-orm";
 import { User, UserInsert } from "./user.schema";
-import { DrizzleResult, fromDrizzleThrowable } from "./utils";
-import { err, ok } from "neverthrow";
+import { DatabaseReadError, DatabaseWriteError, Transaction } from "./utils";
+import { Effect, pipe } from "effect";
+import {
+  requireSingleElement,
+  requireValueExists,
+  TaggedError,
+} from "../utils";
 
-const Errors = {
-  UnexpectedInsertCount: (ct: number) =>
-    new Error(`Expected 1 user to be inserted, but got ${ct.toString()}`),
-};
-
-type MaybeUser = User | undefined;
-
-type Identifier =
-  | {
-      type: "email";
-      value: string;
-    }
-  | {
-      type: "id";
-      value: string;
-    };
-
-function getByIdentifier(
-  identifier: Identifier,
-  ...returning: (keyof (typeof userTable)["$inferSelect"])[]
-): DrizzleResult<MaybeUser> {
-  const columns = returning.reduce((a, c) => ({ ...a, [c]: true }), {});
-
-  const safeQuery = fromDrizzleThrowable(() =>
-    db.query.userTable.findFirst({
-      where: eq(userTable[identifier.type], identifier.value),
-      columns: returning.length ? columns : undefined,
-    })
-  );
-
-  return safeQuery();
-}
+class UserNotFoundError extends TaggedError("UserNotFoundError") {}
+class UserNotCreatedError extends TaggedError("UserNotCreatedError") {}
+class DuplicateUserError extends TaggedError("DuplicateUserError") {}
 
 export namespace users {
-  export function getByEmail(email: string): DrizzleResult<MaybeUser> {
-    return getByIdentifier({ type: "email", value: email }, "id");
-  }
-
-  export function getAuthenticatedUser(id: string): DrizzleResult<MaybeUser> {
-    return getByIdentifier({ type: "id", value: id });
-  }
-
-  export function create(user: UserInsert): DrizzleResult<Pick<User, "id">> {
-    const safelyInsertUserRecord = fromDrizzleThrowable(() =>
-      db.insert(userTable).values(user).returning({ id: userTable.id })
+  export function getByEmail(
+    email: string
+  ): Effect.Effect<string, UserNotFoundError | DatabaseReadError> {
+    return pipe(
+      Effect.tryPromise(() =>
+        db.query.userTable.findFirst({
+          where: eq(userTable.email, email),
+        })
+      ),
+      Effect.flatMap(
+        requireValueExists({
+          success: (user) => user.id,
+          error: () => new UserNotFoundError("User not found"),
+        })
+      ),
+      Effect.catchTag(
+        "UnknownException",
+        (e) => new DatabaseReadError("Failed fetching user by email", e)
+      )
     );
+  }
 
-    return safelyInsertUserRecord().andThen((ids) =>
-      ids.length === 1
-        ? ok(ids[0])
-        : err(Errors.UnexpectedInsertCount(ids.length))
+  export function getById(
+    id: string
+  ): Effect.Effect<User, UserNotFoundError | DatabaseReadError> {
+    return pipe(
+      Effect.tryPromise(() =>
+        db.query.userTable.findFirst({ where: eq(userTable.id, id) })
+      ),
+      Effect.flatMap(
+        requireValueExists({
+          success: (user) => user,
+          error: () => new UserNotFoundError("User not found"),
+        })
+      ),
+      Effect.catchTag(
+        "UnknownException",
+        (e) => new DatabaseReadError("Failed fetching user by id", e)
+      )
+    );
+  }
+
+  export function create(user: UserInsert, tx?: Transaction) {
+    return pipe(
+      Effect.tryPromise(() =>
+        (tx ?? db)
+          .insert(userTable)
+          .values(user)
+          .returning({ id: userTable.id })
+      ),
+      Effect.flatMap(
+        requireSingleElement({
+          empty: () => new UserNotCreatedError("User not created"),
+          success: (row) => row.id,
+          dup: () => new DuplicateUserError("Duplicate user found"),
+        })
+      ),
+      Effect.catchTag(
+        "UnknownException",
+        (e) => new DatabaseWriteError("Failed creating user", e)
+      )
     );
   }
 }

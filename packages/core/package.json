@@ -28,11 +28,16 @@
     "ai": "^4.3.4",
     "autoevals": "^0.0.127",
     "braintrust": "^0.0.197",
-    "drizzle-orm": "^0.39.0",
+    "drizzle-orm": "^0.39.3",
     "drizzle-seed": "^0.3.1",
     "drizzle-valibot": "^0.4.1",
+    "effect": "^3.13.10",
     "neverthrow": "^8.2.0",
     "postgres": "^3.4.5",
-    "valibot": "^1.0.0"
+    "valibot": "^1.0.0",
+    "ws": "^8.18.2"
+  },
+  "devDependencies": {
+    "@types/ws": "^8.18.1"
   }
 }

@@ -5,6 +5,11 @@ import {
 } from "drizzle-orm";
 import { PgTable, text } from "drizzle-orm/pg-core";
 import { ResultAsync } from "neverthrow";
+import { db } from ".";
+import { TaggedError } from "../utils";
+
+export class DatabaseReadError extends TaggedError("DatabaseReadError") {}
+export class DatabaseWriteError extends TaggedError("DatabaseWriteError") {}
 
 export type DrizzleResult<T, R = DrizzleError> = ResultAsync<T, R>;
 
@@ -35,3 +40,7 @@ export type DrizzleModelTypes<Model extends PgTable> = {
 
 export const clean = (input: string[]) =>
   input.map((item) => item.trim()).filter((item) => item);
+
+export type Transaction = Parameters<
+  Parameters<(typeof db)["transaction"]>[0]
+>[0];

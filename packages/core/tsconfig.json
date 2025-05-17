@@ -4,6 +4,8 @@
     "strict": true,
     "strictNullChecks": true,
     "module": "ESNext",
-    "moduleResolution": "Bundler"
+    "moduleResolution": "Bundler",
+    "lib": ["ESNext"],
+    "target": "ESNext"
   }
 }

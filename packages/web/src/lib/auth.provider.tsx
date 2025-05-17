@@ -1,5 +1,4 @@
 import { type ReactNode } from "react";
-import { hydrateAsyncServerResult, unwrapOrThrow } from "@blank/core/utils";
 import { Navigate } from "@tanstack/react-router";
 import { Loading } from "@/components/loading";
 import { logoutRPC, meRPC } from "@/server/auth/route";
@@ -23,7 +22,8 @@ export function authenticationQueryOptions() {
   return queryOptions({
     queryKey: ["authentication"],
     queryFn: async () => {
-      return unwrapOrThrow(hydrateAsyncServerResult(meRPC));
+      console.log("queryFn running");
+      return meRPC();
     },
   });
 }
@@ -49,8 +49,5 @@ export function useAuthentication() {
     throw new Error("useAuth must be used beneath the AuthProvider");
   }
 
-  return {
-    user: query.data[0],
-    token: query.data[1],
-  };
+  return query.data;
 }
