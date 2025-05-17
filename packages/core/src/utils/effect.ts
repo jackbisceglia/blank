@@ -1,4 +1,4 @@
-import { Data, Match, Effect } from "effect";
+import { Cause, Data, Effect } from "effect";
 
 /**
  * Creates a tagged error class with a specific name and error structure.
@@ -12,11 +12,18 @@ export function TaggedError<T extends string>(name: T) {
     cause?: unknown;
   };
 
-  return class extends Data.TaggedError(name)<E> {
+  const NewClass = class extends Data.TaggedError(name)<E> {
     constructor(message: string, cause?: unknown) {
       super({ message, cause });
     }
   };
+
+  return NewClass as unknown as new <
+    A extends Record<string, unknown> = Record<string, unknown>,
+  >(
+    message: string,
+    cause?: unknown
+  ) => Cause.YieldableError & { readonly _tag: T } & Readonly<A>;
 }
 
 /**
@@ -39,16 +46,21 @@ export function requireSingleElement<
   empty: () => TEmptyError;
   dup: () => unknown;
 }) {
-  return (rows: TElement[]) =>
-    Match.value(rows.length).pipe(
-      Match.when(1, () =>
-        context.success
+  return (rows: TElement[]) => {
+    return Effect.if(rows.length === 1, {
+      onTrue: () => {
+        return context.success
           ? Effect.succeed(context.success(rows[0]))
-          : Effect.succeed(rows[0] as unknown as TSuccess)
-      ),
-      Match.when(0, () => Effect.fail(context.empty())),
-      Match.orElse(() => Effect.die(context.dup()))
-    );
+          : Effect.succeed(rows[0] as unknown as TSuccess);
+      },
+      onFalse: () => {
+        return Effect.if(rows.length === 0, {
+          onTrue: () => Effect.fail(context.empty()),
+          onFalse: () => Effect.die(context.dup()),
+        });
+      },
+    });
+  };
 }
 
 /**
@@ -70,14 +82,14 @@ export function requireManyElements<
   empty: () => TEmptyError;
 }) {
   return (rows: TElement[]) =>
-    Match.value(rows.length).pipe(
-      Match.when(0, () => Effect.fail(context.empty())),
-      Match.orElse(() =>
-        context.success
+    Effect.if(rows.length === 0, {
+      onTrue: () => Effect.fail(context.empty()),
+      onFalse: () => {
+        return context.success
           ? Effect.succeed(context.success(rows))
-          : Effect.succeed(rows as TSuccess)
-      )
-    );
+          : Effect.succeed(rows as TSuccess);
+      },
+    });
 }
 
 /**

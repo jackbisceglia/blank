@@ -16,12 +16,11 @@ class DuplicateUserError extends TaggedError("DuplicateUserError") {}
 
 export namespace users {
   export function getByEmail(
-    email: string,
-    tx?: Transaction
+    email: string
   ): Effect.Effect<string, UserNotFoundError | DatabaseReadError> {
     return pipe(
       Effect.tryPromise(() =>
-        (tx ?? db).query.userTable.findFirst({
+        db.query.userTable.findFirst({
           where: eq(userTable.email, email),
         })
       ),
@@ -39,12 +38,11 @@ export namespace users {
   }
 
   export function getById(
-    id: string,
-    tx?: Transaction
+    id: string
   ): Effect.Effect<User, UserNotFoundError | DatabaseReadError> {
     return pipe(
       Effect.tryPromise(() =>
-        (tx ?? db).query.userTable.findFirst({ where: eq(userTable.id, id) })
+        db.query.userTable.findFirst({ where: eq(userTable.id, id) })
       ),
       Effect.flatMap(
         requireValueExists({

@@ -4,7 +4,7 @@ import { requireSingleElement, unwrapOrThrow } from "../utils";
 import { ExpenseInsert, expenseTable } from "./expense.schema";
 import { DatabaseWriteError, Transaction } from "./utils";
 import { TaggedError } from "../utils";
-import { Effect, Match, pipe } from "effect";
+import { Effect, pipe } from "effect";
 import {
   findClosestMatch,
   MIN_MATCH_THRESHOLD,
@@ -136,24 +136,23 @@ export namespace expenses {
     });
 
     function flatten(error: Effect.Effect.Error<typeof create>) {
-      return Effect.fail(
-        Match.value(error).pipe(
-          Match.tag(
-            "DatabaseReadError",
-            "DatabaseWriteError",
-            "ExpenseNotCreatedError",
-            "ParticipantsNotCreatedError",
-            () => new ExpenseNotCreatedError("Failed parsing expense", error)
-          ),
-          Match.tag(
-            "UserMissingInParse",
-            "NoMemberMatchFound",
-            "ExpenseParsingError",
-            () => new ExpenseParsingError("Failed parsing expense", error)
-          ),
-          Match.orElse((rest) => rest)
-        )
-      );
+      const consolidate = () => {
+        switch (error._tag) {
+          case "DatabaseReadError":
+          case "DatabaseWriteError":
+          case "ExpenseNotCreatedError":
+          case "ParticipantsNotCreatedError":
+            return new ExpenseNotCreatedError("Failed parsing expense", error);
+          case "UserMissingInParse":
+          case "NoMemberMatchFound":
+          case "ExpenseParsingError":
+            return new ExpenseParsingError("Failed parsing expense", error);
+          default:
+            return error;
+        }
+      };
+
+      return Effect.fail(consolidate());
     }
 
     return pipe(create, Effect.catchAll(flatten));
