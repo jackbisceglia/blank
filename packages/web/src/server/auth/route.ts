@@ -2,38 +2,56 @@ import { getHeader } from "@tanstack/react-start/server";
 import { subjects } from "@blank/auth/subjects";
 import { redirect } from "@tanstack/react-router";
 import { createServerFn } from "@tanstack/react-start";
-import { err, ok, Result } from "neverthrow";
 import { users } from "@blank/core/db";
-import { serverResult } from "@blank/core/utils";
+import { requireValueExists, TaggedError } from "@blank/core/utils";
 import { authenticate, openauth } from "@/server/auth/core";
 import { AuthTokens } from "@/server/utils";
+import { Effect, pipe } from "effect";
 import { evaluate } from "@/lib/utils";
 
-const assertPresent =
-  (message: string) =>
-  <T>(value: T | null | undefined) =>
-    value ? ok(value) : err(message);
+class AuthenticatedError extends TaggedError("AuthenticatedError") {}
 
 export const authenticateRPC = createServerFn().handler(async function () {
   return authenticate({ cookies: AuthTokens.cookies });
 });
 
 export const meRPC = createServerFn().handler(async function () {
-  const auth = await authenticate({ cookies: AuthTokens.cookies });
-
-  const subject = ok(auth)
-    .andThen(assertPresent("Could not subject from auth server"))
-    .map((result) => result.subject.properties);
-
-  const user = await subject
-    .asyncAndThen((subject) => users.getAuthenticatedUser(subject.userID))
-    .andThen(assertPresent("Could not fetch current user"));
-
-  const access = ok(AuthTokens.cookies.get().access).andThen(
-    assertPresent("Could not find access token")
+  const authenticated = Effect.tryPromise(() =>
+    authenticate({ cookies: AuthTokens.cookies })
   );
 
-  return serverResult(Result.combine([user, access]));
+  const user = pipe(
+    authenticated,
+    Effect.flatMap(
+      requireValueExists({
+        error: () => new AuthenticatedError("Could not authenticate user"),
+      })
+    ),
+    Effect.map((result) => result.subject.properties.userID),
+    Effect.flatMap(users.getById),
+    Effect.flatMap(
+      requireValueExists({
+        error: () => new AuthenticatedError("Could not fetch current user"),
+      })
+    )
+  );
+
+  const token = pipe(
+    Effect.try(() => AuthTokens.cookies.get()),
+    Effect.map((tokens) => tokens.access),
+    Effect.flatMap(
+      requireValueExists({
+        error: () => new AuthenticatedError("Could not fetch access token"),
+      })
+    )
+  );
+
+  const result = pipe(
+    Effect.all([user, token]),
+    Effect.map(([user, token]) => ({ user, token }))
+  );
+
+  return Effect.runPromise(result);
 });
 
 export const loginRPC = createServerFn().handler(async function () {

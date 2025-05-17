@@ -1,43 +1,58 @@
-import { err, ok } from "neverthrow";
 import { db } from ".";
-import { DrizzleResult, fromDrizzleThrowable } from "./utils";
-import {
-  Participant,
-  ParticipantInsert,
-  participantTable,
-} from "./participant.schema";
+import { DatabaseWriteError, Transaction } from "./utils";
+import { ParticipantInsert, participantTable } from "./participant.schema";
+import { pipe, Effect } from "effect";
+import { requireSingleElement, TaggedError } from "../utils";
 
-const Errors = {
-  UnexpectedInsertCount: (ct: number) =>
-    new Error(`Expected 1 expense to be inserted, but got ${ct.toString()}`),
-};
+class ParticipantNotCreatedError extends TaggedError(
+  "ParticipantNotCreatedError"
+) {}
+class DuplicateParticipantError extends TaggedError(
+  "DuplicateParticipantError"
+) {}
+class ParticipantsNotCreatedError extends TaggedError(
+  "ParticipantsNotCreatedError"
+) {}
 
 export namespace participants {
-  export function create(
-    participant: ParticipantInsert
-  ): DrizzleResult<Participant> {
-    const safelyInsertExpenseRecord = fromDrizzleThrowable(() =>
-      db.insert(participantTable).values(participant).returning()
-    );
-
-    return safelyInsertExpenseRecord().andThen((ids) =>
-      ids.length === 1
-        ? ok(ids[0])
-        : err(Errors.UnexpectedInsertCount(ids.length))
+  export function create(participant: ParticipantInsert, tx?: Transaction) {
+    return pipe(
+      Effect.tryPromise(() =>
+        (tx ?? db).insert(participantTable).values(participant).returning()
+      ),
+      Effect.flatMap(
+        requireSingleElement({
+          empty: () =>
+            new ParticipantNotCreatedError("Participant was not inserted"),
+          dup: () =>
+            new DuplicateParticipantError("Duplicate participant inserted"),
+        })
+      ),
+      Effect.catchTag(
+        "UnknownException",
+        (e) => new DatabaseWriteError("Failed creating participant", e)
+      )
     );
   }
 
   export function createMany(
-    participants: ParticipantInsert[]
-  ): DrizzleResult<Participant[]> {
-    const safelyInsertExpenseRecord = fromDrizzleThrowable(() =>
-      db.insert(participantTable).values(participants).returning()
-    );
-
-    return safelyInsertExpenseRecord().andThen((ids) =>
-      ids.length === participants.length
-        ? ok(ids)
-        : err(Errors.UnexpectedInsertCount(ids.length))
+    participants: ParticipantInsert[],
+    tx?: Transaction
+  ) {
+    return pipe(
+      Effect.tryPromise({
+        try: () =>
+          (tx ?? db).insert(participantTable).values(participants).returning(),
+        catch: (error: unknown) =>
+          new DatabaseWriteError("Failed creating participants", error),
+      }),
+      Effect.flatMap((rows) => {
+        return rows.length === participants.length
+          ? Effect.succeed(rows)
+          : Effect.fail(
+              new ParticipantsNotCreatedError("Participants were not inserted")
+            );
+      })
     );
   }
 }
