@@ -135,12 +135,53 @@ export const TextField = (props: TextFieldProps) => {
   );
 };
 
+type SheetTextFieldProps = TextFieldProps & {
+  variant?: "sheet";
+};
+
+export const SheetTextField = (props: SheetTextFieldProps) => {
+  const field = useFieldContext<string>();
+  const { label, ...rest } = props;
+  const { className: labelClassName, ...restLabelProps } =
+    rest.labelProps ?? {};
+  const { className: inputClassName, ...restInputProps } =
+    rest.inputProps ?? {};
+
+  return (
+    <div className="space-y-2">
+      <Label
+        className={cn(
+          "lowercase font-medium text-xs text-muted-foreground",
+          labelClassName
+        )}
+        htmlFor={field.name}
+        {...restLabelProps}
+      >
+        {label}
+      </Label>
+      <Input
+        id={field.name}
+        name={field.name}
+        value={field.state.value}
+        onChange={(e) => field.handleChange(e.target.value)}
+        onBlur={field.handleBlur}
+        className={cn(
+          "bg-accent/50 border-border/50 text-foreground placeholder:text-muted-foreground/60 h-10",
+          inputClassName
+        )}
+        {...restInputProps}
+      />
+    </div>
+  );
+};
+
 export const { fieldContext, useFieldContext, formContext, useFormContext } =
   createFormHookContexts();
 
 export const { useAppForm } = createFormHook({
   fieldComponents: {
     TextField,
+    SheetTextField,
   },
   formComponents: {
     SubmitButton,

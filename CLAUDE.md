@@ -62,3 +62,14 @@ SST configuration in `sst.config.ts` defines:
 - Zero sync services for real-time functionality
 - ECS cluster for containerized services
 - Cloudflare domain management
+
+## Important Development Rules
+
+Please refer to `.cursorrules` file for comprehensive development guidelines including:
+- Effect TypeScript patterns for backend code
+- shadcn UI component development patterns
+- Zero sync implementation patterns
+- Code style and conventions
+- Error handling approaches
+
+The `.cursorrules` file contains detailed examples and patterns that must be followed for consistency across the codebase.

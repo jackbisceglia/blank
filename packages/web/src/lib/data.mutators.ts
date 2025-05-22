@@ -27,6 +27,22 @@ export type CreateGroupOptions = {
 export type DeleteGroupOptions = { groupId: string };
 export type DeleteExpenseOptions = { expenseId: string };
 export type DeleteAllExpensesOptions = { groupId: string };
+export type UpdateExpenseOptions = {
+  expenseId: string;
+  updates: {
+    amount?: number;
+    date?: number;
+    description?: string;
+  };
+};
+
+export type UpdateExpenseParticipantsOptions = {
+  expenseId: string;
+  participants: {
+    userId: string;
+    split: number;
+  }[];
+};
 
 const queries = {
   users: (tx: Transaction, userId: string) => {
@@ -75,6 +91,47 @@ const assertUserCanCreateAndJoinGroup = async (
 };
 
 const expenseMutators = {
+  async update(tx: Transaction, opts: UpdateExpenseOptions) {
+    const expense = await tx.query.expense.where("id", opts.expenseId).one();
+    if (!expense) {
+      throw new Error("Expense not found");
+    }
+
+    await tx.mutate.expense.update({
+      id: opts.expenseId,
+      ...opts.updates,
+    });
+  },
+  async updateParticipants(tx: Transaction, opts: UpdateExpenseParticipantsOptions) {
+    const expense = await tx.query.expense.where("id", opts.expenseId).one();
+    if (!expense) {
+      throw new Error("Expense not found");
+    }
+
+    // Validate splits add up to 1 (100%)
+    const totalSplit = opts.participants.reduce((sum, p) => sum + p.split, 0);
+    if (Math.abs(totalSplit - 1) > 0.0001) {
+      throw new Error("Participant splits must add up to 100%");
+    }
+
+    // Get all existing participants (including payer)
+    const existingParticipants = await tx.query.participant
+      .where("expenseId", opts.expenseId)
+      .run();
+
+    // Update each participant's split
+    for (const update of opts.participants) {
+      const existing = existingParticipants.find(p => p.userId === update.userId);
+      if (existing) {
+        await tx.mutate.participant.update({
+          expenseId: opts.expenseId,
+          groupId: existing.groupId,
+          userId: update.userId,
+          split: update.split,
+        });
+      }
+    }
+  },
   async delete(tx: Transaction, opts: DeleteExpenseOptions) {
     const q = queries.expenses(tx, opts.expenseId);
 
