@@ -38,7 +38,7 @@ function findClosestName(name: string, names: string[]) {
     onTrue: () => Effect.succeed(bestMatch),
     onFalse: () =>
       Effect.fail(
-        new NoMemberMatchFound("Member from parse not found in group"),
+        new NoMemberMatchFound("Member from parse not found in group")
       ),
   });
 }
@@ -66,18 +66,18 @@ export namespace expenses {
         (tx ?? db)
           .insert(expenseTable)
           .values(expense)
-          .returning({ id: expenseTable.id }),
+          .returning({ id: expenseTable.id })
       ),
       Effect.flatMap(
         requireSingleElement({
           empty: () => new ExpenseNotCreatedError("Expense not created"),
           dup: () => new DuplicateExpenseError("Duplicate expense found"),
-        }),
+        })
       ),
       Effect.catchTag(
         "UnknownException",
-        (e) => new DatabaseWriteError("Failed creating expense", e),
-      ),
+        (e) => new DatabaseWriteError("Failed creating expense", e)
+      )
     );
   }
 
@@ -97,11 +97,17 @@ export namespace expenses {
         catch: (e) => new ExpenseParsingError("Failed parsing expense", e),
       });
 
+      yield* Effect.log(
+        "\ngenerated: \n",
+        JSON.stringify(generated, null, 2),
+        "\n"
+      );
+
       const user = generated.members.find((m) => m.name === USER);
 
       if (!user) {
         return yield* Effect.fail(
-          new UserMissingInParse("User omitted from parse"),
+          new UserMissingInParse("User omitted from parse")
         );
       }
 
@@ -109,7 +115,7 @@ export namespace expenses {
 
       const restMapped = yield* normalize(
         generated.members.filter((m) => m.name !== USER),
-        members,
+        members
       );
 
       const merged = [userMapped, ...restMapped];
@@ -126,7 +132,7 @@ export namespace expenses {
           groupId: options.groupId,
           expenseId: newExpense.id,
           ...m,
-        })),
+        }))
       );
 
       return {

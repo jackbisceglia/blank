@@ -68,7 +68,6 @@ export function createStackableSearchRoute(key: string, value: string) {
         go(key, removed.length > 0 ? removed : undefined);
       },
       view: (): ViewState => {
-        console.log(stack, value);
         return stack?.includes(value) ? "open" : "closed";
       },
       state: () => search,

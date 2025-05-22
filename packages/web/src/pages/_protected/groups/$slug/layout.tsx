@@ -34,12 +34,15 @@ function GroupNavigation(props: GroupNavigationProps) {
           key={link}
           activeOptions={{ exact: true, includeSearch: false }}
           activeProps={{
-            className: `${underline_defaults} text-blank-theme font-semibold`,
+            className: cn(
+              underline_defaults,
+              "text-blank-theme font-semibold hover:text-blank-theme"
+            ),
           }}
           params={{ title: props.title }}
           from="/"
           to={buildTo(link)}
-          className="[&[aria-disabled=true]]:pointer-events-none [&[aria-disabled=true]]:text-muted-foreground/70"
+          className="active:[&[aria-disabled=true]]:pointer-events-none [&[aria-disabled=true]]:text-muted-foreground/70"
         >
           {link}
         </Link>

@@ -18,7 +18,6 @@ function SettingsRoute() {
   const del = useConfirmDialog({
     description: { type: "default", entity: "group" },
     onConfirm: () => {
-      console.log("is confirm invoked?");
       const promise = deleteGroup({ groupId: data.id })
         .then(() => {
           void navigate({ to: "/groups" });

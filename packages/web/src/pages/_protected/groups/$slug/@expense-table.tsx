@@ -224,7 +224,6 @@ export function DataTable(props: DataTableProps) {
             table.getRowModel().rows.map((row) => {
               const select = () => {
                 const isSelected = row.getIsSelected();
-                console.log("selecting", isSelected);
                 table.resetRowSelection();
 
                 if (!isSelected) {

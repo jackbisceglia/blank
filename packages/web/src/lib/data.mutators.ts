@@ -26,6 +26,7 @@ export type CreateGroupOptions = {
 
 export type DeleteGroupOptions = { groupId: string };
 export type DeleteExpenseOptions = { expenseId: string };
+export type DeleteAllExpensesOptions = { groupId: string };
 
 const queries = {
   users: (tx: Transaction, userId: string) => {
@@ -73,23 +74,33 @@ const assertUserCanCreateAndJoinGroup = async (
   }
 };
 
+const expenseMutators = {
+  async delete(tx: Transaction, opts: DeleteExpenseOptions) {
+    const q = queries.expenses(tx, opts.expenseId);
+
+    await tx.mutate.expense.delete({ id: opts.expenseId });
+
+    for (const participant of await q.findAllParticipants()) {
+      await tx.mutate.participant.delete({
+        groupId: participant.groupId,
+        userId: participant.userId,
+        expenseId: participant.expenseId,
+      });
+    }
+  },
+  async deleteAll(tx: Transaction, opts: DeleteAllExpensesOptions) {
+    const q = queries.groups(tx, opts.groupId);
+    const expenses = await q.findAllExpenses();
+
+    for (const expense of expenses) {
+      await expenseMutators.delete(tx, { expenseId: expense.id });
+    }
+  },
+};
+
 export function createClientMutators(_auth: OpenAuthToken | undefined) {
   return {
-    expense: {
-      async delete(tx, opts: DeleteExpenseOptions) {
-        const q = queries.expenses(tx, opts.expenseId);
-
-        await tx.mutate.expense.delete({ id: opts.expenseId });
-
-        for (const participant of await q.findAllParticipants()) {
-          await tx.mutate.participant.delete({
-            groupId: participant.groupId,
-            userId: participant.userId,
-            expenseId: participant.expenseId,
-          });
-        }
-      },
-    },
+    expense: expenseMutators,
     group: {
       async create(tx, opts: CreateGroupOptions) {
         await assertUserCanCreateAndJoinGroup(tx, opts.userId);

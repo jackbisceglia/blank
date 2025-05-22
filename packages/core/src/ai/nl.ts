@@ -66,6 +66,7 @@ export namespace nl {
         - Always include "USER" (the person initiating the expense) unless clearly excluded
         - Omit anyone with a split of 0 (unless they're the payer)
         - Total of all splits must equal 1.0
+        - ALWAYS ASSUME EQUAL SPLITS WHEN NOT SPECIFIED (with 2 people, this means 0.5 each)
         - Default to equal splits when not specified
 
         ## Examples

@@ -109,7 +109,6 @@ function CreateExpenseForm(props: CreateExpenseFormProps) {
 export function CreateExpenseDialog() {
   const createExpense = useCreateExpense();
   const route = SearchRoute.useSearchRoute();
-  console.log("state: ", route.view());
 
   return (
     <Dialog

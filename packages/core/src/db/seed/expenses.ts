@@ -1,7 +1,7 @@
 import { Effect, pipe } from "effect";
 import { expenses } from "../expense";
 
-const name = ""; // can replace with whatever name of a user is in the group for testing
+const name = "jenna"; // can replace with whatever name of a user is in the group for testing
 const placeholder = `John Doe`;
 
 function randomDateLast30Days() {
@@ -50,25 +50,30 @@ export async function seed() {
     "Paid for dance class with John Doe, $70",
   ].map((desc) => desc.replace(placeholder, name));
 
-  const result = Effect.forEach(descriptions, (description) => {
-    return pipe(
-      Effect.log(`Creating expense: ${description}`),
-      Effect.flatMap(() =>
-        expenses.createFromDescription({
-          groupId,
-          description,
-          userId,
-          date: randomDateLast30Days(),
-        })
-      ),
-      Effect.tapBoth({
-        onFailure: (error) =>
-          Effect.logError(`Failed creating expnse: ${error.message}`),
-        onSuccess: (result) =>
-          Effect.log(`Created expense: ${JSON.stringify(result, null, 2)}`),
-      })
-    );
-  });
+  const result = Effect.forEach(
+    descriptions,
+    (description) => {
+      return pipe(
+        Effect.log(`Creating expense: ${description}`),
+        Effect.flatMap(() =>
+          expenses.createFromDescription({
+            groupId,
+            description,
+            userId,
+            date: randomDateLast30Days(),
+          })
+        ),
+        Effect.tapBoth({
+          onFailure: (error) =>
+            Effect.logError(`Failed creating expnse: ${error.message}`),
+          onSuccess: (result) =>
+            Effect.log(`Created expense: ${JSON.stringify(result, null, 2)}`),
+        }),
+        Effect.ignore
+      );
+    },
+    { concurrency: 3 }
+  );
 
   return Effect.runPromise(result);
 }

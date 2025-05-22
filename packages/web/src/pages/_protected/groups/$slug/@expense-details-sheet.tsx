@@ -42,9 +42,7 @@ export function ExpenseSheet(props: ExpenseSheetProps) {
   const ConfirmDelete = useConfirmDialog({
     title: "Are you absolutely sure?",
     description: { type: "default", entity: "expense" },
-    confirm: "Delete",
-    cancel: "Cancel",
-    async onSuccess() {
+    onConfirm: async () => {
       try {
         await deleteExpense({ expenseId: active?.id ?? "" });
         route.close();

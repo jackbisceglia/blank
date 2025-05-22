@@ -10,6 +10,7 @@ import {
   SearchRouteSchema,
 } from "./@expense-details-sheet";
 import { Expense, Member, Participant } from "@blank/zero";
+import { useDeleteAllExpenses } from "./@data";
 
 type ParticipantWithMember = Participant & { member: Member | undefined };
 export type Expenses = Expense & { participants: ParticipantWithMember[] };
@@ -18,6 +19,7 @@ function GroupRoute() {
   const expenseSheet = SearchRoute.useSearchRoute();
   const params = Route.useParams();
   const group = useGetGroupBySlug(params.slug);
+  const deleteAllExpenses = useDeleteAllExpenses();
 
   if (group.status === "not-found") {
     return <div>Group not found</div>;
@@ -25,7 +27,7 @@ function GroupRoute() {
 
   return (
     <>
-      <SecondaryRow className="justify-between gap-4 flex flex-col sm:flex-row sm:items-start">
+      <SecondaryRow className="justify-between gap-4 md:gap-2 flex flex-col sm:flex-row sm:items-start">
         <SubHeading> {group.data?.description} </SubHeading>
         <Button asChild size="xs" variant="theme" className="sm:ml-auto">
           <Link
@@ -37,6 +39,18 @@ function GroupRoute() {
             New Expense
           </Link>
         </Button>
+        {/* {process.env.NODE_ENV === "development" && (
+          <Button
+            onClick={() => {
+              void deleteAllExpenses({ groupId: group.data?.id ?? "" });
+            }}
+            variant="outline"
+            size="xs"
+            className="ml-2"
+          >
+            DELETE ALL
+          </Button>
+        )} */}
       </SecondaryRow>
       <GroupBody>
         <DataTable
