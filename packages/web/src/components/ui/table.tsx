@@ -7,10 +7,10 @@ type TableProps = React.ComponentProps<"table">;
 
 function Table({ className, ...props }: TableProps) {
   return (
-    <div className={cn("w-full overflow-auto text-foreground/75 duration-0")}>
+    <div className={cn("overflow-x-auto w-full text-foreground/75 duration-0")}>
       <table
         data-slot="table"
-        className={cn("w-full caption-bottom text-sm h-full", className)}
+        className={cn("caption-bottom text-sm min-w-full", className)}
         {...props}
       />
     </div>
@@ -60,12 +60,15 @@ function TableRow({ className, ...props }: React.ComponentProps<"tr">) {
   );
 }
 
+const x_spacing = "pl-2 pr-4 lg:pl-2 lg:pr-10";
+
 function TableHead({ className, ...props }: React.ComponentProps<"th">) {
   return (
     <th
       data-slot="table-head"
       className={cn(
-        "uppercase text-xs text-muted-foreground h-10 pl-4 pr-14 text-left align-middle font-normal [&:has([role=checkbox])]:pr-0 [&>[role=checkbox]]:translate-y-[2px] [&:nth-child(1)]:w-24 [&:nth-child(2)]:w-full min-w-fit",
+        x_spacing,
+        " uppercase text-xs text-muted-foreground h-10 min-w-fit whitespace-nowrap text-left align-middle font-normal [&:has([role=checkbox])]:pr-0 [&>[role=checkbox]]:translate-y-[2px] [&:nth-child(1)]:w-24 [&:nth-child(2)]:w-full",
         className
       )}
       {...props}
@@ -78,7 +81,8 @@ function TableCell({ className, ...props }: React.ComponentProps<"td">) {
     <td
       data-slot="table-cell"
       className={cn(
-        "pl-4 pr-14 py-3 align-left [&:has([role=checkbox])]:pr-0 [&>[role=checkbox]]:translate-y-[2px] [&:nth-child(2)]:w-full min-w-fit border-b border-primary/5 [tr:last-child_&]:border-b-0",
+        "py-3 w-fit align-left [&:has([role=checkbox])]:pr-0 [&>[role=checkbox]]:translate-y-[2px] border-b border-primary/5 ",
+        x_spacing,
         className
       )}
       {...props}

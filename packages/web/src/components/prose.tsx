@@ -5,7 +5,13 @@ import { cn } from "@/lib/utils";
 export function PrimaryHeading(props: React.ComponentProps<"h1">) {
   const { className, ...rest } = props;
   return (
-    <h1 className={cn(className, "text-xl font-medium uppercase")} {...rest} />
+    <h1
+      className={cn(
+        className,
+        "text-lg sm:text-xl font-medium uppercase min-w-fit"
+      )}
+      {...rest}
+    />
   );
 }
 
@@ -27,7 +33,7 @@ export function SubHeading(props: React.ComponentProps<"h3">) {
   return (
     <h3
       className={cn(
-        "font-base leading-none lowercase text-muted-foreground",
+        "font-base leading-none lowercase text-muted-foreground text-sm sm:text-base",
         className
       )}
       {...rest}

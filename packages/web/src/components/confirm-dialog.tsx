@@ -12,11 +12,19 @@ import {
 type DialogState = "open" | "closed";
 type UseConfirmDialogOptions = {
   default?: DialogState;
-  title: string;
-  description: string;
-  confirm: string;
-  cancel: string;
-  onSuccess: () => Promise<void>;
+  title?: string;
+  description:
+    | {
+        type: "custom";
+        value: string;
+      }
+    | {
+        type: "default";
+        entity: string;
+      };
+  confirm?: string;
+  cancel?: string;
+  onConfirm: () => Promise<void>;
 };
 
 export function useConfirmDialog(options: UseConfirmDialogOptions) {
@@ -28,12 +36,21 @@ export function useConfirmDialog(options: UseConfirmDialogOptions) {
   async function handleConfirm() {
     setStatus("loading");
     try {
-      await options.onSuccess();
+      await options.onConfirm();
       setStatus("success");
     } catch {
       setStatus("error");
     }
+    setState("closed");
   }
+
+  const defaults = {
+    title: "Are you sure?",
+    description: (entity: string) =>
+      `This will permanently delete the ${entity}, along with all of its associated data. Be sure to backup your data before permanently deleting.`,
+    confirm: "Delete",
+    cancel: "Cancel",
+  };
 
   function ConfirmDialog() {
     return (
@@ -46,14 +63,18 @@ export function useConfirmDialog(options: UseConfirmDialogOptions) {
       >
         <DialogContent className="py-4 px-6 sm:max-w-xl">
           <DialogHeader className="py-2 gap-1.5">
-            <DialogTitle className="uppercase">{options.title}</DialogTitle>
+            <DialogTitle className="uppercase">
+              {options.title ?? defaults.title}
+            </DialogTitle>
             <DialogDescription className="lowercase">
               This action cannot be undone
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-2 py-2">
             <DialogDescription className="lowercase">
-              {options.description}
+              {options.description.type === "custom"
+                ? options.description.value
+                : defaults.description(options.description.entity)}
             </DialogDescription>
           </div>
           <DialogFooter className="[&>*]:w-full py-3 flex gap-2">
@@ -63,7 +84,9 @@ export function useConfirmDialog(options: UseConfirmDialogOptions) {
               variant="destructive"
               onClick={() => void handleConfirm()}
             >
-              {status === "loading" ? "Processing..." : options.confirm}
+              {status === "loading"
+                ? "Processing..."
+                : (options.confirm ?? defaults.confirm)}
             </Button>
             <Button
               size="xs"
@@ -74,7 +97,7 @@ export function useConfirmDialog(options: UseConfirmDialogOptions) {
               }}
               disabled={status === "loading"}
             >
-              {options.cancel}
+              {options.cancel ?? defaults.cancel}
             </Button>
           </DialogFooter>
         </DialogContent>

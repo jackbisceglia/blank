@@ -9,25 +9,25 @@ import { States } from "./layout";
 function SettingsRoute() {
   const navigate = useNavigate();
   const params = Route.useParams();
-
-  const group = useGetGroupBySlug(params.slug);
-
-  if (group.status === "not-found")
-    return <States.NotFound title={params.slug} />;
-
+  const { data, status } = useGetGroupBySlug(params.slug);
   const deleteGroup = useDeleteGroup();
-  const confirmDelete = useConfirmDialog({
-    title: "Are you absolutely sure?",
-    description: `This will permanently delete the group "${group.data?.title ?? "unknown"}", along with all of its associated data. Be sure to backup your data before permanently deleting.`,
-    confirm: "Delete",
-    cancel: "Cancel",
-    async onSuccess() {
-      try {
-        await deleteGroup({ groupId: group.data?.id ?? "" });
-        void navigate({ to: "/groups" });
-      } catch (error) {
-        console.log("DELETE_ERROR", JSON.stringify(error, null, 2));
-      }
+
+  if (status === "not-found") return <States.NotFound title={params.slug} />;
+  if (!data) return <States.Loading />;
+
+  const del = useConfirmDialog({
+    description: { type: "default", entity: "group" },
+    onConfirm: () => {
+      console.log("is confirm invoked?");
+      const promise = deleteGroup({ groupId: data.id })
+        .then(() => {
+          void navigate({ to: "/groups" });
+        })
+        .catch((error: unknown) =>
+          console.error("DELETE_ERROR", JSON.stringify(error, null, 2))
+        );
+
+      return promise;
     },
   });
 
@@ -42,16 +42,12 @@ function SettingsRoute() {
           <p className="text-sm text-muted-foreground mb-4">
             Destructive actions that cannot be undone.
           </p>
-          <Button
-            variant="destructive"
-            size="sm"
-            onClick={confirmDelete.confirm}
-          >
+          <Button variant="destructive" size="sm" onClick={del.confirm}>
             Delete Group
           </Button>
         </div>
       </GroupBody>
-      <confirmDelete.dialog />
+      <del.dialog />
     </>
   );
 }

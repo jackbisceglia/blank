@@ -4,7 +4,6 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { useDialogFromUrl } from "@/lib/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import * as v from "valibot";
@@ -14,6 +13,8 @@ import { useState } from "react";
 import { slugify } from "@/lib/utils";
 import { Label } from "@/components/ui/label";
 import { useCreateGroup } from "./@data";
+import { createStackableSearchRoute } from "@/lib/create-search-route";
+
 const invalidCharactersMessage =
   "Title must only contain letters, numbers, and spaces";
 
@@ -37,12 +38,12 @@ const schemas = {
   ),
 };
 
-export const CreateGroupSearchParams = v.object({
-  action: v.literal("new-group"),
+const ENTRY = "new-group" as const;
+export const SearchRoute = createStackableSearchRoute("action", ENTRY);
+export type SearchRouteSchema = v.InferOutput<typeof SearchRouteSchema>;
+export const SearchRouteSchema = v.object({
+  action: v.literal(ENTRY),
 });
-export type CreateGroupSearchParams = v.InferOutput<
-  typeof CreateGroupSearchParams
->;
 
 export type CreateGroupDialogProps = {
   searchValue: string[];
@@ -52,9 +53,9 @@ export type CreateGroupDialogProps = {
 export function CreateGroupDialog() {
   const createGroup = useCreateGroup();
   const formKeys = { title: "group-title", description: "group-description" };
+  const route = SearchRoute.useSearchRoute();
 
   const [error, setError] = useState<string | null>(null);
-  const view = useDialogFromUrl({ schema: CreateGroupSearchParams });
 
   function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
     const safeSubmitForm = Result.fromThrowable(createGroup);
@@ -72,7 +73,7 @@ export function CreateGroupDialog() {
       .andThrough((values) => safeSubmitForm(...values))
       .match(
         () => {
-          view.close();
+          route.close();
         },
         (error) => {
           if (error instanceof ValidationError) {
@@ -86,9 +87,9 @@ export function CreateGroupDialog() {
 
   return (
     <Dialog
-      open={view.state() === "open"}
+      open={route.view() === "open"}
       onOpenChange={(bool) => {
-        (bool ? view.open : view.close)();
+        (bool ? route.open : route.close)();
         if (!bool) setError(null);
       }}
     >
@@ -143,14 +144,13 @@ export function CreateGroupDialog() {
             type="submit"
             variant="theme"
             size="xs"
-            // className="mb-auto w-full py-2.5"
             className="col-start-1 -col-end-2 mb-auto py-2.5 w-full"
           >
             create
           </Button>
           <Button
             type="button"
-            onClick={view.close}
+            onClick={route.close}
             variant="destructive"
             size="xs"
             className="col-span-1 mb-auto py-2.5 w-full"

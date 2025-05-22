@@ -3,9 +3,19 @@ import { SubHeading } from "@/components/prose";
 import { useGetGroupBySlug } from "../@data";
 import { Button } from "@/components/ui/button";
 import { GroupBody, SecondaryRow } from "./layout";
-import { Columns, DataTable } from "./@expense-table";
+import { DataTable } from "./@expense-table";
+import {
+  ExpenseSheet,
+  SearchRoute,
+  SearchRouteSchema,
+} from "./@expense-details-sheet";
+import { Expense, Member, Participant } from "@blank/zero";
+
+type ParticipantWithMember = Participant & { member: Member | undefined };
+export type Expenses = Expense & { participants: ParticipantWithMember[] };
 
 function GroupRoute() {
+  const expenseSheet = SearchRoute.useSearchRoute();
   const params = Route.useParams();
   const group = useGetGroupBySlug(params.slug);
 
@@ -15,9 +25,9 @@ function GroupRoute() {
 
   return (
     <>
-      <SecondaryRow className="justify-between gap-3">
+      <SecondaryRow className="justify-between gap-4 flex flex-col sm:flex-row sm:items-start">
         <SubHeading> {group.data?.description} </SubHeading>
-        <Button asChild size="xs" variant="theme" className="ml-auto">
+        <Button asChild size="xs" variant="theme" className="sm:ml-auto">
           <Link
             to="."
             search={(prev) => ({
@@ -29,8 +39,12 @@ function GroupRoute() {
         </Button>
       </SecondaryRow>
       <GroupBody>
-        <DataTable data={(group.data?.expenses ?? []) as Columns[]} />
+        <DataTable
+          expand={expenseSheet.open}
+          data={(group.data?.expenses ?? []) as Expenses[]}
+        />
       </GroupBody>
+      <ExpenseSheet expenses={(group.data?.expenses ?? []) as Expenses[]} />
     </>
   );
 }
@@ -38,4 +52,5 @@ function GroupRoute() {
 export const Route = createFileRoute("/_protected/groups/$slug/")({
   component: GroupRoute,
   ssr: false,
+  validateSearch: SearchRouteSchema,
 });

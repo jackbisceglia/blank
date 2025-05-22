@@ -24,7 +24,7 @@ import {
 import { useEffect, useState } from "react";
 import { useNavigate } from "@tanstack/react-router";
 
-const MOBILE_BREAKPOINT = 768;
+const MOBILE_BREAKPOINT = 1024;
 
 export function useIsMobile() {
   const [isMobile, setIsMobile] = useState<boolean | undefined>(undefined);
@@ -198,9 +198,7 @@ function Sidebar({
   variant?: "sidebar" | "floating" | "inset";
   collapsible?: "offcanvas" | "icon" | "none";
 }) {
-  const r = useNavigate();
-  const { isMobile, state, openMobile, setOpenMobile, toggleSidebar, setOpen } =
-    useSidebar();
+  const { isMobile, state, openMobile, setOpenMobile } = useSidebar();
   const sidebarRef = React.useRef<HTMLDivElement>(null);
 
   const selector = s.Parts(

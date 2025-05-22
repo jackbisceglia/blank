@@ -27,7 +27,7 @@ function GroupNavigation(props: GroupNavigationProps) {
     build("/")("groups", "$slug", l !== "dashboard" && l);
 
   return (
-    <div className="ml-auto uppercase text-sm flex items-center gap-6">
+    <div className="sm:ml-auto uppercase text-xs sm:text-sm flex items-center justify-center sm:justify-start gap-4">
       {links.map((link) => (
         <Link
           disabled={props.disable}
@@ -74,7 +74,7 @@ function GroupLayout() {
 
   return (
     <>
-      <PageHeaderRow>
+      <PageHeaderRow className="flex-col gap-2.5 sm:flex-row items-start sm:items-center sm:justify-between pb-1 sm:pb-0">
         <PrimaryHeading>{title}</PrimaryHeading>
         <GroupNavigation title={title} />
       </PageHeaderRow>

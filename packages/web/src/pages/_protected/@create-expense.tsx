@@ -4,7 +4,6 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { useDialogFromUrl } from "@/lib/dialog";
 import * as v from "valibot";
 import { useCreateExpense } from "./@data";
 import { ok } from "neverthrow";
@@ -12,14 +11,14 @@ import { toast } from "sonner";
 import { FieldsErrors, prevented, useAppForm } from "@/lib/form";
 import { useStore } from "@tanstack/react-form";
 import { unwrapOrThrow } from "@blank/core/utils";
+import { createStackableSearchRoute } from "@/lib/create-search-route";
 
-export const CreateExpenseSearchParams = v.object({
-  action: v.literal("new-expense"),
+const ENTRY = "new-expense" as const;
+export const SearchRoute = createStackableSearchRoute("action", ENTRY);
+export type SearchRouteSchema = v.InferOutput<typeof SearchRouteSchema>;
+export const SearchRouteSchema = v.object({
+  action: v.literal(ENTRY),
 });
-
-export type CreateExpenseSearchParams = v.InferOutput<
-  typeof CreateExpenseSearchParams
->;
 
 const schema = v.object({
   description: v.pipe(
@@ -109,14 +108,14 @@ function CreateExpenseForm(props: CreateExpenseFormProps) {
 
 export function CreateExpenseDialog() {
   const createExpense = useCreateExpense();
-  const view = useDialogFromUrl({ schema: CreateExpenseSearchParams });
-  const isOpen = view.state() === "open";
+  const route = SearchRoute.useSearchRoute();
+  console.log("state: ", route.view());
 
   return (
     <Dialog
-      open={isOpen}
+      open={route.view() === "open"}
       onOpenChange={(bool) => {
-        (bool ? view.open : view.close)();
+        (bool ? route.open : route.close)();
       }}
     >
       <DialogHeader className="sr-only">
@@ -128,7 +127,7 @@ export function CreateExpenseDialog() {
         className="bg-transparent border-none shadow-none sm:max-w-2xl outline-none"
       >
         <CreateExpenseForm
-          closeDialog={view.close}
+          closeDialog={route.close}
           createExpense={createExpense}
         />
       </DialogContent>
