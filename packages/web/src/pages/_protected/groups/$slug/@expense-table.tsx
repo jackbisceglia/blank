@@ -13,28 +13,22 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { PropsWithChildren, useRef } from "react";
+import { useRef } from "react";
 import { Button } from "@/components/ui/button";
-import { Expenses } from "./page";
 import {
   Tooltip,
   TooltipTrigger,
   TooltipContent,
 } from "@/components/ui/tooltip";
 import React from "react";
-
-const isKey = (key: string, set: string[]) => set.includes(key);
-
-const keys = {
-  up: ["j", "ArrowUp"],
-  down: ["k", "ArrowDown"],
-  select: ["Enter", " "],
-};
-
-const isTableNavUp = (key: string) => isKey(key, keys.up);
-const isTableNavDown = (key: string) => isKey(key, keys.down);
-
-const isTableSelect = (key: string) => isKey(key, keys.select);
+import { ExpenseWithParticipants } from "./page";
+import { DialogTrigger } from "@/components/ui/dialog";
+import { ExpenseSheet } from "./@expense-details-sheet";
+import {
+  isTableNavDown,
+  isTableNavigation,
+  tableNavigationContext,
+} from "@/lib/keyboard-nav";
 
 function getInitials(name?: string) {
   if (!name) return "?";
@@ -52,7 +46,7 @@ const BadgeSimple = React.forwardRef<HTMLSpanElement, BadgeSimpleProps>(
   ({ variant, children, ...rest }, ref) => (
     <Badge
       ref={ref}
-      className="overflow-x-hidden truncate block"
+      className="overflow-x-hidden truncate block max-w-full"
       variant={variant}
       {...rest}
     >
@@ -64,7 +58,7 @@ const BadgeSimple = React.forwardRef<HTMLSpanElement, BadgeSimpleProps>(
 BadgeSimple.displayName = "BadgeSimple";
 
 type ParticipantBadgeProps = {
-  participant: Expenses["participants"][number];
+  participant: ExpenseWithParticipants["participants"][number];
   strategy?: "compact" | "standard";
 };
 function ParticipantBadge(props: ParticipantBadgeProps) {
@@ -91,7 +85,7 @@ function ParticipantBadge(props: ParticipantBadgeProps) {
 }
 
 type ParticipantBadgeListProps = {
-  participants: Expenses["participants"];
+  participants: ExpenseWithParticipants["participants"];
 };
 function ParticipantBadgeList(props: ParticipantBadgeListProps) {
   const participants = props.participants.filter(
@@ -112,7 +106,7 @@ function ParticipantBadgeList(props: ParticipantBadgeListProps) {
   );
 }
 
-const columnHelper = createColumnHelper<Expenses>();
+const columnHelper = createColumnHelper<ExpenseWithParticipants>();
 
 const columns = [
   columnHelper.accessor("amount", {
@@ -161,7 +155,7 @@ const columns = [
         .join("/"),
   }),
   columnHelper.display({
-    id: "checked",
+    id: "manage",
     cell: (props) => (
       <Button
         onClick={() => props.table.options.meta?.expand(props.row.id)}
@@ -178,7 +172,7 @@ const columns = [
 
 type DataTableProps = {
   expand: (id: string) => void;
-  data: Expenses[];
+  data: ExpenseWithParticipants[];
 };
 
 export function DataTable(props: DataTableProps) {
@@ -222,15 +216,6 @@ export function DataTable(props: DataTableProps) {
         <TableBody>
           {table.getRowModel().rows.length ? (
             table.getRowModel().rows.map((row) => {
-              const select = () => {
-                const isSelected = row.getIsSelected();
-                table.resetRowSelection();
-
-                if (!isSelected) {
-                  row.toggleSelected(true);
-                }
-              };
-
               return (
                 <TableRow
                   ref={(el) => {
@@ -239,20 +224,16 @@ export function DataTable(props: DataTableProps) {
                   }}
                   key={row.id}
                   data-state={row.getIsSelected() && "selected"}
-                  onClick={select}
+                  // onClick={select}
                   className="hover:bg-blank-theme-background/25 transition-colors"
-                  role="checkbox"
-                  aria-checked={row.getIsSelected()}
+                  // role="checkbox"
+                  // aria-checked={row.getIsSelected()}
                   tabIndex={0}
                   onKeyDown={(e) => {
-                    if (isTableSelect(e.key)) {
+                    const navigation = tableNavigationContext(e);
+                    if (navigation) {
                       e.preventDefault();
-                      select();
-                    }
-
-                    if (isTableNavUp(e.key) || isTableNavDown(e.key)) {
-                      e.preventDefault();
-                      const delta = isTableNavUp(e.key) ? 1 : -1;
+                      const delta = navigation.direction === "up" ? -1 : 1;
 
                       rowRefs.current
                         .at((row.index + delta) % rowRefs.current.length)
@@ -270,8 +251,8 @@ export function DataTable(props: DataTableProps) {
                         
                         [&:nth-child(2)]:w-auto [&:nth-child(2)]:min-w-fit [&:nth-child(2)]:whitespace-nowrap 
 
-                        [&:nth-child(3)]:min-w-min [&:nth-child(3)]:w-min [&:nth-child(3)]:max-w-28 [&:nth-child(3)]:truncate
-                        lg:[&:nth-child(3)]:min-w-min lg:[&:nth-child(3)]:w-min lg:[&:nth-child(3)]:max-w-32 lg:[&:nth-child(3)]:truncate
+                        [&:nth-child(3)]:min-w-min [&:nth-child(3)]:w-min [&:nth-child(3)]:max-w-20 [&:nth-child(3)]:truncate
+                        xl:[&:nth-child(3)]:min-w-min xl:[&:nth-child(3)]:w-min xl:[&:nth-child(3)]:max-w-40 xl:[&:nth-child(3)]:truncate
 
                         [&:nth-child(4)]:min-w-fit [&:nth-child(4)]:w-fit [&:nth-child(4)]:max-w-36 [&:nth-child(4)]:truncate
 

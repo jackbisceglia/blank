@@ -8,7 +8,10 @@ import { NotFound } from "./components/not-found";
 import { scan } from "react-scan";
 import { RowData } from "@tanstack/react-table";
 
-if (import.meta.env.VITE_SCAN === "true") {
+const shouldScan = false;
+
+// eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
+if (shouldScan && import.meta.env.VITE_SCAN === "true") {
   scan({
     enabled: true,
     showFPS: true,

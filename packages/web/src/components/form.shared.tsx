@@ -1,0 +1,61 @@
+import { Label } from "@/components/ui/label";
+import { cn } from "@/lib/utils";
+import { Input } from "./ui/input";
+import { useFieldContext } from "./form";
+type SharedLabelProps = React.ComponentProps<typeof Label>;
+
+export function SharedLabel(props: SharedLabelProps) {
+  const { className, ...rest } = props;
+
+  return (
+    <Label
+      className={cn(
+        "uppercase font-base text-xs col-span-full mt-auto",
+        className
+      )}
+      {...rest}
+    />
+  );
+}
+
+type SharedSheetLabelProps = React.ComponentProps<typeof Label>;
+
+export function SharedSheetLabel(props: SharedSheetLabelProps) {
+  const { className, ...rest } = props;
+
+  return (
+    <Label
+      className={cn(
+        "uppercase font-medium text-xs text-muted-foreground",
+        className
+      )}
+      {...rest}
+    />
+  );
+}
+
+type SharedInputFromFieldProps<T extends string | number> = {
+  field: ReturnType<typeof useFieldContext<T>>;
+  transform?: (value: string) => T;
+} & React.ComponentProps<typeof Input>;
+
+export function SharedInputFromField<T extends string | number>(
+  props: SharedInputFromFieldProps<T>
+) {
+  const { className, field, transform, ...rest } = props;
+  return (
+    <Input
+      id={field.name}
+      name={field.name}
+      value={field.state.value}
+      onChange={(e) => {
+        field.handleChange(
+          transform?.(e.target.value) ?? (e.target.value as T)
+        );
+      }}
+      onBlur={field.handleBlur}
+      className={className}
+      {...rest}
+    />
+  );
+}

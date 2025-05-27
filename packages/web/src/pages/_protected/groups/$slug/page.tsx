@@ -9,17 +9,21 @@ import {
   SearchRoute,
   SearchRouteSchema,
 } from "./@expense-details-sheet";
-import { Expense, Member, Participant } from "@blank/zero";
-import { useDeleteAllExpenses } from "./@data";
+import { Expense } from "@blank/zero";
+import { ParticipantWithMember } from "@/lib/participants";
+import { Test } from "./@test-dialog";
 
-type ParticipantWithMember = Participant & { member: Member | undefined };
-export type Expenses = Expense & { participants: ParticipantWithMember[] };
+export type ExpenseWithParticipants = Expense & {
+  participants: ParticipantWithMember[];
+};
 
 function GroupRoute() {
   const expenseSheet = SearchRoute.useSearchRoute();
   const params = Route.useParams();
   const group = useGetGroupBySlug(params.slug);
-  const deleteAllExpenses = useDeleteAllExpenses();
+  const sheet = SearchRoute.useSearchRoute();
+
+  const active = group.data?.expenses.find((e) => e.id === sheet.state());
 
   if (group.status === "not-found") {
     return <div>Group not found</div>;
@@ -39,26 +43,14 @@ function GroupRoute() {
             New Expense
           </Link>
         </Button>
-        {/* {process.env.NODE_ENV === "development" && (
-          <Button
-            onClick={() => {
-              void deleteAllExpenses({ groupId: group.data?.id ?? "" });
-            }}
-            variant="outline"
-            size="xs"
-            className="ml-2"
-          >
-            DELETE ALL
-          </Button>
-        )} */}
       </SecondaryRow>
       <GroupBody>
         <DataTable
           expand={expenseSheet.open}
-          data={(group.data?.expenses ?? []) as Expenses[]}
+          data={(group.data?.expenses ?? []) as ExpenseWithParticipants[]}
         />
       </GroupBody>
-      <ExpenseSheet expenses={(group.data?.expenses ?? []) as Expenses[]} />
+      {active && <ExpenseSheet expense={active as ExpenseWithParticipants} />}
     </>
   );
 }

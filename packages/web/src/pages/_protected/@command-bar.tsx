@@ -6,13 +6,14 @@ import {
   CommandItem,
   CommandList,
 } from "@/components/ui/command";
-import { useEffect } from "react";
+import { useEffect, useTransition } from "react";
 import { createPreventDefault, fn, keyboard } from "@/lib/utils";
 import { Link, LinkOptions, useNavigate } from "@tanstack/react-router";
 import { useGetGroupsList } from "./groups/@data";
 import { useAuthentication } from "@/lib/auth.provider";
 import * as v from "valibot";
 import { createStackableSearchRoute } from "@/lib/create-search-route";
+import { SearchRoute as CreateExpenseRoute } from "./@create-expense";
 
 const ENTRY = "command" as const;
 export const SearchRoute = createStackableSearchRoute("action", ENTRY);
@@ -26,6 +27,7 @@ export function GlobalCommandBar() {
   const auth = useAuthentication();
   const groups = useGetGroupsList(auth.user.id);
   const route = SearchRoute.useSearchRoute();
+  const createExpenseRoute = CreateExpenseRoute.useSearchRoute();
 
   const commands = {
     home: fn(() => {
@@ -68,7 +70,8 @@ export function GlobalCommandBar() {
         title: "create expense",
         opts,
         go: () => {
-          void navigate(opts);
+          route.close();
+          createExpenseRoute.open(true);
         },
       };
     }),
@@ -103,7 +106,7 @@ export function GlobalCommandBar() {
       actions.cleanup();
       cmdk.cleanup();
     };
-  }, [route.state]);
+  }, [route.state()]);
 
   const groupCommands = groups.data.map(
     (group) =>
@@ -116,6 +119,7 @@ export function GlobalCommandBar() {
 
   return (
     <CommandDialog
+      omitCloseButton
       open={route.view() === "open"}
       onOpenChange={(bool) => {
         (bool ? route.open : route.close)();

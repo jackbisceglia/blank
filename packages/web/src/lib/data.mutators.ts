@@ -65,6 +65,7 @@ const queries = {
     return {
       findAllParticipants: () =>
         tx.query.participant.where("expenseId", expenseId).run(),
+      find: () => tx.query.expense.where("id", expenseId).one().run(),
     };
   },
 };
@@ -90,23 +91,26 @@ const assertUserCanCreateAndJoinGroup = async (
   }
 };
 
+const assertExpenseExists = async (tx: Transaction, expenseId: string) => {
+  const expense = await queries.expenses(tx, expenseId).find();
+  if (!expense) throw new Error("Expense not found");
+  return expense;
+};
+
 const expenseMutators = {
   async update(tx: Transaction, opts: UpdateExpenseOptions) {
-    const expense = await tx.query.expense.where("id", opts.expenseId).one();
-    if (!expense) {
-      throw new Error("Expense not found");
-    }
+    await assertExpenseExists(tx, opts.expenseId);
 
     await tx.mutate.expense.update({
       id: opts.expenseId,
       ...opts.updates,
     });
   },
-  async updateParticipants(tx: Transaction, opts: UpdateExpenseParticipantsOptions) {
-    const expense = await tx.query.expense.where("id", opts.expenseId).one();
-    if (!expense) {
-      throw new Error("Expense not found");
-    }
+  async updateParticipants(
+    tx: Transaction,
+    opts: UpdateExpenseParticipantsOptions
+  ) {
+    await assertExpenseExists(tx, opts.expenseId);
 
     // Validate splits add up to 1 (100%)
     const totalSplit = opts.participants.reduce((sum, p) => sum + p.split, 0);
@@ -121,7 +125,9 @@ const expenseMutators = {
 
     // Update each participant's split
     for (const update of opts.participants) {
-      const existing = existingParticipants.find(p => p.userId === update.userId);
+      const existing = existingParticipants.find(
+        (p) => p.userId === update.userId
+      );
       if (existing) {
         await tx.mutate.participant.update({
           expenseId: opts.expenseId,
@@ -162,7 +168,6 @@ export function createClientMutators(_auth: OpenAuthToken | undefined) {
       async create(tx, opts: CreateGroupOptions) {
         await assertUserCanCreateAndJoinGroup(tx, opts.userId);
         const location = import.meta.env.SSR ? "server" : "client";
-        console.log(`running on ${location}: `, opts.userId);
 
         const groupId = crypto.randomUUID();
 

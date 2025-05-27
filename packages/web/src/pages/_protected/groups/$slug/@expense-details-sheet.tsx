@@ -5,23 +5,28 @@ import {
   SheetTitle,
   SheetBody,
   SheetFooter,
+  SheetTrigger,
 } from "@/components/ui/sheet";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import * as v from "valibot";
-import { Expenses } from "./page";
+import { ExpenseWithParticipants } from "./page";
 import { createSearchRoute } from "@/lib/create-search-route";
-import { useConfirmDialog } from "@/components/confirm-dialog";
+import { useWithConfirmation } from "@/components/with-confirmation-dialog";
 import {
   useDeleteExpense,
   useUpdateExpense,
   useUpdateExpenseParticipants,
 } from "./@data";
-import { useState, useEffect } from "react";
-import { toast } from "sonner";
-import { cn } from "@/lib/utils";
-import { useZero } from "@/lib/zero.provider";
+import { FieldsErrors, useAppForm } from "@/components/form";
+import { prevented, timestampToDate } from "@/lib/utils";
+import {
+  DeleteExpenseOptions,
+  UpdateExpenseOptions,
+} from "@/lib/data.mutators";
+import { useStore } from "@tanstack/react-form";
+import { PropsWithChildren, useEffect, useRef, useState } from "react";
+import { Separator } from "@/components/ui/separator";
+import { getPayerFromParticipants } from "@/lib/participants";
+import { withToast } from "@/lib/mutate-with-toast";
 
 const key = "expense" as const;
 export const SearchRouteSchema = v.object({
@@ -29,465 +34,216 @@ export const SearchRouteSchema = v.object({
 });
 export const SearchRoute = createSearchRoute(key);
 
-type ExpenseSheetProps = {
-  expenses: Expenses[];
-};
-
-function SheetInput({
-  className,
-  ...props
-}: React.ComponentProps<typeof Input>) {
-  return (
-    <Input
-      className={cn(
-        "bg-accent/30 border-sidebar-border/30 text-foreground placeholder:text-muted-foreground/60 h-10 focus-visible:ring-1 focus-visible:border-sidebar-border/50",
-        className
-      )}
-      {...props}
-    />
-  );
-}
-
-function SheetLabel({
-  className,
-  ...props
-}: React.ComponentProps<typeof Label>) {
-  return (
-    <Label
-      className={cn(
-        "lowercase font-medium text-xs text-muted-foreground",
-        className
-      )}
-      {...props}
-    />
-  );
-}
-
-function FieldGroup({
-  children,
-  className,
-}: {
-  children: React.ReactNode;
-  className?: string;
-}) {
-  return <div className={cn("space-y-2", className)}>{children}</div>;
-}
-
-export function ExpenseSheet(props: ExpenseSheetProps) {
-  const route = SearchRoute.useSearchRoute();
-  const active = props.expenses.find((expense) => expense.id === route.state());
+function useMutators() {
   const updateExpense = useUpdateExpense();
   const updateExpenseParticipants = useUpdateExpenseParticipants();
   const deleteExpense = useDeleteExpense();
 
-  const [isUpdating, setIsUpdating] = useState(false);
-  const [hasChanges, setHasChanges] = useState(false);
-  const [editingSplits, setEditingSplits] = useState(false);
-  const [splitMode, setSplitMode] = useState<"percentage" | "value">(
-    "percentage"
+  return { updateExpense, updateExpenseParticipants, deleteExpense };
+}
+
+function useForm(
+  active: ExpenseWithParticipants,
+  updateExpenseMutation: (opts: UpdateExpenseOptions) => Promise<void>,
+  // updateParticipantsMutation: (opts: UpdateExpenseOptions) => Promise<void>,
+  leave: () => void
+) {
+  const schema = v.pipe(
+    v.object({
+      description: v.string(),
+      amount: v.pipe(
+        v.number(),
+        v.minValue(0.01, "Item must cost at least $0.01"),
+        v.maxValue(100_000, "Item must not exceed $100,000")
+      ),
+      date: v.date(),
+      paidBy: v.picklist(active.participants.map((p) => p.userId)),
+    }),
+    v.check((schema) => {
+      return (
+        schema.amount !== active.amount ||
+        schema.description !== active.description ||
+        schema.date.getTime() !== active.date ||
+        schema.paidBy !== getPayerFromParticipants(active.participants)
+      );
+    })
   );
-  const [formData, setFormData] = useState({
-    description: "",
-    amount: "",
-    date: "",
+
+  const api = useAppForm({
+    defaultValues: {
+      description: active.description,
+      amount: active.amount,
+      date: timestampToDate(active.date),
+      paidBy: getPayerFromParticipants(active.participants),
+    },
+    validators: {
+      onChange: schema,
+      onSubmit: (ctx) => {
+        return ctx.formApi.state.isPristine
+          ? "Fields must be updated"
+          : undefined;
+      },
+    },
+    listeners: {
+      onChange(props) {
+        console.log("onChange", props.formApi.state.values);
+      },
+    },
+    onSubmit: async (fields) => {
+      if (fields.formApi.state.isPristine) return;
+
+      leave();
+
+      const promise = withToast({
+        promise: () => {
+          return updateExpenseMutation({
+            expenseId: active.id,
+            updates: {
+              description: fields.value.description,
+              amount: fields.value.amount,
+              date: fields.value.date.getTime(),
+            },
+          });
+        },
+        notify: {
+          loading: "updating expense...",
+          success: "Expense updated successfully",
+          error: "Unable to update expense",
+        },
+      }).then(() => fields.formApi.reset());
+
+      return promise;
+    },
   });
-  const [originalData, setOriginalData] = useState({
-    description: "",
-    amount: "",
-    date: "",
-  });
-  const [participantSplits, setParticipantSplits] = useState<
-    Record<string, number>
-  >({});
-  const [originalSplits, setOriginalSplits] = useState<Record<string, number>>(
-    {}
-  );
 
-  useEffect(() => {
-    if (active) {
-      const date = new Date(active.date);
-      const year = date.getFullYear();
-      const month = String(date.getMonth() + 1).padStart(2, "0");
-      const day = String(date.getDate()).padStart(2, "0");
-      const dateStr = `${year}-${month}-${day}`;
+  return { api };
+}
 
-      const data = {
-        description: active.description,
-        amount: active.amount.toString(),
-        date: dateStr,
-      };
-
-      setFormData(data);
-      setOriginalData(data);
-      setHasChanges(false);
-
-      // Initialize participant splits (including payer)
-      const splits: Record<string, number> = {};
-      active.participants.forEach((p) => {
-        splits[p.userId] = p.split;
-      });
-      setParticipantSplits(splits);
-      setOriginalSplits(splits);
-    }
-  }, [active]);
-
-  const ConfirmDelete = useConfirmDialog({
+function useConfirmAndDelete(
+  expenseId: string,
+  deleteMutation: (opts: DeleteExpenseOptions) => Promise<void>,
+  leave: () => void
+) {
+  return useWithConfirmation({
     title: "Delete expense?",
     description: { type: "default", entity: "expense" },
     onConfirm: async () => {
       try {
-        await deleteExpense({ expenseId: active?.id ?? "" });
-        route.close();
+        await deleteMutation({ expenseId });
+        leave();
       } catch (error) {
         console.error("DELETE_ERROR", JSON.stringify(error, null, 2));
       }
     },
   });
+}
 
-  const handleFieldChange = (field: keyof typeof formData, value: string) => {
-    setFormData((prev) => ({ ...prev, [field]: value }));
-    const hasSplitChanges =
-      JSON.stringify(participantSplits) !== JSON.stringify(originalSplits);
-    setHasChanges(
-      originalData.description !==
-        (field === "description" ? value : formData.description) ||
-        originalData.amount !==
-          (field === "amount" ? value : formData.amount) ||
-        originalData.date !== (field === "date" ? value : formData.date) ||
-        hasSplitChanges
-    );
-  };
+type ExpenseSheetProps = PropsWithChildren<{
+  expense: ExpenseWithParticipants;
+}>;
 
-  const handleSplitChange = (userId: string, value: string) => {
-    const numValue = parseFloat(value) || 0;
-    const newValue =
-      splitMode === "percentage"
-        ? numValue / 100
-        : numValue / parseFloat(formData.amount);
+export function ExpenseSheet(props: ExpenseSheetProps) {
+  const route = SearchRoute.useSearchRoute();
+  const active = props.expense;
 
-    setParticipantSplits((prev) => ({ ...prev, [userId]: newValue }));
+  // const mutators = useMutators();
+  const form = useForm(active, async () => {}, route.close);
+  // const del = useConfirmAndDelete(
+  //   active.id,
+  //   mutators.deleteExpense,
+  //   route.close
+  // );
 
-    const newSplits = { ...participantSplits, [userId]: newValue };
-    const hasSplitChanges =
-      JSON.stringify(newSplits) !== JSON.stringify(originalSplits);
-    setHasChanges(
-      originalData.description !== formData.description ||
-        originalData.amount !== formData.amount ||
-        originalData.date !== formData.date ||
-        hasSplitChanges
-    );
-  };
-
-  const validateSplits = () => {
-    const total = Object.values(participantSplits).reduce(
-      (sum, split) => sum + split,
-      0
-    );
-    return Math.abs(total - 1) < 0.0001;
-  };
-
-  const handleSave = async () => {
-    if (!active || !hasChanges) return;
-
-    // Validate splits if they were changed
-    const hasSplitChanges =
-      JSON.stringify(participantSplits) !== JSON.stringify(originalSplits);
-    if (hasSplitChanges && !validateSplits()) {
-      toast.error("Splits must add up to 100%");
-      return;
-    }
-
-    setIsUpdating(true);
-    try {
-      const updates: any = {};
-
-      if (formData.description !== active.description) {
-        updates.description = formData.description;
-      }
-      if (formData.amount !== active.amount.toString()) {
-        updates.amount = parseFloat(formData.amount);
-      }
-
-      const activeDate = new Date(active.date);
-      const activeYear = activeDate.getFullYear();
-      const activeMonth = String(activeDate.getMonth() + 1).padStart(2, "0");
-      const activeDay = String(activeDate.getDate()).padStart(2, "0");
-      const activeDateStr = `${activeYear}-${activeMonth}-${activeDay}`;
-
-      if (formData.date !== activeDateStr) {
-        updates.date = new Date(formData.date).getTime();
-      }
-
-      // Update expense fields if needed
-      if (Object.keys(updates).length > 0) {
-        await updateExpense({ expenseId: active.id, updates });
-      }
-
-      // Update participant splits if needed
-      if (hasSplitChanges) {
-        const participantUpdates = Object.entries(participantSplits).map(
-          ([userId, split]) => ({
-            userId,
-            split,
-          })
-        );
-        await updateExpenseParticipants({
-          expenseId: active.id,
-          participants: participantUpdates,
-        });
-      }
-
-      toast.success("Expense updated");
-      setOriginalData(formData);
-      setOriginalSplits(participantSplits);
-      setHasChanges(false);
-      setEditingSplits(false);
-    } catch (error) {
-      toast.error("Failed to update expense");
-      console.error("UPDATE_ERROR", error);
-    } finally {
-      setIsUpdating(false);
-    }
-  };
-
-  if (!active) return null;
-
-  const participants = active.participants || [];
-  const payer = participants.find((p) => p.role === "payer");
-  const splitParticipants = participants.filter(
-    (p) => p.role === "participant"
-  );
-
+  console.log("rendering sheet");
   return (
     <>
-      <ConfirmDelete.dialog />
+      {/* <del.dialog /> */}
       <Sheet
         open={route.view() === "open"}
-        onOpenChange={(bool) => {
-          if (!bool) return route.close();
+        onOpenChange={(opening) => {
+          if (!opening) {
+            route.close();
+          }
         }}
       >
-        <SheetContent className="bg-background border-sidebar-border/50">
-          <SheetHeader className="space-y-1 pb-4">
-            <SheetTitle className="text-lg font-semibold text-foreground">
-              {active.description}
-            </SheetTitle>
-            <div className="text-sm text-muted-foreground">
-              {active.createdAt
-                ? new Date(active.createdAt).toLocaleDateString("en-US", {
-                    month: "short",
-                    day: "numeric",
-                    year: "numeric",
-                  })
-                : "N/A"}
-            </div>
-          </SheetHeader>
-
-          <SheetBody className="space-y-6">
-            <FieldGroup>
-              <SheetLabel htmlFor="description">description</SheetLabel>
-              <SheetInput
-                id="description"
-                value={formData.description}
-                onChange={(e) =>
-                  handleFieldChange("description", e.target.value)
-                }
-                disabled={isUpdating}
-                placeholder="what was this expense for?"
-              />
-            </FieldGroup>
-
-            <div className="grid grid-cols-2 gap-4">
-              <FieldGroup>
-                <SheetLabel htmlFor="amount">amount</SheetLabel>
-                <div className="relative">
-                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground text-sm">
-                    $
-                  </span>
-                  <SheetInput
-                    id="amount"
-                    type="number"
-                    step="0.01"
-                    value={formData.amount}
-                    onChange={(e) =>
-                      handleFieldChange("amount", e.target.value)
-                    }
-                    disabled={isUpdating}
-                    className="pl-8"
-                    placeholder="0.00"
-                  />
-                </div>
-              </FieldGroup>
-
-              <FieldGroup>
-                <SheetLabel htmlFor="date">date</SheetLabel>
-                <SheetInput
-                  id="date"
-                  type="date"
-                  value={formData.date}
-                  onChange={(e) => handleFieldChange("date", e.target.value)}
-                  disabled={isUpdating}
+        <form
+          className="h-full flex flex-col gap-2"
+          onSubmit={prevented(() => void form.api.handleSubmit())}
+        >
+          <SheetContent
+            className="bg-background border-sidebar-border/50"
+            aria-describedby={undefined}
+          >
+            <SheetHeader className="gap-1 pb-4">
+              <SheetTitle className="text-lg font-semibold text-foreground uppercase">
+                {active.description}
+              </SheetTitle>
+              <div className="text-sm text-muted-foreground lowercase">
+                {active.createdAt
+                  ? new Date(active.createdAt).toLocaleDateString("en-US", {
+                      month: "short",
+                      day: "numeric",
+                      year: "numeric",
+                    })
+                  : "N/A"}
+              </div>
+            </SheetHeader>
+            <SheetBody className="grid grid-cols-2 gap-y-4 gap-x-6">
+              <div className="col-span-2">
+                <form.api.AppField
+                  name="description"
+                  children={(field) => (
+                    <field.SheetTextField label="description" />
+                  )}
                 />
-              </FieldGroup>
-            </div>
-
-            <FieldGroup className="pt-4 border-t border-sidebar-border/30">
-              <div className="flex items-center justify-between mb-2">
-                <SheetLabel>participants</SheetLabel>
-                {participants.length > 0 && (
-                  <div className="flex items-center gap-2">
-                    {editingSplits && (
-                      <div className="flex items-center gap-1 bg-accent/20 rounded-xs ">
-                        <Button
-                          variant="ghost"
-                          size="xs"
-                          type="button"
-                          onClick={() => setSplitMode("percentage")}
-                          className={cn(
-                            "text-xs rounded-xs transition-colors uppercase",
-                            splitMode === "percentage"
-                              ? "bg-secondary/50 text-foreground"
-                              : "text-muted-foreground hover:text-foreground"
-                          )}
-                        >
-                          Percent
-                        </Button>
-                        <Button
-                          variant="ghost"
-                          size="xs"
-                          type="button"
-                          onClick={() => setSplitMode("value")}
-                          className={cn(
-                            "rounded-xs transition-colors uppercase",
-                            splitMode === "value"
-                              ? "bg-secondary/50 text-foreground"
-                              : "text-muted-foreground hover:text-foreground"
-                          )}
-                        >
-                          Total
-                        </Button>
-                      </div>
-                    )}
-                    <Button
-                      variant={editingSplits ? "destructive" : "ghost"}
-                      size="xs"
-                      type="button"
-                      onClick={() => setEditingSplits(!editingSplits)}
-                      className="transition-colors"
-                    >
-                      {editingSplits ? "cancel" : "edit splits"}
-                    </Button>
-                  </div>
-                )}
               </div>
-              <div className="space-y-2">
-                {participants.map(
-                  (p) =>
-                    p.member && (
-                      <div
-                        key={`${p.userId}-${p.expenseId}`}
-                        className={cn(
-                          "flex items-center justify-between px-3 py-2.5 rounded-sm",
-                          p.role === "payer" && "bg-accent/20"
-                        )}
-                      >
-                        <div className="flex items-center gap-2">
-                          <span className="text-sm font-medium text-foreground">
-                            {p.member.nickname}
-                          </span>
-                          {p.role === "payer" && (
-                            <span className="text-xs lowercase text-foreground/70 bg-secondary/40 px-2 py-1 rounded-xs">
-                              paid
-                            </span>
-                          )}
-                        </div>
-                        {editingSplits ? (
-                          <div className="flex items-center gap-2">
-                            <SheetInput
-                              type="number"
-                              value={
-                                splitMode === "percentage"
-                                  ? (participantSplits[p.userId] * 100).toFixed(
-                                      0
-                                    )
-                                  : (
-                                      parseFloat(formData.amount) *
-                                      participantSplits[p.userId]
-                                    ).toFixed(2)
-                              }
-                              onChange={(e) =>
-                                handleSplitChange(p.userId, e.target.value)
-                              }
-                              className="w-20 h-8 text-right px-2"
-                              placeholder="0"
-                              step={splitMode === "percentage" ? "1" : "0.01"}
-                            />
-                            <span className="text-xs text-muted-foreground w-4">
-                              {splitMode === "percentage" ? "%" : "$"}
-                            </span>
-                          </div>
-                        ) : (
-                          <span className="text-sm font-medium text-foreground/80">
-                            $
-                            {(
-                              parseFloat(formData.amount) *
-                              participantSplits[p.userId]
-                            ).toFixed(2)}
-                          </span>
-                        )}
-                      </div>
-                    )
-                )}
-                {editingSplits && participants.length > 0 && (
-                  <div className="mt-2 pt-2 border-t border-sidebar-border/30">
-                    <div className="flex items-center justify-between px-3 py-1">
-                      <span className="text-xs text-muted-foreground">
-                        total
-                      </span>
-                      <span
-                        className={cn(
-                          "text-xs font-medium",
-                          validateSplits()
-                            ? "text-foreground/70"
-                            : "text-destructive"
-                        )}
-                      >
-                        {(
-                          Object.values(participantSplits).reduce(
-                            (sum, split) => sum + split,
-                            0
-                          ) * 100
-                        ).toFixed(0)}
-                        %
-                      </span>
-                    </div>
-                  </div>
-                )}
+              <div className="col-span-1">
+                <form.api.AppField
+                  name="amount"
+                  children={(field) => (
+                    <field.SheetCostField label="Cost (USD)" />
+                  )}
+                />
               </div>
-            </FieldGroup>
-          </SheetBody>
+              <div className="col-span-1">
+                <form.api.AppField
+                  name="date"
+                  children={(field) => <field.SheetDateField label="Date" />}
+                />
+              </div>
 
-          <SheetFooter className="flex-col gap-2">
-            <Button
-              onClick={handleSave}
-              variant="theme"
-              size="sm"
-              className="w-full"
-              disabled={!hasChanges || isUpdating}
-            >
-              {isUpdating ? "saving..." : "save changes"}
-            </Button>
-            <Button
-              onClick={() => ConfirmDelete.confirm()}
-              variant="destructive"
-              size="sm"
-              className="w-full"
-              disabled={isUpdating}
-            >
-              delete expense
-            </Button>
-          </SheetFooter>
-        </SheetContent>
+              <div className="col-span-2">
+                <form.api.AppField
+                  name="paidBy"
+                  children={(field) => (
+                    <field.SheetPaidByField
+                      participants={active.participants}
+                      label="Paid by"
+                    />
+                  )}
+                />
+              </div>
+              <Separator className="col-span-full my-4" />
+            </SheetBody>
+            <SheetFooter className="flex-col gap-2 mt-auto">
+              <form.api.Subscribe
+                selector={(state) => state.fieldMeta}
+                children={(fieldMeta) => (
+                  <FieldsErrors
+                    className="col-span-full"
+                    metas={Object.values(fieldMeta)}
+                  />
+                )}
+              ></form.api.Subscribe>
+              <form.api.AppForm>
+                <form.api.SubmitButton>Save</form.api.SubmitButton>
+                <form.api.CancelButton onClick={route.close}>
+                  Cancel
+                </form.api.CancelButton>
+              </form.api.AppForm>
+            </SheetFooter>
+          </SheetContent>
+        </form>
       </Sheet>
     </>
   );

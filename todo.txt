@@ -35,8 +35,10 @@
 [[OPEN BUGS]]
 
 --UI--
-    [ ] table x-overflow bug
+    [x] table x-overflow bug
     [ ] expense member relation nullish, causes issues passing down as props
+    [ ] escape bug on popover-on-sheet
+    [ ] fix keyboard nav in table with manage button
 
 --DB--
     [ ] no transactions causes layout shift on new expense entries

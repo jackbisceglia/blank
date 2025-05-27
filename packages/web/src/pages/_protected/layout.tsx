@@ -131,10 +131,10 @@ function Breadcrumbs() {
 
 function ProtectedLayout() {
   return (
-    <div className="flex w-full h-full">
+    <>
       <GlobalSidebar groups={data.groups} collapsible="icon" />
-      <main className="flex-1 min-w-0 flex flex-col items-start gap-4 sm:gap-3.5 py-3 px-2.5 sm:px-6 lg:pl-10 lg:pr-14 min-h-full relative">
-        <header className="flex justify-start items-center gap-0.5 sm:gap-2 text-sm w-full">
+      <main className="flex-1 min-w-0 flex flex-col items-start gap-4 sm:gap-3 py-3 px-2.5 sm:px-6 lg:pl-8 lg:pr-12 min-h-full relative">
+        <header className="flex justify-start items-center gap-0.5 sm:gap-2 text-sm w-full pb-1.5">
           <SidebarTrigger />
           <Breadcrumbs />
         </header>
@@ -144,7 +144,7 @@ function ProtectedLayout() {
       <CreateExpenseDialog />
       <CreateGroupDialog />
       <Toaster />
-    </div>
+    </>
   );
 }
 

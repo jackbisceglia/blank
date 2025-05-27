@@ -2,7 +2,7 @@ import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useDeleteGroup, useGetGroupBySlug } from "../@data";
 import { GroupBody, SecondaryRow } from "./layout";
 import { SubHeading } from "@/components/prose";
-import { useConfirmDialog } from "@/components/confirm-dialog";
+import { useWithConfirmation } from "@/components/with-confirmation-dialog";
 import { Button } from "@/components/ui/button";
 import { States } from "./layout";
 
@@ -15,7 +15,7 @@ function SettingsRoute() {
   if (status === "not-found") return <States.NotFound title={params.slug} />;
   if (!data) return <States.Loading />;
 
-  const del = useConfirmDialog({
+  const del = useWithConfirmation({
     description: { type: "default", entity: "group" },
     onConfirm: () => {
       const promise = deleteGroup({ groupId: data.id })

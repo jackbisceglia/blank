@@ -1,4 +1,5 @@
 import { useNavigate, useSearch } from "@tanstack/react-router";
+import { useCallback } from "react";
 
 // TODO: add linkOptions export to the route that can be added to ui based navs
 
@@ -49,28 +50,52 @@ export function createStackableSearchRoute(key: string, value: string) {
 
     const stack = assertAsArray(search);
 
-    function go(k: string, v?: unknown) {
-      return void navigate({
-        to: ".",
-        search: (prev) => ({ ...prev, [key]: v }),
-      });
-    }
+    const go = useCallback(
+      (k: string, v?: unknown) => {
+        return void navigate({
+          to: ".",
+          search: (prev) => {
+            return { ...prev, [key]: v };
+          },
+        });
+      },
+      [navigate, key]
+    );
+
+    // const open = useCallback(() => {
+    //   console.log("opening route\n");
+    //   const added = new Set([...(stack ?? []), value]);
+    //   go(key, Array.from(added));
+    // }, [stack, key, value, go]);
+    const open = (solo?: boolean) => {
+      const current = !solo ? (stack ?? []) : [];
+
+      const added = new Set([...current, value]);
+      go(key, Array.from(added));
+    };
+
+    // const close = useCallback(() => {
+    //   console.log("closing route\n");
+    //   const removed = stack?.filter((v) => v !== value) ?? [];
+    //   go(key, removed.length > 0 ? removed : undefined);
+    // }, [stack, key, value, go]);
+    const close = () => {
+      console.log("closing route\n");
+      const removed = stack?.filter((v) => v !== value) ?? [];
+      go(key, removed.length > 0 ? removed : undefined);
+    };
+
+    const view = useCallback((): ViewState => {
+      return stack?.includes(value) ? "open" : "closed";
+    }, [stack, value]);
+
+    const state = useCallback(() => search, [search]);
 
     return {
-      open: () => {
-        const added = new Set([...(stack ?? []), value]);
-
-        go(key, Array.from(added));
-      },
-      close: () => {
-        const removed = stack?.filter((v) => v !== value) ?? [];
-
-        go(key, removed.length > 0 ? removed : undefined);
-      },
-      view: (): ViewState => {
-        return stack?.includes(value) ? "open" : "closed";
-      },
-      state: () => search,
+      open,
+      close,
+      view,
+      state,
     };
   }
 

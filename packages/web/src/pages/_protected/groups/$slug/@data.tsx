@@ -9,13 +9,16 @@ import { useZero } from "@/lib/zero.provider";
 export function useUpdateExpense() {
   const z = useZero();
 
-  return (opts: UpdateExpenseOptions) => z.mutate.expense.update(opts);
+  return (opts: UpdateExpenseOptions) => {
+    return z.mutate.expense.update(opts);
+  };
 }
 
 export function useUpdateExpenseParticipants() {
   const z = useZero();
 
-  return (opts: UpdateExpenseParticipantsOptions) => z.mutate.expense.updateParticipants(opts);
+  return (opts: UpdateExpenseParticipantsOptions) =>
+    z.mutate.expense.updateParticipants(opts);
 }
 
 export function useDeleteExpense() {
