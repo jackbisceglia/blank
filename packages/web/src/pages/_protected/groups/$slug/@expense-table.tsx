@@ -41,7 +41,7 @@ const BadgeSimple = React.forwardRef<HTMLSpanElement, BadgeSimpleProps>(
   ({ variant, children, ...rest }, ref) => (
     <Badge
       ref={ref}
-      className="overflow-x-hidden truncate block max-w-full"
+      className="overflow-x-hidden truncate block max-w-full lowercase"
       variant={variant}
       {...rest}
     >

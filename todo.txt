@@ -44,3 +44,4 @@
 --DB--
     [ ] no transactions causes layout shift on new expense entries
     [ ] every field should have a createdAt
+    [ ] UUID vs other id mechanism

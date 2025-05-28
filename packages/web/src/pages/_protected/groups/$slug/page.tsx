@@ -2,7 +2,7 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { SubHeading } from "@/components/prose";
 import { useGetGroupBySlug } from "../@data";
 import { Button } from "@/components/ui/button";
-import { GroupBody, SecondaryRow } from "./layout";
+import { GroupBody, SecondaryRow, States } from "./layout";
 import { DataTable } from "./@expense-table";
 import {
   ExpenseSheet,
@@ -12,31 +12,13 @@ import {
 import { Expense } from "@blank/zero";
 import { ParticipantWithMember } from "@/lib/participants";
 import { useDeleteAllExpenses, useUpdateExpense } from "./@data";
-import { flags } from "@/lib/utils";
 import * as v from "valibot";
-import { Input } from "@/components/ui/input";
+import { TableActions, useQueryFromSearch } from "./@table-actions";
+import { slugify } from "@/lib/utils";
 
 export type ExpenseWithParticipants = Expense & {
   participants: ParticipantWithMember[];
 };
-
-function useQueryFromSearch() {
-  const navigate = Route.useNavigate();
-  const value = Route.useSearch({
-    select: (state) => state.query,
-  });
-
-  function set(value: string) {
-    void navigate({
-      search: (prev) => ({
-        ...prev,
-        query: value.length > 0 ? value : undefined,
-      }),
-    });
-  }
-
-  return { value, set };
-}
 
 function GroupRoute() {
   const sheet = SearchRoute.useSearchRoute();
@@ -60,54 +42,29 @@ function GroupRoute() {
 
   const active = group.data?.expenses.find((e) => e.id === sheet.state());
 
-  if (group.status === "not-found") {
-    return <div>Group not found</div>;
-  }
+  const NotFound = () => (
+    <States.NotFound title={slugify(params.slug).decode()} />
+  );
+
+  if (!group.data) return <NotFound />;
+  if (group.status === "not-found") return <NotFound />;
 
   return (
     <>
-      {/* <SecondaryRow className="justify-between gap-4 md:gap-2 flex flex-col sm:flex-row sm:items-start"> */}
-      <SubHeading> {group.data?.description} </SubHeading>
-      {/* </SecondaryRow> */}
+      <SubHeading> {group.data.description} </SubHeading>
 
       <GroupBody>
-        <SecondaryRow className="justify-between gap-4 md:gap-1 flex flex-col sm:flex-row sm:items-center">
-          <Input
-            className="max-w-72 placeholder:lowercase py-0 h-full py-1.5 bg-transparent placeholder:text-secondary-foreground/50 border-border border-1"
-            placeholder="Search expenses..."
-            value={query.value ?? ""}
-            onChange={(e) => {
-              query.set(e.target.value);
-            }}
-          />
-          <Button asChild size="xs" variant="theme" className="ml-auto">
-            <Link
-              to="."
-              search={(prev) => ({
-                action: ["new-expense", ...(prev.action ?? [])],
-              })}
-            >
-              Create
-            </Link>
-          </Button>
-          {flags.dev.deleteAllExpenses && (
-            <Button
-              onClick={() => {
-                void deleteAllExpenses({ groupId: group.data?.id ?? "" });
-              }}
-              variant="secondary"
-              size="xs"
-              className="ml-2 "
-            >
-              DELETE
-            </Button>
-          )}
-        </SecondaryRow>
+        <TableActions
+          actions={{
+            deleteAll: () =>
+              deleteAllExpenses({ groupId: group.data?.id ?? "" }),
+          }}
+        />
         <DataTable
           query={query.value}
           expand={sheet.open}
           updateTitle={(id) => void randomTitle(id)}
-          data={(group.data?.expenses ?? []) as ExpenseWithParticipants[]}
+          data={group.data.expenses as ExpenseWithParticipants[]}
         />
       </GroupBody>
       {active && <ExpenseSheet expense={active as ExpenseWithParticipants} />}
