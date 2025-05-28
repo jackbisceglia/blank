@@ -117,3 +117,10 @@ export const prevented = <
 
 export const timestampToDate = (timestamp: number): Date => new Date(timestamp);
 export const dateToTimestamp = (date: Date): number => date.getTime();
+
+export const flags = {
+  dev: {
+    deleteAllExpenses: true,
+    inlineRandomizeExpense: false,
+  },
+};

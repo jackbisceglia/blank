@@ -7,7 +7,11 @@ type TableProps = React.ComponentProps<"table">;
 
 function Table({ className, ...props }: TableProps) {
   return (
-    <div className={cn("overflow-x-auto w-full text-foreground/75 duration-0")}>
+    <div
+      className={cn(
+        "overflow-x-auto w-full text-foreground/75 duration-0 p-0.5"
+      )}
+    >
       <table
         data-slot="table"
         className={cn("caption-bottom text-sm min-w-full", className)}
@@ -52,7 +56,7 @@ function TableRow({ className, ...props }: React.ComponentProps<"tr">) {
     <tr
       data-slot="table-row"
       className={cn(
-        "hover:bg-blank-theme-background/25 data-[state=selected]:bg-blank-theme-background/50 transition-[color,box-shadow] duration-0 outline-hidden focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[1.5px] focus-visible:relative focus-visible:z-10",
+        "hover:bg-blank-theme-background/25 data-[state=selected]:bg-blank-theme-background/50 transition-[color,box-shadow] duration-0 not-focus-within:outline-hidden focus-within:outline-ring/50 focus-within:outline-2 focus:relative focus-within:z-10",
         className
       )}
       {...props}

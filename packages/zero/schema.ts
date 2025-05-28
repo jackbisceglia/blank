@@ -62,7 +62,7 @@ const participant = table("participant")
     role: enumeration<"payer" | "participant">(),
     split: number(),
   })
-  .primaryKey("expenseId", "groupId", "userId");
+  .primaryKey("expenseId", "userId");
 
 // relationships
 const groupRelationships = relationships(group, ({ one, many }) => ({

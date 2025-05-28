@@ -1,9 +1,8 @@
 import {
-  DeleteAllExpensesOptions,
-  DeleteExpenseOptions,
-  UpdateExpenseOptions,
-  UpdateExpenseParticipantsOptions,
-} from "@/lib/data.mutators";
+  DeleteAllOptions as DeleteAllExpensesOptions,
+  DeleteOptions as DeleteExpenseOptions,
+  UpdateOptions as UpdateExpenseOptions,
+} from "@/lib/mutators/expense-mutators";
 import { useZero } from "@/lib/zero.provider";
 
 export function useUpdateExpense() {
@@ -14,13 +13,6 @@ export function useUpdateExpense() {
   };
 }
 
-export function useUpdateExpenseParticipants() {
-  const z = useZero();
-
-  return (opts: UpdateExpenseParticipantsOptions) =>
-    z.mutate.expense.updateParticipants(opts);
-}
-
 export function useDeleteExpense() {
   const z = useZero();
 
@@ -29,5 +21,6 @@ export function useDeleteExpense() {
 export function useDeleteAllExpenses() {
   const z = useZero();
 
-  return (opts: DeleteAllExpensesOptions) => z.mutate.expense.deleteAll(opts);
+  return (opts: DeleteAllExpensesOptions) =>
+    z.mutate.expense.deleteByGroupId(opts);
 }

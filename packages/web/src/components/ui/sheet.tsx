@@ -4,9 +4,27 @@ import { XIcon } from "lucide-react";
 
 import { cn } from "@/lib/utils";
 import { useRef } from "react";
+import { UseSearchRoute } from "@/lib/create-search-route";
 
-function Sheet({ ...props }: React.ComponentProps<typeof SheetPrimitive.Root>) {
-  return <SheetPrimitive.Root data-slot="sheet" {...props} />;
+function Sheet({
+  ...props
+}: React.ComponentProps<typeof SheetPrimitive.Root> & {
+  route?: UseSearchRoute;
+}) {
+  if (!props.route) return <SheetPrimitive.Root data-slot="sheet" {...props} />;
+
+  return (
+    <SheetPrimitive.Root
+      open={props.route?.view() === "open"}
+      onOpenChange={(opening) => {
+        if (!opening) {
+          props.route?.close();
+        }
+      }}
+      data-slot="sheet"
+      {...props}
+    />
+  );
 }
 
 function SheetTrigger({
@@ -74,7 +92,7 @@ function SheetContent({
           side === "left" &&
             "data-[state=closed]:slide-out-to-left data-[state=open]:slide-in-from-left inset-y-0 left-0 h-full w-3/4 border-r sm:max-w-md",
           side === "top" &&
-            "data-[state=closed]:slide-out-to-top data-[state=open]:slide-in-from-top inset-x-0 top-0 h-auto border-b",
+            "data-[state=closed]:slide-out-to-top data-[state=open]:slide-in-from-top inset-x-0 top-0 h-full border-b",
           side === "bottom" &&
             "data-[state=closed]:slide-out-to-bottom data-[state=open]:slide-in-from-bottom inset-x-0 bottom-0 h-auto border-t",
           className

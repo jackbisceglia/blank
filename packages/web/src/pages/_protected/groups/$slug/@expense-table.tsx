@@ -13,7 +13,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { useRef } from "react";
+import { useMemo, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import {
   Tooltip,
@@ -22,13 +22,8 @@ import {
 } from "@/components/ui/tooltip";
 import React from "react";
 import { ExpenseWithParticipants } from "./page";
-import { DialogTrigger } from "@/components/ui/dialog";
-import { ExpenseSheet } from "./@expense-details-sheet";
-import {
-  isTableNavDown,
-  isTableNavigation,
-  tableNavigationContext,
-} from "@/lib/keyboard-nav";
+import { tableNavigationContext } from "@/lib/keyboard-nav";
+import { flags } from "@/lib/utils";
 
 function getInitials(name?: string) {
   if (!name) return "?";
@@ -114,11 +109,29 @@ const columns = [
     cell: (opts) => `$${opts.getValue().toString()}`,
   }),
   columnHelper.accessor("description", {
-    cell: (opts) => (
-      <p className="text-foreground font-medium lowercase w-full">
-        {opts.getValue().toString()}
-      </p>
-    ),
+    cell: (opts) => {
+      const NEG_INF = Number.NEGATIVE_INFINITY;
+      const RANGE = 1000 * 60;
+
+      const NewBadge = () =>
+        (opts.row.original.createdAt ?? NEG_INF) > Date.now() - RANGE && (
+          <Badge
+            className="bg-teal-400/90 uppercase text-[9px] px-1 py-0 my-auto"
+            variant="theme"
+          >
+            New
+          </Badge>
+        );
+
+      return (
+        <>
+          <p className="text-foreground font-medium lowercase w-full h-full flex gap-2">
+            <NewBadge />
+            {opts.getValue().toString()}
+          </p>
+        </>
+      );
+    },
   }),
   columnHelper.accessor("participants", {
     id: "paid-by",
@@ -157,14 +170,27 @@ const columns = [
   columnHelper.display({
     id: "manage",
     cell: (props) => (
-      <Button
-        onClick={() => props.table.options.meta?.expand(props.row.id)}
-        size="xs"
-        variant="outline"
-        className="uppercase py-1 px-3.5 border-border"
-      >
-        Manage
-      </Button>
+      <div className="flex gap-2">
+        <Button
+          onClick={() => props.table.options.meta?.expand(props.row.id)}
+          size="xs"
+          variant="outline"
+          className="uppercase py-1 px-3.5 border-border"
+        >
+          Manage
+        </Button>
+
+        {flags.dev.inlineRandomizeExpense && (
+          <Button
+            onClick={() => props.table.options.meta?.updateTitle(props.row.id)}
+            size="xs"
+            variant="outline"
+            className="uppercase py-1 px-3.5 border-border"
+          >
+            Update Random
+          </Button>
+        )}
+      </div>
     ),
     size: 32,
   }),
@@ -172,79 +198,93 @@ const columns = [
 
 type DataTableProps = {
   expand: (id: string) => void;
+  updateTitle: (id: string) => void;
   data: ExpenseWithParticipants[];
+  query: string | undefined;
 };
 
 export function DataTable(props: DataTableProps) {
+  const data = useMemo(() => {
+    const query = props.query?.trim().toLowerCase();
+
+    if (!query) {
+      return props.data;
+    } else {
+      return props.data.filter((expense) =>
+        expense.description.toLowerCase().includes(query)
+      );
+    }
+  }, [props.data, props.query]);
+
   const table = useReactTable({
-    data: props.data,
+    data,
     columns,
     getCoreRowModel: getCoreRowModel(),
     getRowId: (row) => row.id,
     meta: {
       expand: props.expand,
+      updateTitle: props.updateTitle,
     },
   });
 
   const rowRefs = useRef<HTMLTableRowElement[]>([]);
 
   return (
-    <div className="rounded-md h-fit">
-      <Table className="text-sm">
-        <TableHeader>
-          {table.getHeaderGroups().map((headerGroup) => (
-            <TableRow key={headerGroup.id}>
-              {headerGroup.headers.map((header) => {
-                return (
-                  <TableHead
-                    className={`min-w-fit w-fit max-w-fit`}
-                    data-state={header.id}
-                    key={header.id}
-                  >
-                    {header.isPlaceholder
-                      ? null
-                      : flexRender(
-                          header.column.columnDef.header,
-                          header.getContext()
-                        )}
-                  </TableHead>
-                );
-              })}
-            </TableRow>
-          ))}
-        </TableHeader>
-        <TableBody>
-          {table.getRowModel().rows.length ? (
-            table.getRowModel().rows.map((row) => {
+    <Table className="text-sm">
+      <TableHeader>
+        {table.getHeaderGroups().map((headerGroup) => (
+          <TableRow key={headerGroup.id}>
+            {headerGroup.headers.map((header) => {
               return (
-                <TableRow
-                  ref={(el) => {
-                    if (!el) return;
-                    rowRefs.current[row.index] = el;
-                  }}
-                  key={row.id}
-                  data-state={row.getIsSelected() && "selected"}
-                  // onClick={select}
-                  className="hover:bg-blank-theme-background/25 transition-colors"
-                  // role="checkbox"
-                  // aria-checked={row.getIsSelected()}
-                  tabIndex={0}
-                  onKeyDown={(e) => {
-                    const navigation = tableNavigationContext(e);
-                    if (navigation) {
-                      e.preventDefault();
-                      const delta = navigation.direction === "up" ? -1 : 1;
-
-                      rowRefs.current
-                        .at((row.index + delta) % rowRefs.current.length)
-                        ?.focus();
-                    }
-                  }}
+                <TableHead
+                  className={`min-w-fit w-fit max-w-fit`}
+                  data-state={header.id}
+                  key={header.id}
                 >
-                  {row.getVisibleCells().map((cell) => (
-                    <TableCell
-                      key={cell.id}
-                      className={`
+                  {header.isPlaceholder
+                    ? null
+                    : flexRender(
+                        header.column.columnDef.header,
+                        header.getContext()
+                      )}
+                </TableHead>
+              );
+            })}
+          </TableRow>
+        ))}
+      </TableHeader>
+      <TableBody>
+        {table.getRowModel().rows.length ? (
+          table.getRowModel().rows.map((row) => {
+            return (
+              <TableRow
+                ref={(el) => {
+                  if (!el) return;
+                  rowRefs.current[row.index] = el;
+                }}
+                key={row.id}
+                data-state={row.getIsSelected() && "selected"}
+                // onClick={select}
+                className="hover:bg-blank-theme-background/25 transition-colors"
+                // role="checkbox"
+                // aria-checked={row.getIsSelected()}
+                tabIndex={0}
+                onKeyDown={(e) => {
+                  const navigation = tableNavigationContext(e);
+                  if (navigation) {
+                    e.preventDefault();
+                    const delta = navigation.direction === "up" ? -1 : 1;
+
+                    rowRefs.current
+                      .at((row.index + delta) % rowRefs.current.length)
+                      ?.focus();
+                  }
+                }}
+              >
+                {row.getVisibleCells().map((cell) => (
+                  <TableCell
+                    key={cell.id}
+                    className={`
                         min-w-fit w-fit max-w-fit
                         
                         [&:first-child]:min-w-fit [&:first-child]:w-auto 
@@ -261,28 +301,26 @@ export function DataTable(props: DataTableProps) {
                         [&:last-child]:px-4
                         
                         `}
-                    >
-                      {flexRender(
-                        cell.column.columnDef.cell,
-                        cell.getContext()
-                      )}
-                    </TableCell>
-                  ))}
-                </TableRow>
-              );
-            })
-          ) : (
-            <TableRow>
-              <TableCell
-                colSpan={columns.length}
-                className="h-24 text-center uppercase"
-              >
-                No expenses yet, add one to get started.
-              </TableCell>
-            </TableRow>
-          )}
-        </TableBody>
-      </Table>
-    </div>
+                  >
+                    {flexRender(cell.column.columnDef.cell, cell.getContext())}
+                  </TableCell>
+                ))}
+              </TableRow>
+            );
+          })
+        ) : (
+          <TableRow>
+            <TableCell
+              colSpan={columns.length}
+              className="h-24 text-center uppercase"
+            >
+              {props.data.length === 0
+                ? "No expenses yet, add one to get started."
+                : "No results found."}
+            </TableCell>
+          </TableRow>
+        )}
+      </TableBody>
+    </Table>
   );
 }

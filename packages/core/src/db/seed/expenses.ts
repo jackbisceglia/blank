@@ -4,15 +4,15 @@ import { expenses } from "../expense";
 const name = "jenna"; // can replace with whatever name of a user is in the group for testing
 const placeholder = `John Doe`;
 
-function randomDateLast30Days() {
-  const randomDate = new Date();
-  randomDate.setDate(randomDate.getDate() - Math.floor(Math.random() * 30));
-  return randomDate;
-}
+// function randomDateLast30Days() {
+//   const randomDate = new Date();
+//   randomDate.setDate(randomDate.getDate() - Math.floor(Math.random() * 30));
+//   return randomDate;
+// }
 
 export async function seed() {
-  const userId = "4fb3862b-b29c-44b0-9549-7be1cf490305"; // make configurable
-  const groupId = "6b28e22a-7f0d-4871-a6d2-7fe135abb382"; // automate
+  const userId = "e39c4049-d908-45ec-bd03-879d4f33ac27"; // make configurable
+  const groupId = "e4949a1b-109f-45df-b279-e92687818628"; // automate
 
   // a bunch of ai generated expense split descriptions
   const descriptions = [
@@ -48,11 +48,44 @@ export async function seed() {
     "Covered theme park tickets with John Doe, $220",
     "Split home repair supplies with John Doe, $175",
     "Paid for dance class with John Doe, $70",
+    "Split sushi dinner with John Doe, $52",
+    "John Doe paid for yoga class, $22",
+    "Bought camping gear with John Doe, $130",
+    "John Doe covered brunch, $48",
+    "Split paddleboard rental with John Doe, $55",
+    // "John Doe paid for ice cream, $14",
+    // "Covered escape room with John Doe, $92",
+    // "Split hotel room with John Doe, $180",
+    // "John Doe paid for gas, $40",
+    // "Split groceries with John Doe, $120",
+    // "Bought hiking passes with John Doe, $36",
+    // "Split pizza night with John Doe, $33",
+    // "Paid for art supplies with John Doe, $60",
+    // "Covered comedy show with John Doe, $75",
+    // "Split car rental with John Doe, $200",
+    // "John Doe paid for zoo tickets, $28",
+    // "Split festival tickets with John Doe, $150",
+    // "Bought picnic supplies with John Doe, $27",
+    // "Split ski lift tickets with John Doe, $210",
+    // "John Doe paid for hot springs, $38",
+    // "Covered mini golf with John Doe, $22",
+    // "Split escape room with John Doe, $80",
+    // "Paid for aquarium tickets with John Doe, $44",
+    // "Split dinner cruise with John Doe, $160",
+    // "John Doe paid for bowling, $36",
+    // "Bought board games with John Doe, $58",
+    // "Split spa treatment with John Doe, $120",
+    // "Covered pottery class with John Doe, $95",
+    // "Split amusement park with John Doe, $230",
+    // "John Doe paid for breakfast, $19",
+    // "Split movie snacks with John Doe, $21",
+    // "Bought running shoes with John Doe, $110",
+    // "Split escape room with John Doe, $90",
   ].map((desc) => desc.replace(placeholder, name));
 
   const result = Effect.forEach(
     descriptions,
-    (description) => {
+    (description, index) => {
       return pipe(
         Effect.log(`Creating expense: ${description}`),
         Effect.flatMap(() =>
@@ -60,7 +93,7 @@ export async function seed() {
             groupId,
             description,
             userId,
-            date: randomDateLast30Days(),
+            date: new Date(2025, 4, 1 + Math.floor(index / 2)),
           })
         ),
         Effect.tapBoth({

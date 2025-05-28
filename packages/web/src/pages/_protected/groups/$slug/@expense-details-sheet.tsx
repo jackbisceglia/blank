@@ -5,7 +5,6 @@ import {
   SheetTitle,
   SheetBody,
   SheetFooter,
-  SheetTrigger,
 } from "@/components/ui/sheet";
 import * as v from "valibot";
 import { ExpenseWithParticipants } from "./page";
@@ -19,14 +18,14 @@ import {
 import { FieldsErrors, useAppForm } from "@/components/form";
 import { prevented, timestampToDate } from "@/lib/utils";
 import {
-  DeleteExpenseOptions,
-  UpdateExpenseOptions,
-} from "@/lib/data.mutators";
-import { useStore } from "@tanstack/react-form";
-import { PropsWithChildren, useEffect, useRef, useState } from "react";
+  DeleteOptions as DeleteExpenseOptions,
+  UpdateOptions as UpdateExpenseOptions,
+} from "@/lib/mutators/expense-mutators";
+import { PropsWithChildren } from "react";
 import { Separator } from "@/components/ui/separator";
 import { getPayerFromParticipants } from "@/lib/participants";
 import { withToast } from "@/lib/mutate-with-toast";
+import { Participant } from "@blank/zero";
 
 const key = "expense" as const;
 export const SearchRouteSchema = v.object({
@@ -34,18 +33,47 @@ export const SearchRouteSchema = v.object({
 });
 export const SearchRoute = createSearchRoute(key);
 
+function useConfirmDeleteExpense(
+  expenseId: string,
+  deleteMutation: (opts: DeleteExpenseOptions) => Promise<void>,
+  leave: () => void
+) {
+  return useWithConfirmation({
+    title: "Delete expense?",
+    description: { type: "default", entity: "expense" },
+    onConfirm: async () => {
+      return withToast({
+        promise: () => {
+          return deleteMutation({ expenseId });
+        },
+        notify: {
+          loading: "deleting expense...",
+          success: "Expense deleted successfully",
+          error: "Unable to delete expense",
+        },
+        classNames: {
+          success: "!bg-secondary !border-border",
+        },
+      }).then(() => leave());
+    },
+  });
+}
+
 function useMutators() {
   const updateExpense = useUpdateExpense();
-  const updateExpenseParticipants = useUpdateExpenseParticipants();
   const deleteExpense = useDeleteExpense();
 
-  return { updateExpense, updateExpenseParticipants, deleteExpense };
+  return {
+    expense: {
+      update: updateExpense,
+      delete: deleteExpense,
+    },
+  };
 }
 
 function useForm(
   active: ExpenseWithParticipants,
-  updateExpenseMutation: (opts: UpdateExpenseOptions) => Promise<void>,
-  // updateParticipantsMutation: (opts: UpdateExpenseOptions) => Promise<void>,
+  updateMutation: (opts: UpdateExpenseOptions) => Promise<void>,
   leave: () => void
 ) {
   const schema = v.pipe(
@@ -57,7 +85,10 @@ function useForm(
         v.maxValue(100_000, "Item must not exceed $100,000")
       ),
       date: v.date(),
-      paidBy: v.picklist(active.participants.map((p) => p.userId)),
+      paidBy: v.picklist(
+        active.participants.map((p) => p.userId),
+        "paidBy must be a valid member"
+      ),
     }),
     v.check((schema) => {
       return (
@@ -74,7 +105,7 @@ function useForm(
       description: active.description,
       amount: active.amount,
       date: timestampToDate(active.date),
-      paidBy: getPayerFromParticipants(active.participants),
+      paidBy: getPayerFromParticipants(active.participants) ?? "",
     },
     validators: {
       onChange: schema,
@@ -84,24 +115,44 @@ function useForm(
           : undefined;
       },
     },
-    listeners: {
-      onChange(props) {
-        console.log("onChange", props.formApi.state.values);
-      },
-    },
     onSubmit: async (fields) => {
-      if (fields.formApi.state.isPristine) return;
+      function makeExpense() {
+        return {
+          description: fields.value.description,
+          amount: fields.value.amount,
+          date: fields.value.date.getTime(),
+        };
+      }
+
+      function makeParticipants() {
+        function entry(userId: string, role: Participant["role"]) {
+          return { userId, role };
+        }
+
+        const payerId = getPayerFromParticipants(active.participants);
+
+        if (payerId === fields.value.paidBy) return undefined;
+
+        const entries = [];
+
+        entries.push(entry(fields.value.paidBy, "payer"));
+
+        if (payerId) {
+          entries.push(entry(payerId, "participant"));
+        }
+
+        return entries;
+      }
 
       leave();
 
-      const promise = withToast({
+      const result = await withToast({
         promise: () => {
-          return updateExpenseMutation({
+          return updateMutation({
             expenseId: active.id,
             updates: {
-              description: fields.value.description,
-              amount: fields.value.amount,
-              date: fields.value.date.getTime(),
+              expense: makeExpense(),
+              participants: makeParticipants(),
             },
           });
         },
@@ -110,32 +161,15 @@ function useForm(
           success: "Expense updated successfully",
           error: "Unable to update expense",
         },
-      }).then(() => fields.formApi.reset());
+      });
 
-      return promise;
+      fields.formApi.reset();
+
+      return result;
     },
   });
 
   return { api };
-}
-
-function useConfirmAndDelete(
-  expenseId: string,
-  deleteMutation: (opts: DeleteExpenseOptions) => Promise<void>,
-  leave: () => void
-) {
-  return useWithConfirmation({
-    title: "Delete expense?",
-    description: { type: "default", entity: "expense" },
-    onConfirm: async () => {
-      try {
-        await deleteMutation({ expenseId });
-        leave();
-      } catch (error) {
-        console.error("DELETE_ERROR", JSON.stringify(error, null, 2));
-      }
-    },
-  });
 }
 
 type ExpenseSheetProps = PropsWithChildren<{
@@ -146,33 +180,25 @@ export function ExpenseSheet(props: ExpenseSheetProps) {
   const route = SearchRoute.useSearchRoute();
   const active = props.expense;
 
-  // const mutators = useMutators();
-  const form = useForm(active, async () => {}, route.close);
-  // const del = useConfirmAndDelete(
-  //   active.id,
-  //   mutators.deleteExpense,
-  //   route.close
-  // );
+  const mutators = useMutators();
+  const form = useForm(active, mutators.expense.update, route.close);
+  const deleteExpense = useConfirmDeleteExpense(
+    active.id,
+    mutators.expense.delete,
+    route.close
+  );
 
-  console.log("rendering sheet");
   return (
     <>
-      {/* <del.dialog /> */}
-      <Sheet
-        open={route.view() === "open"}
-        onOpenChange={(opening) => {
-          if (!opening) {
-            route.close();
-          }
-        }}
-      >
-        <form
-          className="h-full flex flex-col gap-2"
-          onSubmit={prevented(() => void form.api.handleSubmit())}
+      <deleteExpense.dialog />
+      <Sheet route={route}>
+        <SheetContent
+          className="outline-none bg-background border-sidebar-border/50"
+          aria-describedby={undefined}
         >
-          <SheetContent
-            className="bg-background border-sidebar-border/50"
-            aria-describedby={undefined}
+          <form
+            className="h-full flex flex-col gap-2"
+            onSubmit={prevented(() => void form.api.handleSubmit())}
           >
             <SheetHeader className="gap-1 pb-4">
               <SheetTitle className="text-lg font-semibold text-foreground uppercase">
@@ -237,13 +263,13 @@ export function ExpenseSheet(props: ExpenseSheetProps) {
               ></form.api.Subscribe>
               <form.api.AppForm>
                 <form.api.SubmitButton>Save</form.api.SubmitButton>
-                <form.api.CancelButton onClick={route.close}>
-                  Cancel
+                <form.api.CancelButton onClick={deleteExpense.confirm}>
+                  Delete
                 </form.api.CancelButton>
               </form.api.AppForm>
             </SheetFooter>
-          </SheetContent>
-        </form>
+          </form>
+        </SheetContent>
       </Sheet>
     </>
   );

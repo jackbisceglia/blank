@@ -1,4 +1,4 @@
-import { toast } from "sonner";
+import { toast, ToastClassnames } from "sonner";
 
 type WithToastOptions<T> = {
   promise: Promise<T> | (() => Promise<T>);
@@ -7,6 +7,7 @@ type WithToastOptions<T> = {
     success: string;
     error: string;
   };
+  classNames?: ToastClassnames;
 };
 
 export function withToast<T>(opts: WithToastOptions<T>): Promise<T> {
@@ -14,6 +15,7 @@ export function withToast<T>(opts: WithToastOptions<T>): Promise<T> {
     typeof opts.promise === "function" ? opts.promise() : opts.promise;
 
   toast.promise(promise, {
+    ...(opts.classNames ? { classNames: opts.classNames } : {}),
     loading: opts.notify.loading,
     success: opts.notify.success,
     error: (e) => {

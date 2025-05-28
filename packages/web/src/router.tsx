@@ -44,5 +44,6 @@ declare module "@tanstack/react-router" {
 declare module "@tanstack/react-table" {
   interface TableMeta<TData extends RowData> {
     expand: (id: string) => void;
+    updateTitle: (id: string) => void;
   }
 }

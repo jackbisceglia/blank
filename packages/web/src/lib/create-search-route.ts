@@ -5,7 +5,18 @@ import { useCallback } from "react";
 
 type ViewState = "open" | "closed";
 
-export function createSearchRoute(key: string) {
+export type UseSearchRoute = {
+  open: (value: unknown) => void;
+  close: () => void;
+  view: () => ViewState;
+  state: () => unknown;
+};
+
+export type SearchRoute = {
+  useSearchRoute: () => UseSearchRoute;
+};
+
+export function createSearchRoute(key: string): SearchRoute {
   function useSearchRoute() {
     const navigate = useNavigate();
     const search = useSearch({
@@ -62,11 +73,6 @@ export function createStackableSearchRoute(key: string, value: string) {
       [navigate, key]
     );
 
-    // const open = useCallback(() => {
-    //   console.log("opening route\n");
-    //   const added = new Set([...(stack ?? []), value]);
-    //   go(key, Array.from(added));
-    // }, [stack, key, value, go]);
     const open = (solo?: boolean) => {
       const current = !solo ? (stack ?? []) : [];
 
@@ -74,13 +80,7 @@ export function createStackableSearchRoute(key: string, value: string) {
       go(key, Array.from(added));
     };
 
-    // const close = useCallback(() => {
-    //   console.log("closing route\n");
-    //   const removed = stack?.filter((v) => v !== value) ?? [];
-    //   go(key, removed.length > 0 ? removed : undefined);
-    // }, [stack, key, value, go]);
     const close = () => {
-      console.log("closing route\n");
       const removed = stack?.filter((v) => v !== value) ?? [];
       go(key, removed.length > 0 ? removed : undefined);
     };

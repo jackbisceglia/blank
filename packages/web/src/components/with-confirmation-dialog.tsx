@@ -8,13 +8,6 @@ import {
   DialogHeader,
   DialogTitle,
 } from "./ui/dialog";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "./ui/select";
 
 type DialogState = "open" | "closed";
 type UseWithConfirmationOptions = {
@@ -83,21 +76,6 @@ export function useWithConfirmation(options: UseWithConfirmationOptions) {
                 ? options.description.value
                 : defaults.description(options.description.entity)}
             </DialogDescription>
-            <Select>
-              <SelectTrigger className="w-[280px]">
-                <SelectValue placeholder="Select a timezone" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="gmt">Greenwich Mean Time (GMT)</SelectItem>
-                <SelectItem value="cet">Central European Time (CET)</SelectItem>
-                <SelectItem value="eet">Eastern European Time (EET)</SelectItem>
-                <SelectItem value="west">
-                  Western European Summer Time (WEST)
-                </SelectItem>
-                <SelectItem value="cat">Central Africa Time (CAT)</SelectItem>
-                <SelectItem value="eat">East Africa Time (EAT)</SelectItem>
-              </SelectContent>
-            </Select>
           </div>
           <DialogFooter className="[&>*]:w-full py-3 flex gap-2">
             <Button

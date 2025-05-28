@@ -9,7 +9,7 @@ import {
 } from "@rocicorp/zero/react";
 import { useAuthentication } from "./auth.provider";
 import { PropsWithChildren, useEffect, useState } from "react";
-import { ClientMutators, createClientMutators } from "./data.mutators";
+import { ClientMutators, createClientMutators } from "./mutators";
 import { Result } from "neverthrow";
 import { UnsecuredJWT } from "jose";
 import { useQueryClient } from "@tanstack/react-query";
@@ -98,9 +98,10 @@ export const ZeroProvider = (props: PropsWithChildren) => {
       server: constants.syncServer,
       schema,
       kvStore: "idb",
-      mutators: createClientMutators({
-        userID: auth.user.id,
-      }),
+      mutators: (() => {
+        console.log("initializing mutators: ", auth.user.id);
+        return createClientMutators({ userID: auth.user.id });
+      })(),
     });
 
     setZero(zero);

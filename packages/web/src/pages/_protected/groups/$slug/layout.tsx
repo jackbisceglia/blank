@@ -53,7 +53,7 @@ function GroupNavigation(props: GroupNavigationProps) {
 
 export function SecondaryRow(props: PropsWithChildren<{ className?: string }>) {
   return (
-    <PageHeaderRow className={cn("min-h-8 items-start", props.className)}>
+    <PageHeaderRow className={cn("items-start", props.className)}>
       {props.children}
     </PageHeaderRow>
   );
@@ -61,7 +61,9 @@ export function SecondaryRow(props: PropsWithChildren<{ className?: string }>) {
 
 export function GroupBody(props: PropsWithChildren<{ className?: string }>) {
   return (
-    <div className={cn("flex flex-col gap-4 w-full", props.className)}>
+    <div
+      className={cn("flex flex-col gap-2 w-full pb-3.5 pt-8", props.className)}
+    >
       {props.children}
     </div>
   );
@@ -77,7 +79,7 @@ function GroupLayout() {
 
   return (
     <>
-      <PageHeaderRow className="flex-col gap-2.5 sm:flex-row items-start sm:items-center sm:justify-between pb-1 sm:pb-0">
+      <PageHeaderRow className="min-h-8 flex-col gap-2.5 sm:flex-row items-start sm:items-center sm:justify-between pb-1 sm:pb-0">
         <PrimaryHeading>{title}</PrimaryHeading>
         <GroupNavigation title={title} />
       </PageHeaderRow>

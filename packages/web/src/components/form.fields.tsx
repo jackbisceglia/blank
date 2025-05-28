@@ -154,7 +154,7 @@ export const SheetPaidByField = (props: SheetPaidByFieldProps) => {
         {label}
       </SharedSheetLabel>
       <Select value={field.state.value} onValueChange={field.handleChange}>
-        <SelectTrigger className="bg-accent/50 border-border/50 text-foreground placeholder:text-muted-foreground/60 h-10">
+        <SelectTrigger className="bg-accent/50 border-border/50 border-[1.5px] text-foreground hover:bg-secondary/80 placeholder:text-muted-foreground/60 h-10">
           <SelectValue />
         </SelectTrigger>
         <SelectContent>
@@ -196,7 +196,7 @@ export const SheetDateField = (props: SheetDateFieldProps) => {
           <Button
             variant="secondary"
             className={cn(
-              "w-full justify-start text-left font-normal lowercase bg-accent/50 border h-full border-border/50 text-foreground h-10",
+              "w-full justify-start text-left font-normal lowercase bg-accent/50 border h-full border-[1.5px] border-border/50 text-foreground h-10",
               !field.state.value && "text-muted-foreground"
             )}
           >
