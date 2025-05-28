@@ -5,7 +5,7 @@ import {
   Zero,
 } from "@/lib/zero.provider";
 import { constants } from "@/lib/utils";
-import { DeleteGroupOptions } from "@/lib/data.mutators";
+import { DeleteGroupOptions } from "@/lib/mutators/group-mutators";
 import { useAuthentication } from "@/lib/auth.provider";
 
 const groupByProperty = (key: "slug" | "id", value: string, z: Zero) =>
@@ -15,7 +15,7 @@ const groupByProperty = (key: "slug" | "id", value: string, z: Zero) =>
     .related("expenses", (expenses) =>
       expenses
         .related("participants", (participants) =>
-          participants.related("member")
+          participants.related("member").related("member")
         )
         .orderBy("date", "desc")
     )
@@ -60,7 +60,7 @@ export function useCreateGroup() {
       description,
       title,
       userId: auth.user.id,
-      username: auth.user.name,
+      nickname: auth.user.name,
     });
 }
 

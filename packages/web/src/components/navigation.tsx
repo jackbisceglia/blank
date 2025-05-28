@@ -132,9 +132,6 @@ type GroupsProps = {
 };
 
 function Groups(props: GroupsProps) {
-  // if (props.status === "loading")
-  //   return <Loading omitBaseText className="h-min min-h-0 w-fit p-2" />;
-
   if (props.status === "empty") {
     return (
       <SidebarMenuItem
@@ -179,7 +176,6 @@ type SideNavigationProps = React.ComponentProps<typeof Sidebar> & {
   }[];
 };
 
-// TODO: FIX NAVIGATION TO GROUPS
 export function GlobalSidebar(props: SideNavigationProps) {
   const { user } = useAuthentication();
   const logout = useLogout();
@@ -196,10 +192,7 @@ export function GlobalSidebar(props: SideNavigationProps) {
               asChild
               className="data-[state=open]:bg-sidebar-accent data-[state=open]:text-sidebar-accent-foreground hover:no-underline"
             >
-              <Link
-                to="/"
-                // search={(previous) => ({ action: previous.action ?? [] })}
-              >
+              <Link to="/">
                 <div
                   className="flex aspect-square size-[30px] items-center justify-center rounded-lg bg-blank-theme text-primary-foreground font-bold text-base "
                   aria-hidden="true"

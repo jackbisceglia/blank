@@ -1,11 +1,9 @@
 import { createFromDescriptionServerFn } from "@/server/expense.route";
-import { hydrateAsyncServerResult } from "@blank/core/utils";
 import { useParams } from "@tanstack/react-router";
 import { useGetGroupBySlug } from "./groups/@data";
 import { useRecordQuery, useZero } from "@/lib/zero.provider";
 import { constants } from "@/lib/utils";
 import { useAuthentication } from "@/lib/auth.provider";
-import { errAsync } from "neverthrow";
 
 function useGetUserDefaultGroup(userId: string) {
   const z = useZero();
@@ -27,11 +25,11 @@ export function useCreateExpense() {
           ? "No default group found"
           : "Could not find group to insert";
 
-      return errAsync(new Error(message));
+      throw new Error(message);
     }
 
-    return hydrateAsyncServerResult(() =>
-      createFromDescriptionServerFn({ data: { description, groupId } })
-    );
+    return createFromDescriptionServerFn({
+      data: { description, groupId },
+    });
   };
 }

@@ -22,7 +22,7 @@ export const participantTable = pgTable(
     split: numeric({ precision: 3, scale: 2 }).notNull(),
   },
   (table) => [
-    primaryKey({ columns: [table.expenseId, table.groupId, table.userId] }),
+    primaryKey({ columns: [table.expenseId, table.userId] }),
     check("split_check", sql`${table.split} >= 0 AND ${table.split} <= 1`),
   ]
 );
@@ -31,10 +31,12 @@ export const participantRelation = relations(participantTable, ({ one }) => ({
   expense: one(expenseTable, {
     fields: [participantTable.expenseId],
     references: [expenseTable.id],
+    relationName: "expense",
   }),
   member: one(memberTable, {
     fields: [participantTable.groupId, participantTable.userId],
     references: [memberTable.groupId, memberTable.userId],
+    relationName: "member",
   }),
 }));
 

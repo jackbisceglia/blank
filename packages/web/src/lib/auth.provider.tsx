@@ -22,7 +22,6 @@ export function authenticationQueryOptions() {
   return queryOptions({
     queryKey: ["authentication"],
     queryFn: async () => {
-      console.log("queryFn running");
       return meRPC();
     },
   });

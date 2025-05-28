@@ -5,6 +5,19 @@ import { QueryClient } from "@tanstack/react-query";
 import { routerWithQueryClient } from "@tanstack/react-router-with-query";
 import { DefaultCatchBoundary } from "./components/default-catch-boundary";
 import { NotFound } from "./components/not-found";
+import { scan } from "react-scan";
+import { RowData } from "@tanstack/react-table";
+
+const shouldScan = false;
+
+// eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
+if (shouldScan && import.meta.env.VITE_SCAN === "true") {
+  scan({
+    enabled: true,
+    showFPS: true,
+    _debug: "verbose",
+  });
+}
 
 export function createRouter() {
   const queryClient = new QueryClient();
@@ -25,5 +38,12 @@ export function createRouter() {
 declare module "@tanstack/react-router" {
   interface Register {
     router: ReturnType<typeof createRouter>;
+  }
+}
+
+declare module "@tanstack/react-table" {
+  interface TableMeta<TData extends RowData> {
+    expand: (id: string) => void;
+    updateTitle: (id: string) => void;
   }
 }

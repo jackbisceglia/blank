@@ -7,7 +7,6 @@
     [ ] 
 
 --ERROR HANDLING--
-    [ ] explore effect tagged errors
     [ ] remove neverthrow hydration -> only on server
 
 --UI--
@@ -35,10 +34,13 @@
 [[OPEN BUGS]]
 
 --UI--
-    [ ] table x-overflow bug
+    [x] table x-overflow bug
     [ ] expense member relation nullish, causes issues passing down as props
+    [x] escape bug on popover-on-sheet
+    [x] fix keyboard nav in table with manage button
+    [ ] unify focus/hover/border styles in sheet (need to unify input/button/select styles as such)
+    [ ] sheet close ring style
 
 --DB--
     [ ] no transactions causes layout shift on new expense entries
-    [ ] duplicate date fields serve no purpose currently
     [ ] every field should have a createdAt

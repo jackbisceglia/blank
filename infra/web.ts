@@ -13,7 +13,7 @@ export const Web = new sst.aws.TanStackStart("Web", {
   environment: {
     VITE_AUTH_SERVER_URL: Auth.url,
     VITE_SYNC_SERVER_URL: $interpolate`${Sync.url}`,
-    VITE_SCAN: "false",
+    VITE_SCAN: "true",
   },
   domain: domains.web,
   link: [Database, AI],
