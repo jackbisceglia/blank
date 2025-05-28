@@ -12,7 +12,6 @@ import { Loading } from "@/components/loading";
 import { Button } from "@/components/ui/button";
 import { PageHeaderRow } from "@/components/layouts";
 import { useAuthentication } from "@/lib/auth.provider";
-import { SearchParams } from "../@search-params";
 
 type GroupListProps = {
   groups: Group[];
@@ -76,5 +75,4 @@ export const Route = createFileRoute("/_protected/groups/")({
   component: GroupsRoute,
   ssr: false,
   loader: () => ({ crumb: "" }), // no crumb- this is handled in the layout for nesting
-  validateSearch: SearchParams,
 });

@@ -3,23 +3,23 @@ import {
   DialogContent,
   DialogHeader,
   DialogTitle,
+  DialogTrigger,
 } from "@/components/ui/dialog";
-import { useDialogFromUrl } from "@/lib/dialog";
 import * as v from "valibot";
 import { useCreateExpense } from "./@data";
-import { ok } from "neverthrow";
-import { toast } from "sonner";
-import { FieldsErrors, prevented, useAppForm } from "@/lib/form";
+import { FieldsErrors, useAppForm } from "@/components/form";
+import { createStackableSearchRoute } from "@/lib/create-search-route";
+import { prevented } from "@/lib/utils";
+import { withToast } from "@/lib/mutate-with-toast";
+import { PropsWithChildren, useEffect, useMemo } from "react";
 import { useStore } from "@tanstack/react-form";
-import { unwrapOrThrow } from "@blank/core/utils";
 
-export const CreateExpenseSearchParams = v.object({
-  action: v.literal("new-expense"),
+const ENTRY = "new-expense" as const;
+export const SearchRoute = createStackableSearchRoute("action", ENTRY);
+export type SearchRouteSchema = v.InferOutput<typeof SearchRouteSchema>;
+export const SearchRouteSchema = v.object({
+  action: v.literal(ENTRY),
 });
-
-export type CreateExpenseSearchParams = v.InferOutput<
-  typeof CreateExpenseSearchParams
->;
 
 const schema = v.object({
   description: v.pipe(
@@ -29,96 +29,73 @@ const schema = v.object({
   ),
 });
 
-type HandleSubmitOptions = {
-  closeDialog: () => void;
-  resetForm: () => void;
-  createExpense: ReturnType<typeof useCreateExpense>;
+type UseFormOptions = {
+  close: () => void;
+  open: () => void;
+  view: () => "open" | "closed";
+  create: ReturnType<typeof useCreateExpense>;
 };
 
-function handleSubmit(value: string, options: HandleSubmitOptions) {
-  const submission = ok(value) // unresolved promise
-    .andTee(options.closeDialog)
-    .asyncAndThen((description) => {
-      return options.createExpense(description);
-    })
-    .andTee(() => {
-      options.resetForm();
-    });
-
-  toast.promise(unwrapOrThrow(submission), {
-    loading: "Creating expense...",
-    success: { message: "Expense created successfully" },
-    error: (e) => ({
-      message: "Unable to create expense",
-      description: e instanceof Error ? e.message : "Unknown error occurred",
-    }),
-  });
-
-  return submission; // return promise so the form track/sync submission state
-}
-
-type CreateExpenseFormProps = {
-  closeDialog: () => void;
-  createExpense: ReturnType<typeof useCreateExpense>;
-};
-
-function CreateExpenseForm(props: CreateExpenseFormProps) {
-  const form = useAppForm({
+function useForm(options: UseFormOptions) {
+  const api = useAppForm({
     defaultValues: { description: "" },
-    onSubmit: async (fields) => {
-      await handleSubmit(fields.value.description, {
-        closeDialog: props.closeDialog,
-        resetForm: form.reset,
-        createExpense: props.createExpense,
-      });
+    validators: {
+      onChange: ({ formApi }) => {
+        if (options.view() === "closed") return;
+        return formApi.parseValuesWithSchema(schema);
+      },
     },
-    validators: { onChange: schema },
+    onSubmit: async (fields) => {
+      const value = fields.value.description;
+
+      options.close();
+
+      const promise = withToast({
+        promise: () => options.create(value),
+        notify: {
+          loading: "Creating expense...",
+          success: "Expense created successfully",
+          error: "Unable to create expense",
+        },
+      }).catch(() => {
+        options.open();
+        api.setFieldValue("description", value);
+      });
+
+      return promise;
+    },
   });
 
-  const fieldMetas = useStore(form.store, (store) => store.fieldMeta);
-
-  return (
-    <form
-      className="grid grid-rows-3 grid-cols-6 focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[1.5px] items-center gap-2.5 p-2 border-[1.5px] border-none bg-transparent [&>div>input]:h-6 h-fit"
-      onSubmit={prevented(() => void form.handleSubmit())}
-    >
-      <form.AppField
-        name="description"
-        children={(field) => (
-          <field.TextField
-            label="Description"
-            inputProps={{
-              placeholder: "enter description",
-            }}
-          />
-        )}
-      />
-      <form.AppForm>
-        <form.SubmitButton>Submit</form.SubmitButton>
-        <form.CancelButton onClick={props.closeDialog}>
-          Cancel
-        </form.CancelButton>
-        <FieldsErrors
-          className="col-span-full"
-          metas={Object.values(fieldMetas)}
-        />
-      </form.AppForm>
-    </form>
-  );
+  return { api };
 }
 
-export function CreateExpenseDialog() {
-  const createExpense = useCreateExpense();
-  const view = useDialogFromUrl({ schema: CreateExpenseSearchParams });
-  const isOpen = view.state() === "open";
+export function CreateExpenseDialog(props: PropsWithChildren) {
+  const create = useCreateExpense();
+  const route = SearchRoute.useSearchRoute();
+
+  const form = useForm({
+    create: create,
+    close: route.close,
+    open: route.open,
+    view: route.view,
+  });
+
+  useEffect(() => {
+    if (route.view() === "closed") {
+      setTimeout(() => form.api.reset(), 0);
+    }
+  }, [route.view()]);
 
   return (
     <Dialog
-      open={isOpen}
-      onOpenChange={(bool) => {
-        (bool ? view.open : view.close)();
+      open={route.view() === "open"}
+      onOpenChange={(opening) => {
+        if (!opening) {
+          route.close();
+        }
       }}
     >
+      <DialogTrigger asChild>{props.children}</DialogTrigger>
       <DialogHeader className="sr-only">
         <DialogTitle>Create New Group</DialogTitle>
       </DialogHeader>
@@ -127,10 +104,37 @@ export function CreateExpenseDialog() {
         omitCloseButton
         className="bg-transparent border-none shadow-none sm:max-w-2xl outline-none"
       >
-        <CreateExpenseForm
-          closeDialog={view.close}
-          createExpense={createExpense}
-        />
+        <form
+          className="grid grid-rows-3 grid-cols-6 focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[1.5px] items-center gap-2.5 p-2 border-[1.5px] border-none bg-transparent [&>div>input]:h-6 h-fit"
+          onSubmit={prevented(() => void form.api.handleSubmit())}
+        >
+          <form.api.AppField
+            name="description"
+            children={(field) => (
+              <field.TextField
+                label="Description"
+                inputProps={{
+                  placeholder: "enter description",
+                }}
+              />
+            )}
+          />
+          <form.api.AppForm>
+            <form.api.SubmitButton>Submit</form.api.SubmitButton>
+            <form.api.CancelButton onClick={route.close}>
+              Cancel
+            </form.api.CancelButton>
+          </form.api.AppForm>
+          <form.api.Subscribe
+            selector={(state) => state.fieldMeta}
+            children={(fieldMeta) => (
+              <FieldsErrors
+                className="col-span-full min-h-32 "
+                metas={Object.values(fieldMeta)}
+              />
+            )}
+          />
+        </form>
       </DialogContent>
     </Dialog>
   );

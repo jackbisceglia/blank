@@ -27,19 +27,22 @@ function GroupNavigation(props: GroupNavigationProps) {
     build("/")("groups", "$slug", l !== "dashboard" && l);
 
   return (
-    <div className="ml-auto uppercase text-sm flex items-center gap-6">
+    <div className="sm:ml-auto uppercase text-xs sm:text-sm flex items-center justify-center sm:justify-start gap-4">
       {links.map((link) => (
         <Link
           disabled={props.disable}
           key={link}
           activeOptions={{ exact: true, includeSearch: false }}
           activeProps={{
-            className: `${underline_defaults} text-blank-theme font-semibold`,
+            className: cn(
+              underline_defaults,
+              "text-blank-theme font-semibold hover:text-blank-theme"
+            ),
           }}
           params={{ title: props.title }}
           from="/"
           to={buildTo(link)}
-          className="[&[aria-disabled=true]]:pointer-events-none [&[aria-disabled=true]]:text-muted-foreground/70"
+          className="active:[&[aria-disabled=true]]:pointer-events-none [&[aria-disabled=true]]:text-muted-foreground/70"
         >
           {link}
         </Link>
@@ -50,7 +53,7 @@ function GroupNavigation(props: GroupNavigationProps) {
 
 export function SecondaryRow(props: PropsWithChildren<{ className?: string }>) {
   return (
-    <PageHeaderRow className={cn("min-h-8 items-start", props.className)}>
+    <PageHeaderRow className={cn("items-start", props.className)}>
       {props.children}
     </PageHeaderRow>
   );
@@ -58,7 +61,9 @@ export function SecondaryRow(props: PropsWithChildren<{ className?: string }>) {
 
 export function GroupBody(props: PropsWithChildren<{ className?: string }>) {
   return (
-    <div className={cn("flex flex-col gap-4 w-full", props.className)}>
+    <div
+      className={cn("flex flex-col gap-2 w-full pb-3.5 pt-8", props.className)}
+    >
       {props.children}
     </div>
   );
@@ -74,7 +79,7 @@ function GroupLayout() {
 
   return (
     <>
-      <PageHeaderRow>
+      <PageHeaderRow className="min-h-8 flex-col gap-2.5 sm:flex-row items-start sm:items-center sm:justify-between pb-1 sm:pb-0">
         <PrimaryHeading>{title}</PrimaryHeading>
         <GroupNavigation title={title} />
       </PageHeaderRow>

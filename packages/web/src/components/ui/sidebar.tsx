@@ -24,7 +24,7 @@ import {
 import { useEffect, useState } from "react";
 import { useNavigate } from "@tanstack/react-router";
 
-const MOBILE_BREAKPOINT = 768;
+const MOBILE_BREAKPOINT = 1024;
 
 export function useIsMobile() {
   const [isMobile, setIsMobile] = useState<boolean | undefined>(undefined);
@@ -48,7 +48,7 @@ export function useIsMobile() {
 
 export const SIDEBAR_COOKIE_NAME = "sidebar_state";
 const SIDEBAR_COOKIE_MAX_AGE = 60 * 60 * 24 * 7;
-const SIDEBAR_WIDTH = "16rem";
+const SIDEBAR_WIDTH = "15rem";
 const SIDEBAR_WIDTH_MOBILE = "18rem";
 const SIDEBAR_WIDTH_ICON = "3rem";
 const SIDEBAR_KEYBOARD_SHORTCUT = "b";
@@ -166,7 +166,7 @@ function SidebarProvider({
             } as React.CSSProperties
           }
           className={cn(
-            "group/sidebar-wrapper has-data-[variant=inset]:bg-sidebar flex min-h-svh w-full",
+            "group/sidebar-wrapper flex min-h-svh w-full",
             className
           )}
           {...props}
@@ -198,9 +198,7 @@ function Sidebar({
   variant?: "sidebar" | "floating" | "inset";
   collapsible?: "offcanvas" | "icon" | "none";
 }) {
-  const r = useNavigate();
-  const { isMobile, state, openMobile, setOpenMobile, toggleSidebar, setOpen } =
-    useSidebar();
+  const { isMobile, state, openMobile, setOpenMobile } = useSidebar();
   const sidebarRef = React.useRef<HTMLDivElement>(null);
 
   const selector = s.Parts(

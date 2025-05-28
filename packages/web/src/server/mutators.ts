@@ -1,4 +1,4 @@
-import { createClientMutators } from "@/lib/data.mutators";
+import { createClientMutators } from "@/lib/mutators";
 import { schema } from "@blank/zero";
 
 import { connectionProvider, PushProcessor } from "@rocicorp/zero/pg";

@@ -7,6 +7,7 @@
 
 :root {
   --blank-theme: hsl(226, 100%, 76%);
+  --blank-theme-disabled: hsl(223, 36%, 47%);
   --blank-theme-text: hsl(226, 56%, 85%);
   --blank-theme-background: hsl(223, 30%, 19%);
   --background: hsl(224, 35%, 90%);
@@ -47,7 +48,7 @@
   --popover-foreground: hsl(224, 35%, 90%);
   --primary: hsl(225, 35%, 90%);
   --primary-foreground: hsl(224 5.9% 10%);
-  --secondary: hsl(224 15% 15%);
+  --secondary: hsl(224 15% 17%);
   --secondary-foreground: hsl(225, 35%, 90%);
   --muted-alt: hsl(224, 35%, 90%, 0.5);
   --muted: hsl(224 3.7% 15.9%);
@@ -77,6 +78,7 @@
 
 @theme inline {
   --color-blank-theme: var(--blank-theme);
+  --color-blank-theme-disabled: var(--blank-theme-disabled);
   --color-blank-theme-text: var(--blank-theme-text);
   --color-blank-theme-background: var(--blank-theme-background);
   --color-background: var(--background);

@@ -9,6 +9,7 @@ import {
   SIDEBAR_COOKIE_NAME,
   SidebarProvider,
   SidebarTrigger,
+  useIsMobile,
 } from "@/components/ui/sidebar";
 import { cn } from "@/lib/utils";
 import {
@@ -24,10 +25,13 @@ import { ZeroProvider } from "@/lib/zero.provider";
 import { authenticationQueryOptions, AuthProvider } from "@/lib/auth.provider";
 import { getCookie as getCookieTanstackStart } from "@tanstack/react-start/server";
 import { PropsWithChildren } from "react";
-import { SearchParams } from "./@search-params";
 import { CreateExpenseDialog } from "./@create-expense";
 import { CreateGroupDialog } from "./groups/@create-group";
 import { Toaster } from "@/components/ui/sonner";
+import { SearchRouteSchema as GlobalSearchParams } from "./@command-bar";
+import { SearchRouteSchema as CreateExpenseSearchParams } from "./@create-expense";
+import { SearchRouteSchema as CreateGroupSearchParams } from "./groups/@create-group";
+import * as v from "valibot";
 
 function getCookie(name: string, fallback?: string) {
   const getCookieOnServer = getCookieTanstackStart;
@@ -54,9 +58,42 @@ const data = {
 };
 
 function Breadcrumbs() {
+  const isMobile = useIsMobile();
   const breadcrumbs = useMatches()
     .filter((match) => isMatch(match, "loaderData.crumb"))
     .filter((match) => !!match.loaderData?.crumb);
+
+  if (isMobile) {
+    const match = breadcrumbs.at(-1);
+    if (!match) return null;
+    return (
+      <Breadcrumb>
+        <BreadcrumbList>
+          <BreadcrumbSeparator />
+          <BreadcrumbLink
+            asChild
+            className={cn(
+              "uppercase data-[status=active]:font-medium data-[status=active]:text-foreground data-[status=active]:underline underline-offset-4"
+            )}
+          >
+            <Link
+              activeOptions={{
+                exact: true,
+                includeSearch: false,
+              }}
+              search={(prev) => ({
+                ...prev,
+                action: prev.action,
+              })}
+              from={match.fullPath}
+            >
+              {match.loaderData?.crumb}
+            </Link>
+          </BreadcrumbLink>
+        </BreadcrumbList>
+      </Breadcrumb>
+    );
+  }
 
   return (
     <Breadcrumb>
@@ -96,15 +133,14 @@ function ProtectedLayout() {
   return (
     <>
       <GlobalSidebar groups={data.groups} collapsible="icon" />
-      <main className="w-full flex flex-col items-start gap-3.5 py-3 px-6 md:pl-10 md:pr-14 min-h-full relative">
-        <header className="flex items-center gap-2 text-sm w-full">
+      <main className="flex-1 min-w-0 flex flex-col items-start gap-4 sm:gap-2 py-3 px-2.5 sm:px-6 lg:pl-8 lg:pr-12 min-h-full relative">
+        <header className="flex justify-start items-center gap-0.5 sm:gap-2 text-sm w-full pb-1.5">
           <SidebarTrigger />
           <Breadcrumbs />
         </header>
         <Outlet />
       </main>
       <GlobalCommandBar />
-
       <CreateExpenseDialog />
       <CreateGroupDialog />
       <Toaster />
@@ -130,7 +166,6 @@ function Providers(props: PropsWithChildren) {
 export const Route = createFileRoute("/_protected")({
   ssr: false,
   loader: (opts) => {
-    // TODO: could i just check auth here?
     void opts.context.queryClient.ensureQueryData(authenticationQueryOptions());
   },
   component: () => (
@@ -138,5 +173,16 @@ export const Route = createFileRoute("/_protected")({
       <ProtectedLayout />
     </Providers>
   ),
-  validateSearch: SearchParams,
+  validateSearch: v.object({
+    // here we define search params for ui that can be shown globally
+    action: v.optional(
+      v.array(
+        v.union([
+          GlobalSearchParams.entries.action,
+          CreateGroupSearchParams.entries.action,
+          CreateExpenseSearchParams.entries.action,
+        ])
+      )
+    ),
+  }),
 });

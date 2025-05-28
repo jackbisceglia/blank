@@ -4,7 +4,7 @@ import { valibotSchema } from "@ai-sdk/valibot";
 import * as v from "valibot";
 import { ParticipantInsert } from "../db/participant.schema";
 import { DEFAULT, DEFAULT_FAST, ModelKeys, models } from "./models";
-import { ResultAsync } from "neverthrow";
+import { ResultAsync, err, ok } from "neverthrow";
 
 function unindent(strings: TemplateStringsArray, ...values: unknown[]) {
   const rawString = strings.reduce(
@@ -66,6 +66,7 @@ export namespace nl {
         - Always include "USER" (the person initiating the expense) unless clearly excluded
         - Omit anyone with a split of 0 (unless they're the payer)
         - Total of all splits must equal 1.0
+        - ALWAYS ASSUME EQUAL SPLITS WHEN NOT SPECIFIED (with 2 people, this means 0.5 each)
         - Default to equal splits when not specified
 
         ## Examples
@@ -107,12 +108,49 @@ export namespace nl {
       return ResultAsync.combine([
         fastLLMParser(`${this.config.instruction}: ${description}`),
         qualityLLMParser(`${this.config.instruction}: ${description}`),
-      ]).map(([fast, quality]) => {
-        return {
-          expense: fast.object.expense,
-          members: quality.object.members,
-        };
-      });
+      ])
+        .map(([fast, quality]) => {
+          return {
+            expense: fast.object.expense,
+            members: quality.object.members,
+          };
+        })
+        .andThen((parsed) => {
+          // TODO: Replace these basic validation checks with more robust validation system
+
+          // Check: Non-zero price
+          if (parsed.expense.amount <= 0) {
+            return err(new Error("Expense amount must be greater than zero"));
+          }
+
+          // Check: Has a payer
+          const payer = parsed.members.find(
+            (member) => member.role === "payer"
+          );
+          if (!payer) {
+            return err(new Error("Expense must have a payer"));
+          }
+
+          // Check: Has at least one member
+          if (parsed.members.length === 0) {
+            return err(new Error("Expense must have at least one member"));
+          }
+
+          // Check: Splits add up to 1.0 (allowing small floating point tolerance)
+          const totalSplit = parsed.members.reduce(
+            (sum, member) => sum + member.split,
+            0
+          );
+          if (Math.abs(totalSplit - 1.0) > 0.0001) {
+            return err(
+              new Error(
+                `Member splits must add up to 1.0, got ${totalSplit.toString()}`
+              )
+            );
+          }
+
+          return ok(parsed);
+        });
     },
   };
 }

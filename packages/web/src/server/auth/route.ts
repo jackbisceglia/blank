@@ -1,6 +1,6 @@
 import { getHeader } from "@tanstack/react-start/server";
 import { subjects } from "@blank/auth/subjects";
-import { redirect } from "@tanstack/react-router";
+import { notFound, redirect } from "@tanstack/react-router";
 import { createServerFn } from "@tanstack/react-start";
 import { users } from "@blank/core/db";
 import { requireValueExists, TaggedError } from "@blank/core/utils";
@@ -48,7 +48,12 @@ export const meRPC = createServerFn().handler(async function () {
 
   const result = pipe(
     Effect.all([user, token]),
-    Effect.map(([user, token]) => ({ user, token }))
+    Effect.map(([user, token]) => ({ user, token })),
+    Effect.mapError((e) =>
+      e._tag === "UserNotFoundError" || e._tag === "AuthenticatedError"
+        ? notFound({ data: e.data })
+        : e
+    )
   );
 
   return Effect.runPromise(result);

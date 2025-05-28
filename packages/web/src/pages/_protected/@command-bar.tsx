@@ -6,25 +6,28 @@ import {
   CommandItem,
   CommandList,
 } from "@/components/ui/command";
-import { useEffect } from "react";
+import { useEffect, useTransition } from "react";
 import { createPreventDefault, fn, keyboard } from "@/lib/utils";
 import { Link, LinkOptions, useNavigate } from "@tanstack/react-router";
 import { useGetGroupsList } from "./groups/@data";
 import { useAuthentication } from "@/lib/auth.provider";
-import { useDialogFromUrl } from "@/lib/dialog";
 import * as v from "valibot";
+import { createStackableSearchRoute } from "@/lib/create-search-route";
+import { SearchRoute as CreateExpenseRoute } from "./@create-expense";
 
-export const GlobalSearchParams = v.object({
-  action: v.literal("command"),
+const ENTRY = "command" as const;
+export const SearchRoute = createStackableSearchRoute("action", ENTRY);
+export type SearchRouteSchema = v.InferOutput<typeof SearchRouteSchema>;
+export const SearchRouteSchema = v.object({
+  action: v.literal(ENTRY),
 });
-export type GlobalSearchParams = v.InferOutput<typeof GlobalSearchParams>;
 
 export function GlobalCommandBar() {
   const navigate = useNavigate();
   const auth = useAuthentication();
   const groups = useGetGroupsList(auth.user.id);
-
-  const view = useDialogFromUrl({ schema: GlobalSearchParams });
+  const route = SearchRoute.useSearchRoute();
+  const createExpenseRoute = CreateExpenseRoute.useSearchRoute();
 
   const commands = {
     home: fn(() => {
@@ -56,7 +59,8 @@ export function GlobalCommandBar() {
     newExpense: fn(() => {
       const opts = {
         to: ".",
-        search: () => ({
+        search: (previous) => ({
+          ...previous,
           action: ["new-expense"],
         }),
       } satisfies LinkOptions;
@@ -66,7 +70,8 @@ export function GlobalCommandBar() {
         title: "create expense",
         opts,
         go: () => {
-          void navigate(opts);
+          route.close();
+          createExpenseRoute.open(true);
         },
       };
     }),
@@ -74,7 +79,7 @@ export function GlobalCommandBar() {
 
   useEffect(() => {
     const actions = keyboard.register({
-      when: view.state() === "open",
+      when: route.view() === "open",
       fn: (e) => {
         const keymap = new Map<string, () => void>([
           [commands.home.hotkey, createPreventDefault(commands.home.go, e)],
@@ -92,7 +97,7 @@ export function GlobalCommandBar() {
       fn: (e) => {
         if (e.key === "k" && (e.metaKey || e.ctrlKey)) {
           e.preventDefault();
-          view.open();
+          route.open();
         }
       },
     });
@@ -101,7 +106,7 @@ export function GlobalCommandBar() {
       actions.cleanup();
       cmdk.cleanup();
     };
-  }, [view.state]);
+  }, [route.state()]);
 
   const groupCommands = groups.data.map(
     (group) =>
@@ -114,9 +119,10 @@ export function GlobalCommandBar() {
 
   return (
     <CommandDialog
-      open={view.state() === "open"}
+      omitCloseButton
+      open={route.view() === "open"}
       onOpenChange={(bool) => {
-        (bool ? view.open : view.close)();
+        (bool ? route.open : route.close)();
       }}
     >
       <CommandInput placeholder="type a command or search..." />

@@ -16,7 +16,7 @@ const Toaster = ({ ...props }: ToasterProps) => {
           error: "!bg-destructive-background !border-destructive",
           loading: "!bg-secondary !border-border ",
           toast:
-            "!rounded-none group toast group-[.toaster]:text-foreground group-[.toaster]:border-border group-[.toaster]:shadow-lg",
+            "select-none !rounded-none group toast group-[.toaster]:text-foreground group-[.toaster]:border-border group-[.toaster]:shadow-lg",
           description: "lowercase group-[.toast]:text-muted-foreground",
           actionButton:
             "group-[.toast]:bg-primary group-[.toast]:text-primary-foreground font-medium",

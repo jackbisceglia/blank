@@ -95,9 +95,32 @@ export function evaluate<T>(fn: () => T): T {
   return fn();
 }
 
+// TODO: dedup usage of these
 export function createPreventDefault(fn: () => void, e: KeyboardEvent) {
   return () => {
     e.preventDefault();
     fn();
   };
 }
+
+export const prevented = <
+  E extends { preventDefault: () => void; stopPropagation: () => void },
+>(
+  callback?: (e: E) => unknown
+) => {
+  return (e: E) => {
+    e.preventDefault();
+    e.stopPropagation();
+    callback?.(e);
+  };
+};
+
+export const timestampToDate = (timestamp: number): Date => new Date(timestamp);
+export const dateToTimestamp = (date: Date): number => date.getTime();
+
+export const flags = {
+  dev: {
+    deleteAllExpenses: true,
+    inlineRandomizeExpense: false,
+  },
+};
