@@ -1,54 +1,61 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute } from "@tanstack/react-router";
 import { SubHeading } from "@/components/prose";
-import { useGetGroupBySlug } from "../@data";
-import { Button } from "@/components/ui/button";
-import { GroupBody, SecondaryRow } from "./layout";
+import { useGetExpenseListByGroupSlug, useGetGroupBySlug } from "../@data";
+import { GroupBody, States } from "./layout";
 import { DataTable } from "./@expense-table";
-import {
-  ExpenseSheet,
-  SearchRoute,
-  SearchRouteSchema,
-} from "./@expense-details-sheet";
-import { Expense } from "@blank/zero";
+import { ExpenseSheet, SearchRoute, SearchRouteSchema } from "./@expense-sheet";
+import { Member, Expense as ZeroExpense } from "@blank/zero";
 import { ParticipantWithMember } from "@/lib/participants";
 import { useDeleteAllExpenses, useUpdateExpense } from "./@data";
-import { flags } from "@/lib/utils";
 import * as v from "valibot";
-import { Input } from "@/components/ui/input";
+import { TableActions, useQueryFromSearch } from "./@expense-table-actions";
+import { slugify } from "@/lib/utils";
+import {
+  ActiveExpensesCard,
+  BalancesCard,
+  CardsSection,
+  SuggestionsCard,
+} from "./@group-cards";
 
-export type ExpenseWithParticipants = Expense & {
+function createBalanceMap(expenses: ExpenseWithParticipants[]) {
+  function initialize() {
+    const map = new Map<string, number>();
+
+    expenses.forEach((expense) => {
+      expense.participants.forEach((p) => {
+        const balance = map.get(p.userId) ?? 0;
+
+        const delta = p.role === "payer" ? -1 : 1;
+        const split = p.split;
+
+        map.set(p.userId, balance + delta * split * expense.amount);
+      });
+    });
+
+    return map;
+  }
+
+  const balances = initialize();
+
+  return (id: string) => balances.get(id) ?? 0;
+}
+
+export type ExpenseWithParticipants = ZeroExpense & {
   participants: ParticipantWithMember[];
 };
 
-function useQueryFromSearch() {
-  const navigate = Route.useNavigate();
-  const value = Route.useSearch({
-    select: (state) => state.query,
-  });
+function useQueries(slug: string, query: string | undefined) {
+  const group = useGetGroupBySlug(slug);
+  const expenses = useGetExpenseListByGroupSlug(slug, { query });
 
-  function set(value: string) {
-    void navigate({
-      search: (prev) => ({
-        ...prev,
-        query: value.length > 0 ? value : undefined,
-      }),
-    });
-  }
-
-  return { value, set };
+  return { group, expenses };
 }
 
-function GroupRoute() {
-  const sheet = SearchRoute.useSearchRoute();
-  const params = Route.useParams();
-  const group = useGetGroupBySlug(params.slug);
+function useMutations() {
   const deleteAllExpenses = useDeleteAllExpenses();
   const updateExpense = useUpdateExpense();
-
-  const query = useQueryFromSearch();
-
-  const randomTitle = (id: string) => {
-    return updateExpense({
+  function randomizeExpenseTitle(id: string) {
+    void updateExpense({
       expenseId: id,
       updates: {
         expense: {
@@ -56,58 +63,59 @@ function GroupRoute() {
         },
       },
     });
-  };
-
-  const active = group.data?.expenses.find((e) => e.id === sheet.state());
-
-  if (group.status === "not-found") {
-    return <div>Group not found</div>;
   }
+
+  return {
+    expense: {
+      deleteAll: deleteAllExpenses,
+      update: updateExpense,
+      randomizeTitle: randomizeExpenseTitle,
+    },
+  };
+}
+
+function GroupRoute() {
+  const sheet = SearchRoute.useSearchRoute();
+  const params = Route.useParams();
+  const term = useQueryFromSearch();
+
+  const query = useQueries(params.slug, term.value);
+  const mutate = useMutations();
+
+  if (!query.group.data || query.group.status === "not-found") {
+    return <States.NotFound title={slugify(params.slug).decode()} />;
+  }
+
+  const group = query.group.data;
+  const expenses = query.expenses.data;
+
+  const active = group.expenses.find((e) => e.id === sheet.state());
+  const sum = group.expenses.reduce((sum, { amount }) => sum + amount, 0);
+  const map = createBalanceMap(group.expenses as ExpenseWithParticipants[]);
 
   return (
     <>
-      {/* <SecondaryRow className="justify-between gap-4 md:gap-2 flex flex-col sm:flex-row sm:items-start"> */}
-      <SubHeading> {group.data?.description} </SubHeading>
-      {/* </SecondaryRow> */}
-
+      <SubHeading> {group.description} </SubHeading>
       <GroupBody>
-        <SecondaryRow className="justify-between gap-4 md:gap-1 flex flex-col sm:flex-row sm:items-center">
-          <Input
-            className="max-w-72 placeholder:lowercase py-0 h-full py-1.5 bg-transparent placeholder:text-secondary-foreground/50 border-border border-1"
-            placeholder="Search expenses..."
-            value={query.value ?? ""}
-            onChange={(e) => {
-              query.set(e.target.value);
-            }}
+        <CardsSection>
+          <ActiveExpensesCard total={sum} count={group.expenses.length} />
+          <BalancesCard
+            count={group.expenses.length}
+            members={group.members as Member[]}
+            balance={map}
           />
-          <Button asChild size="xs" variant="theme" className="ml-auto">
-            <Link
-              to="."
-              search={(prev) => ({
-                action: ["new-expense", ...(prev.action ?? [])],
-              })}
-            >
-              Create
-            </Link>
-          </Button>
-          {flags.dev.deleteAllExpenses && (
-            <Button
-              onClick={() => {
-                void deleteAllExpenses({ groupId: group.data?.id ?? "" });
-              }}
-              variant="secondary"
-              size="xs"
-              className="ml-2 "
-            >
-              DELETE
-            </Button>
-          )}
-        </SecondaryRow>
+          <SuggestionsCard members={group.members as Member[]} balance={map} />
+        </CardsSection>
+        <TableActions
+          id={group.id}
+          expenseCount={group.expenses.length}
+          actions={{ deleteAll: mutate.expense.deleteAll }}
+        />
         <DataTable
-          query={query.value}
+          query={term.value}
           expand={sheet.open}
-          updateTitle={(id) => void randomTitle(id)}
-          data={(group.data?.expenses ?? []) as ExpenseWithParticipants[]}
+          data={expenses as ExpenseWithParticipants[]}
+          updateTitle={mutate.expense.randomizeTitle}
         />
       </GroupBody>
       {active && <ExpenseSheet expense={active as ExpenseWithParticipants} />}

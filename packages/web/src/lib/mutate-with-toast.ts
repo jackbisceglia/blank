@@ -1,3 +1,5 @@
+import { unwrapOrThrow } from "@blank/core/utils";
+import { ResultAsync } from "neverthrow";
 import { toast, ToastClassnames } from "sonner";
 
 type WithToastOptions<T> = {
@@ -10,9 +12,14 @@ type WithToastOptions<T> = {
   classNames?: ToastClassnames;
 };
 
+// TODO: this is broken when the error is thrown synchronously
 export function withToast<T>(opts: WithToastOptions<T>): Promise<T> {
-  const promise =
+  const getPromise = () =>
     typeof opts.promise === "function" ? opts.promise() : opts.promise;
+
+  // hackily doing this temporarily;
+  // it catches all errors but as a promise and then rethrows whcih the toast promise catches
+  const promise = unwrapOrThrow(ResultAsync.fromThrowable(getPromise)());
 
   toast.promise(promise, {
     ...(opts.classNames ? { classNames: opts.classNames } : {}),

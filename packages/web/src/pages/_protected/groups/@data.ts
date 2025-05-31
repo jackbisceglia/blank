@@ -11,16 +11,12 @@ import { useAuthentication } from "@/lib/auth.provider";
 const groupByProperty = (key: "slug" | "id", value: string, z: Zero) =>
   z.query.group
     .where(key, value)
-    .one()
-    .related("expenses", (expenses) =>
-      expenses
-        .related("participants", (participants) =>
-          participants.related("member").related("member")
-        )
-        .orderBy("date", "desc")
+    .related("expenses", (e) =>
+      e.related("participants", (p) => p.related("member").related("member"))
     )
     .related("members")
-    .related("owner");
+    .related("owner")
+    .one();
 
 export function useGetGroupBySlug(slug: string) {
   const z = useZero();
@@ -49,6 +45,25 @@ export function useGetGroupsList(userId: string) {
   const result = useListQuery(query, { ttl: constants.zero_ttl });
 
   return result;
+}
+
+export function useGetExpenseListByGroupSlug(
+  slug: string,
+  filters?: {
+    query?: string;
+  }
+) {
+  const z = useZero();
+  let query = z.query.expense
+    .whereExists("group", (g) => g.where("slug", slug))
+    .orderBy("date", "desc")
+    .related("participants", (p) => p.related("member").related("member"));
+
+  if (filters?.query) {
+    query = query.where("description", "ILIKE", `%${filters.query}%`);
+  }
+
+  return useListQuery(query, { ttl: constants.zero_ttl });
 }
 
 export function useCreateGroup() {

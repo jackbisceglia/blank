@@ -9,7 +9,7 @@ function Table({ className, ...props }: TableProps) {
   return (
     <div
       className={cn(
-        "overflow-x-auto w-full text-foreground/75 duration-0 p-0.5"
+        "overflow-x-auto w-full text-foreground/75 duration-0 p-0.5 pt-0"
       )}
     >
       <table
@@ -56,7 +56,7 @@ function TableRow({ className, ...props }: React.ComponentProps<"tr">) {
     <tr
       data-slot="table-row"
       className={cn(
-        "hover:bg-blank-theme-background/25 data-[state=selected]:bg-blank-theme-background/50 transition-[color,box-shadow] duration-0 not-focus-within:outline-hidden focus-within:outline-ring/50 focus-within:outline-2 focus:relative focus-within:z-10",
+        "data-[state=selected]:bg-blank-theme-background/50 transition-[color,box-shadow] duration-0 not-focus-within:outline-hidden focus-within:outline-ring/50 focus-within:outline focus:relative focus-within:z-10",
         className
       )}
       {...props}
@@ -72,7 +72,7 @@ function TableHead({ className, ...props }: React.ComponentProps<"th">) {
       data-slot="table-head"
       className={cn(
         x_spacing,
-        " uppercase text-xs text-muted-foreground h-10 min-w-fit whitespace-nowrap text-left align-middle font-normal [&:has([role=checkbox])]:pr-0 [&>[role=checkbox]]:translate-y-[2px] [&:nth-child(1)]:w-24 [&:nth-child(2)]:w-full",
+        "uppercase text-xs text-muted-foreground h-9 min-w-fit whitespace-nowrap text-left align-middle font-normal [&:has([role=checkbox])]:pr-0 [&>[role=checkbox]]:translate-y-[2px] [&:nth-child(1)]:w-24 [&:nth-child(2)]:w-full",
         className
       )}
       {...props}
@@ -85,7 +85,7 @@ function TableCell({ className, ...props }: React.ComponentProps<"td">) {
     <td
       data-slot="table-cell"
       className={cn(
-        "py-3 w-fit align-left [&:has([role=checkbox])]:pr-0 [&>[role=checkbox]]:translate-y-[2px] border-b border-primary/5 ",
+        "py-2.5 w-fit align-left [&:has([role=checkbox])]:pr-0 [&>[role=checkbox]]:translate-y-[2px] border-b border-border/10 [tr:last-child_&]:border-b-0",
         x_spacing,
         className
       )}
