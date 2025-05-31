@@ -99,7 +99,6 @@ export const ZeroProvider = (props: PropsWithChildren) => {
       schema,
       kvStore: "idb",
       mutators: (() => {
-        console.log("initializing mutators: ", auth.user.id);
         return createClientMutators({ userID: auth.user.id });
       })(),
     });

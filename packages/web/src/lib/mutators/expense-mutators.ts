@@ -30,7 +30,7 @@ const assertExpenseExists = async (tx: ZTransaction, expenseId: string) => {
   return expense;
 };
 
-type Mutators = ClientMutatorGroup<{
+export type Mutators = ClientMutatorGroup<{
   update: ClientMutator<UpdateOptions, void>;
   delete: ClientMutator<DeleteOptions, void>;
   deleteByGroupId: ClientMutator<DeleteAllOptions, void>;

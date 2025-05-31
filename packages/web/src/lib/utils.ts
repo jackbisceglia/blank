@@ -120,7 +120,7 @@ export const dateToTimestamp = (date: Date): number => date.getTime();
 
 export const flags = {
   dev: {
-    deleteAllExpenses: true,
+    deleteAllExpenses: false,
     inlineRandomizeExpense: false,
   },
 };

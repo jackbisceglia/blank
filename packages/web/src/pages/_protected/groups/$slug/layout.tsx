@@ -62,7 +62,10 @@ export function SecondaryRow(props: PropsWithChildren<{ className?: string }>) {
 export function GroupBody(props: PropsWithChildren<{ className?: string }>) {
   return (
     <div
-      className={cn("flex flex-col gap-2 w-full pb-3.5 pt-8", props.className)}
+      className={cn(
+        "flex flex-col w-full pb-3.5 space-y-6 pt-3 pb-0",
+        props.className
+      )}
     >
       {props.children}
     </div>

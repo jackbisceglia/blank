@@ -24,10 +24,6 @@ export function assertIsAuthenticated(auth: OpenAuthToken | undefined) {
 }
 
 export function createClientMutators(auth: OpenAuthToken | undefined) {
-  console.log("\n");
-  console.log("client auth", auth);
-  console.log("\n");
-
   return {
     expense: expenseMutators(auth),
     participant: participantMutators(auth),

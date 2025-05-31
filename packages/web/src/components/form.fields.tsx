@@ -18,11 +18,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from "./ui/select";
-import {
-  assertParticipantsHaveMembers,
-  getPayerFromParticipants,
-  type ParticipantWithMember,
-} from "@/lib/participants";
+import { type ParticipantWithMember } from "@/lib/participants";
+import { Member } from "@blank/core/db";
 
 type TextFieldProps = {
   label: string;
@@ -140,7 +137,9 @@ export const SheetPaidByField = (props: SheetPaidByFieldProps) => {
   const { className: labelClassName, ...restLabelProps } =
     rest.labelProps ?? {};
 
-  const participants = assertParticipantsHaveMembers(participantsProp);
+  const participants = participantsProp.filter((p) => !!p.member) as Array<
+    ParticipantWithMember & { member: Member }
+  >;
   const field =
     useFieldContext<(typeof participants)[number]["member"]["userId"]>();
 
