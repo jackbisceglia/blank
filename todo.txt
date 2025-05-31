@@ -40,7 +40,12 @@
     [x] fix keyboard nav in table with manage button
     [ ] unify focus/hover/border styles in sheet (need to unify input/button/select styles as such)
     [ ] sheet close ring style
+    [ ] table left/right padding consistency/fix
 
 --DB--
     [ ] no transactions causes layout shift on new expense entries
     [ ] every field should have a createdAt
+    [ ] UUID vs other id mechanism
+    
+--AUTH--
+    [ ] react query auth retries slows down first un-auth'd page load

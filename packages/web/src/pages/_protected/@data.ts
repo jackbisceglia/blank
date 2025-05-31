@@ -28,8 +28,6 @@ export function useCreateExpense() {
       throw new Error(message);
     }
 
-    return createFromDescriptionServerFn({
-      data: { description, groupId },
-    });
+    return createFromDescriptionServerFn({ data: { description, groupId } });
   };
 }

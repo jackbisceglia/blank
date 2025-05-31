@@ -183,7 +183,7 @@ export function GlobalSidebar(props: SideNavigationProps) {
   const groups = useGetGroupsList(user.id);
 
   return (
-    <Sidebar {...props} className="overflow-x-hidden">
+    <Sidebar variant="inset" {...props} className="overflow-x-hidden">
       <SidebarHeader>
         <SidebarMenu>
           <SidebarMenuItem>

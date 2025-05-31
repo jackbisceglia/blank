@@ -13,8 +13,8 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { useMemo, useRef } from "react";
-import { Button } from "@/components/ui/button";
+import { useRef } from "react";
+import { Button, buttonVariants } from "@/components/ui/button";
 import {
   Tooltip,
   TooltipTrigger,
@@ -23,7 +23,8 @@ import {
 import React from "react";
 import { ExpenseWithParticipants } from "./page";
 import { tableNavigationContext } from "@/lib/keyboard-nav";
-import { flags } from "@/lib/utils";
+import { cn, flags } from "@/lib/utils";
+import { Link } from "@tanstack/react-router";
 
 function getInitials(name?: string) {
   if (!name) return "?";
@@ -41,7 +42,7 @@ const BadgeSimple = React.forwardRef<HTMLSpanElement, BadgeSimpleProps>(
   ({ variant, children, ...rest }, ref) => (
     <Badge
       ref={ref}
-      className="overflow-x-hidden truncate block max-w-full"
+      className="overflow-x-hidden truncate block max-w-full lowercase"
       variant={variant}
       {...rest}
     >
@@ -69,7 +70,7 @@ function ParticipantBadge(props: ParticipantBadgeProps) {
               {getInitials(p.member?.nickname)}
             </BadgeSimple>
           </TooltipTrigger>
-          <TooltipContent side="right" align="center">
+          <TooltipContent side="bottom" align="end">
             <p className="font-semibold">{p.member?.nickname || "?"}</p>
           </TooltipContent>
         </Tooltip>
@@ -88,10 +89,8 @@ function ParticipantBadgeList(props: ParticipantBadgeListProps) {
       p.member !== undefined
   );
 
-  if (participants.length !== props.participants.length) return null;
-
   return (
-    <ul className="space-x-1 w-fit">
+    <ul className="space-x-1 w-fit flex">
       {participants.map((p) => (
         <li key={p.userId}>
           <ParticipantBadge participant={p} strategy="compact" />
@@ -204,20 +203,8 @@ type DataTableProps = {
 };
 
 export function DataTable(props: DataTableProps) {
-  const data = useMemo(() => {
-    const query = props.query?.trim().toLowerCase();
-
-    if (!query) {
-      return props.data;
-    } else {
-      return props.data.filter((expense) =>
-        expense.description.toLowerCase().includes(query)
-      );
-    }
-  }, [props.data, props.query]);
-
   const table = useReactTable({
-    data,
+    data: props.data,
     columns,
     getCoreRowModel: getCoreRowModel(),
     getRowId: (row) => row.id,
@@ -233,11 +220,11 @@ export function DataTable(props: DataTableProps) {
     <Table className="text-sm">
       <TableHeader>
         {table.getHeaderGroups().map((headerGroup) => (
-          <TableRow key={headerGroup.id}>
+          <TableRow key={headerGroup.id} className="hover:bg-transparent">
             {headerGroup.headers.map((header) => {
               return (
                 <TableHead
-                  className={`min-w-fit w-fit max-w-fit`}
+                  className="min-w-fit w-fit max-w-fit"
                   data-state={header.id}
                   key={header.id}
                 >
@@ -264,10 +251,7 @@ export function DataTable(props: DataTableProps) {
                 }}
                 key={row.id}
                 data-state={row.getIsSelected() && "selected"}
-                // onClick={select}
-                className="hover:bg-blank-theme-background/25 transition-colors"
-                // role="checkbox"
-                // aria-checked={row.getIsSelected()}
+                className="hover:bg-muted focus-within:bg-muted transition-colors"
                 tabIndex={0}
                 onKeyDown={(e) => {
                   const navigation = tableNavigationContext(e);
@@ -309,14 +293,31 @@ export function DataTable(props: DataTableProps) {
             );
           })
         ) : (
-          <TableRow>
+          <TableRow className="focus-within:outline-none">
             <TableCell
               colSpan={columns.length}
               className="h-24 text-center uppercase"
             >
-              {props.data.length === 0
-                ? "No expenses yet, add one to get started."
-                : "No results found."}
+              {props.data.length === 0 ? (
+                <p className="text-muted-foreground">
+                  No expenses yet,{" "}
+                  <Link
+                    to="."
+                    className={cn(
+                      buttonVariants({ variant: "link" }),
+                      "p-0 text-blank-theme-text"
+                    )}
+                    search={(prev) => ({
+                      action: ["new-expense", ...(prev.action ?? [])],
+                    })}
+                  >
+                    create an expense
+                  </Link>{" "}
+                  to get started.
+                </p>
+              ) : (
+                "No results found."
+              )}
             </TableCell>
           </TableRow>
         )}

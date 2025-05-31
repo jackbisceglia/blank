@@ -10,11 +10,7 @@ import * as v from "valibot";
 import { ExpenseWithParticipants } from "./page";
 import { createSearchRoute } from "@/lib/create-search-route";
 import { useWithConfirmation } from "@/components/with-confirmation-dialog";
-import {
-  useDeleteExpense,
-  useUpdateExpense,
-  useUpdateExpenseParticipants,
-} from "./@data";
+import { useDeleteExpense, useUpdateExpense } from "./@data";
 import { FieldsErrors, useAppForm } from "@/components/form";
 import { prevented, timestampToDate } from "@/lib/utils";
 import {
