@@ -11,21 +11,13 @@ import * as v from "valibot";
 import { TableActions, useQueryFromSearch } from "./@expense-table-actions";
 import { slugify } from "@/lib/utils";
 import {
-  ActiveExpenses,
   ActiveExpensesCard,
-  Balances,
   BalancesCard,
   CardsSection,
-  GroupCard,
   SuggestionsCard,
 } from "./@group-cards";
-import { CardTitle } from "@/components/ui/card";
 
-function computeGroupBalance(expenses: ExpenseWithParticipants[]) {
-  return expenses.reduce((acc, expense) => acc + expense.amount, 0);
-}
-
-function computeUserBalances(expenses: ExpenseWithParticipants[]) {
+function createBalanceMap(expenses: ExpenseWithParticipants[]) {
   function initialize() {
     const map = new Map<string, number>();
 
@@ -90,48 +82,39 @@ function GroupRoute() {
   const query = useQueries(params.slug, term.value);
   const mutate = useMutations();
 
-  const group = query.group;
-  const expenses = query.expenses;
-
-  if (!group.data || group.status === "not-found") {
+  if (!query.group.data || query.group.status === "not-found") {
     return <States.NotFound title={slugify(params.slug).decode()} />;
   }
 
-  // derived
-  const active = group.data.expenses.find((e) => e.id === sheet.state());
-  const total = computeGroupBalance(
-    group.data.expenses as ExpenseWithParticipants[]
-  );
-  const balance = computeUserBalances(
-    group.data.expenses as ExpenseWithParticipants[]
-  );
+  const group = query.group.data;
+  const expenses = query.expenses.data;
+
+  const active = group.expenses.find((e) => e.id === sheet.state());
+  const sum = group.expenses.reduce((sum, { amount }) => sum + amount, 0);
+  const map = createBalanceMap(group.expenses as ExpenseWithParticipants[]);
 
   return (
     <>
-      <SubHeading> {group.data.description} </SubHeading>
+      <SubHeading> {group.description} </SubHeading>
       <GroupBody>
         <CardsSection>
-          <ActiveExpensesCard
-            total={total}
-            count={group.data.expenses.length}
-          />
+          <ActiveExpensesCard total={sum} count={group.expenses.length} />
           <BalancesCard
-            count={group.data.expenses.length}
-            members={group.data.members as Member[]}
-            balance={balance}
+            count={group.expenses.length}
+            members={group.members as Member[]}
+            balance={map}
           />
-          <SuggestionsCard />
+          <SuggestionsCard members={group.members as Member[]} balance={map} />
         </CardsSection>
         <TableActions
-          id={group.data.id}
-          actions={{
-            deleteAll: mutate.expense.deleteAll,
-          }}
+          id={group.id}
+          expenseCount={group.expenses.length}
+          actions={{ deleteAll: mutate.expense.deleteAll }}
         />
         <DataTable
           query={term.value}
           expand={sheet.open}
-          data={expenses.data as ExpenseWithParticipants[]}
+          data={expenses as ExpenseWithParticipants[]}
           updateTitle={mutate.expense.randomizeTitle}
         />
       </GroupBody>

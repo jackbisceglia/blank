@@ -46,3 +46,6 @@
     [ ] no transactions causes layout shift on new expense entries
     [ ] every field should have a createdAt
     [ ] UUID vs other id mechanism
+    
+--AUTH--
+    [ ] react query auth retries slows down first un-auth'd page load

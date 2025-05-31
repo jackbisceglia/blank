@@ -7,9 +7,8 @@ import {
 } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
 import { Member } from "@blank/zero";
-import { PropsWithChildren } from "react";
-
-const spans = [4, 4, 4];
+import { ComponentProps, PropsWithChildren } from "react";
+import { Button } from "@/components/ui/button";
 
 function formatUSD(amount: number) {
   return new Intl.NumberFormat("en-US", {
@@ -20,10 +19,17 @@ function formatUSD(amount: number) {
   }).format(amount);
 }
 
+function compare<T>(balance: number, neg: T, even: T, pos: T) {
+  if (balance === 0) return even;
+
+  return balance > 0 ? pos : neg;
+}
+
 type CardsContainerProps = PropsWithChildren;
+
 export function CardsSection(props: CardsContainerProps) {
   return (
-    <div className="grid grid-rows-1 grid-cols-1 md:grid-cols-12 gap-4">
+    <div className="grid grid-rows-1 grid-cols-1 md:grid-cols-3 gap-4">
       {props.children}
     </div>
   );
@@ -33,41 +39,21 @@ type CardsProps = PropsWithChildren<{
   header: () => React.ReactNode;
   content: () => React.ReactNode;
   footer?: () => React.ReactNode;
-  colSpan?: number | "rest";
 }>;
 
 export function GroupCard(props: CardsProps) {
   return (
-    <Card
-      className={cn(
-        "w-full flex flex-col col-span-2",
-        ...(props.colSpan
-          ? [
-              props.colSpan === 1 && "col-span-1",
-              props.colSpan === 2 && "col-span-2",
-              props.colSpan === 3 && "col-span-3",
-              props.colSpan === 4 && "col-span-4",
-              props.colSpan === 5 && "col-span-5",
-              props.colSpan === 6 && "col-span-6",
-              props.colSpan === 7 && "col-span-7",
-              props.colSpan === 8 && "col-span-8",
-              props.colSpan === 9 && "col-span-9",
-              props.colSpan === 10 && "col-span-10",
-              props.colSpan === 11 && "col-span-11",
-              props.colSpan === 12 && "col-span-12",
-              props.colSpan === "rest" && "col-span-full",
-            ]
-          : [])
-      )}
-    >
-      <CardHeader className="p-4 pb-2">
-        <props.header />
+    <Card className="w-full flex flex-col">
+      <CardHeader className="p-4 pb-2 pt-3">
+        <CardTitle className="text-xs uppercase text-muted-foreground font-medium tracking-wide">
+          <props.header />
+        </CardTitle>
       </CardHeader>
-      <CardContent className="px-4 pt-0 pb-2">
+      <CardContent className="px-4 pt-0 pb-0 min-h-8">
         <props.content />
       </CardContent>
       {props.footer && (
-        <CardFooter className="px-4 pt-0 pb-4 mt-auto">
+        <CardFooter className="px-4 pt-4 pb-3 mt-auto">
           <props.footer />
         </CardFooter>
       )}
@@ -76,20 +62,18 @@ export function GroupCard(props: CardsProps) {
 }
 
 type ActiveExpensesCardProps = { total: number; count: number };
+
 export function ActiveExpensesCard(props: ActiveExpensesCardProps) {
   return (
     <GroupCard
-      colSpan={spans[0]}
-      header={() => (
-        <CardTitle className="text-xs uppercase text-muted-foreground font-medium tracking-wide">
-          Active Expenses
-        </CardTitle>
-      )}
+      header={() => "Active Expenses"}
       content={() => (
         <div className="text-lg font-semibold">{formatUSD(props.total)}</div>
       )}
       footer={() => (
-        <p className="text-xs text-muted-foreground">{props.count} expenses</p>
+        <p className="text-xs text-muted-foreground h-full">
+          {props.count} expenses
+        </p>
       )}
     />
   );
@@ -100,85 +84,95 @@ type BalancesCardProps = {
   count: number;
   balance: (id: string) => number;
 };
+
 export function BalancesCard(props: BalancesCardProps) {
+  const transformed = props.members
+    .map((member) => [member, props.balance(member.userId)] as const)
+    .sort((tupleA) => compare(tupleA[1], -1, 0, 1));
+
   return (
     <GroupCard
-      colSpan={spans[1]}
-      header={() => (
-        <CardTitle className="text-xs uppercase text-muted-foreground font-medium tracking-wide">
-          Balances
-        </CardTitle>
+      header={() => "Balances"}
+      content={() => (
+        <ul className="flex flex-col gap-1 max-h-24 overflow-y-auto">
+          {transformed.map(([member, balance]) => (
+            <li key={member.nickname}>
+              <div className="flex justify-between items-center">
+                <span
+                  className={cn(
+                    "text-sm text-foreground lowercase",
+                    !balance && "text-muted-foreground"
+                  )}
+                >
+                  {member.nickname}
+                </span>
+                <span
+                  className={cn(
+                    "text-sm font-medium",
+                    compare(
+                      balance,
+                      "text-blank-theme",
+                      "text-muted-foreground",
+                      "text-rose-400"
+                    )
+                  )}
+                >
+                  {`${compare(balance, "+", "", "-")} ${formatUSD(Math.abs(balance))}`}
+                </span>
+              </div>
+            </li>
+          ))}
+        </ul>
       )}
-      content={() =>
-        props.count > 0 && (
-          <ul className="flex flex-col gap-1 max-h-24 overflow-y-auto">
-            {props.members
-              .map((member) => [member, props.balance(member.userId)] as const)
-              .sort((a) => (a[1] === 0 ? 0 : a[1] > 0 ? 1 : -1))
-              .map(([member, balance]) => {
-                if (balance === 0) return null;
-
-                const match = <T,>(neg: T, even: T, pos: T) => {
-                  switch (true) {
-                    case balance < 0:
-                      return neg;
-                    case balance > 0:
-                      return pos;
-                    case balance === 0:
-                    default:
-                      return even;
-                  }
-                };
-
-                return (
-                  <li key={member.nickname}>
-                    <div className="flex justify-between items-center">
-                      <span className="text-sm text-foreground">
-                        {member.nickname}
-                      </span>
-                      <span
-                        className={cn(
-                          "text-sm font-medium",
-                          match(
-                            "text-blank-theme",
-                            "text-muted-foreground",
-                            "text-rose-400"
-                          )
-                        )}
-                      >
-                        {match("+", "", "-")}
-                        {formatUSD(Math.abs(balance))}
-                      </span>
-                    </div>
-                  </li>
-                );
-              })}
-          </ul>
-        )
-      }
     />
   );
 }
 
-type SuggestionsCardProps = {};
+type SuggestionsCardProps = {
+  members: Member[];
+  balance: (id: string) => number;
+};
 
 export function SuggestionsCard(props: SuggestionsCardProps) {
+  const lastSettled = "04/02/25"; // TODO: compute from db
+  const hasBalances = props.members.some(
+    (member) => props.balance(member.userId) !== 0
+  );
+
+  const SettleOption = (
+    props: PropsWithChildren & ComponentProps<typeof Button>
+  ) => {
+    return (
+      <Button
+        disabled
+        variant="outline"
+        size="xs"
+        className="flex-1 border-border"
+      >
+        {props.children}
+      </Button>
+    );
+  };
+
   return (
     <GroupCard
-      colSpan={spans[2]}
-      header={() => (
-        <CardTitle className="text-xs uppercase text-muted-foreground font-medium tracking-wide">
-          Suggestions
-        </CardTitle>
-      )}
-      content={() => (
-        <div className="text-lg font-semibold">
-          {/* {formatUSD(props.total)} */}
-        </div>
-      )}
+      header={() => "Settle"}
+      content={() =>
+        !hasBalances ? (
+          <p className="text-sm lowercase text-muted-foreground">All settled</p>
+        ) : (
+          <div className="flex flex-wrap w-full h-full justify-evenly items-center gap-x-2 gap-y-2 py-0">
+            <SettleOption>Manual</SettleOption>
+            <SettleOption>Venmo</SettleOption>
+            <SettleOption>Zelle</SettleOption>
+          </div>
+        )
+      }
       footer={() => (
-        <p className="text-xs text-muted-foreground">
-          {/* {props.count} expenses */}
+        <p className="text-xs text-muted-foreground lowercase">
+          {hasBalances
+            ? `last settled ${lastSettled}`
+            : "No outstanding balances"}
         </p>
       )}
     />

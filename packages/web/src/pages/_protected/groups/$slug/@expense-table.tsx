@@ -13,7 +13,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { useMemo, useRef } from "react";
+import { useRef } from "react";
 import { Button, buttonVariants } from "@/components/ui/button";
 import {
   Tooltip,
@@ -24,7 +24,6 @@ import React from "react";
 import { ExpenseWithParticipants } from "./page";
 import { tableNavigationContext } from "@/lib/keyboard-nav";
 import { cn, flags } from "@/lib/utils";
-import { SearchRoute } from "../../@create-expense";
 import { Link } from "@tanstack/react-router";
 
 function getInitials(name?: string) {
@@ -252,7 +251,7 @@ export function DataTable(props: DataTableProps) {
                 }}
                 key={row.id}
                 data-state={row.getIsSelected() && "selected"}
-                className="hover:bg-secondary/25 focus-within:bg-secondary/25 transition-colors"
+                className="hover:bg-muted focus-within:bg-muted transition-colors"
                 tabIndex={0}
                 onKeyDown={(e) => {
                   const navigation = tableNavigationContext(e);
@@ -294,7 +293,7 @@ export function DataTable(props: DataTableProps) {
             );
           })
         ) : (
-          <TableRow>
+          <TableRow className="focus-within:outline-none">
             <TableCell
               colSpan={columns.length}
               className="h-24 text-center uppercase"
