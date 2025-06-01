@@ -40,19 +40,20 @@ export namespace participants {
     tx?: Transaction
   ) {
     return pipe(
-      Effect.tryPromise({
-        try: () =>
-          (tx ?? db).insert(participantTable).values(participants).returning(),
-        catch: (error: unknown) =>
-          new DatabaseWriteError("Failed creating participants", error),
-      }),
+      Effect.tryPromise(() =>
+        (tx ?? db).insert(participantTable).values(participants).returning()
+      ),
       Effect.flatMap((rows) => {
         return rows.length === participants.length
           ? Effect.succeed(rows)
           : Effect.fail(
               new ParticipantsNotCreatedError("Participants were not inserted")
             );
-      })
+      }),
+      Effect.catchTag(
+        "UnknownException",
+        (e) => new DatabaseWriteError("Failed creating participants", e)
+      )
     );
   }
 }

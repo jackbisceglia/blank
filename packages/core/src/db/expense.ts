@@ -2,7 +2,7 @@ import { db, groups, Member, ParticipantInsert, participants } from ".";
 import { nl } from "../ai";
 import { requireSingleElement, unwrapOrThrow } from "../utils";
 import { ExpenseInsert, expenseTable } from "./expense.schema";
-import { DatabaseWriteError, Transaction } from "./utils";
+import { DatabaseWriteError, Transaction, withTransaction } from "./utils";
 import { TaggedError } from "../utils";
 import { Effect, pipe } from "effect";
 import {
@@ -97,12 +97,6 @@ export namespace expenses {
         catch: (e) => new ExpenseParsingError("Failed parsing expense", e),
       });
 
-      yield* Effect.log(
-        "\ngenerated: \n",
-        JSON.stringify(generated, null, 2),
-        "\n"
-      );
-
       const user = generated.members.find((m) => m.name === USER);
 
       if (!user) {
@@ -120,25 +114,35 @@ export namespace expenses {
 
       const merged = [userMapped, ...restMapped];
 
-      const newExpense = yield* expenses.create({
-        amount: generated.expense.amount,
-        description: generated.expense.description,
-        groupId: options.groupId,
-        date: options.date,
-      });
+      const result = yield* withTransaction((tx) =>
+        Effect.gen(function* () {
+          const newExpense = yield* expenses.create(
+            {
+              amount: generated.expense.amount,
+              description: generated.expense.description,
+              groupId: options.groupId,
+              date: options.date,
+            },
+            tx
+          );
 
-      const newParticipants = yield* participants.createMany(
-        merged.map((m) => ({
-          groupId: options.groupId,
-          expenseId: newExpense.id,
-          ...m,
-        }))
+          const newParticipants = yield* participants.createMany(
+            merged.map((m) => ({
+              groupId: options.groupId,
+              expenseId: newExpense.id,
+              ...m,
+            })),
+            tx
+          );
+
+          return {
+            expense: newExpense,
+            participants: newParticipants,
+          };
+        })
       );
 
-      return {
-        expense: newExpense,
-        participants: newParticipants,
-      };
+      return result;
     });
 
     function flatten(error: Effect.Effect.Error<typeof create>) {
