@@ -1,7 +1,7 @@
 import { db, userTable } from ".";
 
 import { eq } from "drizzle-orm";
-import { User, UserInsert } from "./user.schema";
+import { UserInsert } from "./user.schema";
 import { DatabaseReadError, DatabaseWriteError, Transaction } from "./utils";
 import { Effect, pipe } from "effect";
 import {
@@ -15,12 +15,10 @@ class UserNotCreatedError extends TaggedError("UserNotCreatedError") {}
 class DuplicateUserError extends TaggedError("DuplicateUserError") {}
 
 export namespace users {
-  export function getByEmail(
-    email: string
-  ): Effect.Effect<string, UserNotFoundError | DatabaseReadError> {
+  export function getByEmail(email: string, tx?: Transaction) {
     return pipe(
       Effect.tryPromise(() =>
-        db.query.userTable.findFirst({
+        (tx ?? db).query.userTable.findFirst({
           where: eq(userTable.email, email),
         })
       ),
@@ -37,12 +35,10 @@ export namespace users {
     );
   }
 
-  export function getById(
-    id: string
-  ): Effect.Effect<User, UserNotFoundError | DatabaseReadError> {
+  export function getById(id: string, tx?: Transaction) {
     return pipe(
       Effect.tryPromise(() =>
-        db.query.userTable.findFirst({ where: eq(userTable.id, id) })
+        (tx ?? db).query.userTable.findFirst({ where: eq(userTable.id, id) })
       ),
       Effect.flatMap(
         requireValueExists({
