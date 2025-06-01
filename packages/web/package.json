@@ -10,7 +10,6 @@
     "lint:fix": "eslint . --fix"
   },
   "dependencies": {
-    "@blank/api": "workspace:*",
     "@blank/auth": "workspace:*",
     "@blank/core": "workspace:*",
     "@blank/zero": "workspace:*",

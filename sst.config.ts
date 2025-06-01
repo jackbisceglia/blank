@@ -16,7 +16,6 @@ export default $config({
   },
   async run() {
     await import("./infra/ai");
-    const { ApiRouter } = await import("./infra/api"); // <-
     const { Auth } = await import("./infra/auth");
     await import("./infra/cluster");
     await import("./infra/database");
@@ -25,7 +24,6 @@ export default $config({
     await import("./infra/web");
 
     return {
-      api: ApiRouter.url,
       // web: Web.url,
       auth: Auth.url,
       syncViewSyncer: Sync.url,
