@@ -1,7 +1,7 @@
 import { eq } from "drizzle-orm";
 import { db } from ".";
 import { groupTable } from "./group.schema";
-import { DatabaseReadError } from "./utils";
+import { DatabaseReadError, Transaction } from "./utils";
 import { Effect, pipe } from "effect";
 import { requireValueExists, requireManyElements, TaggedError } from "../utils";
 
@@ -9,10 +9,10 @@ class GroupNotFoundError extends TaggedError("GroupNotFoundError") {}
 class MembersNotFoundError extends TaggedError("MembersNotFoundError") {}
 
 export namespace groups {
-  export function getMembers(groupId: string) {
+  export function getMembers(groupId: string, tx?: Transaction) {
     return pipe(
       Effect.tryPromise(() =>
-        db.query.groupTable.findFirst({
+        (tx ?? db).query.groupTable.findFirst({
           where: eq(groupTable.id, groupId),
           with: { members: true },
         })
