@@ -8,9 +8,8 @@ import {
 } from "@/components/ui/sheet";
 import * as v from "valibot";
 import { ExpenseWithParticipants } from "./page";
-import { createSearchRoute } from "@/lib/create-search-route";
+import { createSearchRoute } from "@/lib/search-route";
 import { useWithConfirmation } from "@/components/with-confirmation-dialog";
-import { useDeleteExpense, useUpdateExpense } from "./@data";
 import { FieldsErrors, useAppForm } from "@/components/form";
 import { prevented, timestampToDate } from "@/lib/utils";
 import {
@@ -20,8 +19,9 @@ import {
 import { PropsWithChildren } from "react";
 import { Separator } from "@/components/ui/separator";
 import { getPayerFromParticipants } from "@/lib/participants";
-import { withToast } from "@/lib/mutate-with-toast";
+import { withToast } from "@/lib/toast";
 import { Participant } from "@blank/zero";
+import { useDeleteOneExpense, useUpdateExpense } from "../../@data/expenses";
 
 const key = "expense" as const;
 export const SearchRouteSchema = v.object({
@@ -57,7 +57,7 @@ function useConfirmDeleteExpense(
 
 function useMutators() {
   const updateExpense = useUpdateExpense();
-  const deleteExpense = useDeleteExpense();
+  const deleteExpense = useDeleteOneExpense();
 
   return {
     expense: {

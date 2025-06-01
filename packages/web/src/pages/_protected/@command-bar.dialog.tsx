@@ -6,14 +6,14 @@ import {
   CommandItem,
   CommandList,
 } from "@/components/ui/command";
-import { useEffect, useTransition } from "react";
+import { useEffect } from "react";
 import { createPreventDefault, fn, keyboard } from "@/lib/utils";
 import { Link, LinkOptions, useNavigate } from "@tanstack/react-router";
-import { useGetGroupsList } from "./groups/@data";
-import { useAuthentication } from "@/lib/auth.provider";
+import { useAuthentication } from "@/lib/authentication";
 import * as v from "valibot";
-import { createStackableSearchRoute } from "@/lib/create-search-route";
-import { SearchRoute as CreateExpenseRoute } from "./@create-expense";
+import { createStackableSearchRoute } from "@/lib/search-route";
+import { SearchRoute as CreateExpenseRoute } from "./@create-expense.dialog";
+import { useGroupListByUserId } from "./@data/groups";
 
 const ENTRY = "command" as const;
 export const SearchRoute = createStackableSearchRoute("action", ENTRY);
@@ -25,7 +25,7 @@ export const SearchRouteSchema = v.object({
 export function GlobalCommandBar() {
   const navigate = useNavigate();
   const auth = useAuthentication();
-  const groups = useGetGroupsList(auth.user.id);
+  const groups = useGroupListByUserId(auth.user.id);
   const route = SearchRoute.useSearchRoute();
   const createExpenseRoute = CreateExpenseRoute.useSearchRoute();
 

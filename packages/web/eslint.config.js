@@ -9,7 +9,7 @@ export default [
   ...baseConfig,
   // Add an ignore pattern specific to the web package
   {
-    ignores: ["src/components/ui/**", ".output/**"],
+    ignores: ["src/components/ui/**", ".output/**", ".vinxi/**"],
   },
   {
     files: ["**/*.{ts,tsx}"],

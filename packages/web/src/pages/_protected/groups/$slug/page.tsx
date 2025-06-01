@@ -1,14 +1,11 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { SubHeading } from "@/components/prose";
-import { useGetExpenseListByGroupSlug, useGetGroupBySlug } from "../@data";
 import { GroupBody, States } from "./layout";
-import { DataTable } from "./@expense-table";
-import { ExpenseSheet, SearchRoute, SearchRouteSchema } from "./@expense-sheet";
+import { DataTable } from "./@expense-table/table";
+import { ExpenseSheet, SearchRoute, SearchRouteSchema } from "./@expense.sheet";
 import { Member, Expense as ZeroExpense } from "@blank/zero";
 import { ParticipantWithMember } from "@/lib/participants";
-import { useDeleteAllExpenses, useUpdateExpense } from "./@data";
 import * as v from "valibot";
-import { TableActions, useQueryFromSearch } from "./@expense-table-actions";
 import { slugify } from "@/lib/utils";
 import {
   ActiveExpensesCard,
@@ -16,6 +13,10 @@ import {
   CardsSection,
   SuggestionsCard,
 } from "./@group-cards";
+import { TableActions, useQueryFromSearch } from "./@expense-table/actions";
+import { useDeleteAllExpenses, useUpdateExpense } from "../../@data/expenses";
+import { useGroupBySlug } from "../../@data/groups";
+import { useExpenseListByGroupSlug } from "../../@data/expenses";
 
 function createBalanceMap(expenses: ExpenseWithParticipants[]) {
   function initialize() {
@@ -45,8 +46,8 @@ export type ExpenseWithParticipants = ZeroExpense & {
 };
 
 function useQueries(slug: string, query: string | undefined) {
-  const group = useGetGroupBySlug(slug);
-  const expenses = useGetExpenseListByGroupSlug(slug, { query });
+  const group = useGroupBySlug(slug);
+  const expenses = useExpenseListByGroupSlug(slug, { query });
 
   return { group, expenses };
 }

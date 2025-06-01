@@ -21,7 +21,7 @@ import {
   TooltipContent,
 } from "@/components/ui/tooltip";
 import React from "react";
-import { ExpenseWithParticipants } from "./page";
+import { ExpenseWithParticipants } from "../page";
 import { tableNavigationContext } from "@/lib/keyboard-nav";
 import { cn, flags } from "@/lib/utils";
 import { Link } from "@tanstack/react-router";

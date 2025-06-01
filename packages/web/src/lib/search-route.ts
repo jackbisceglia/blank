@@ -65,7 +65,7 @@ export function createStackableSearchRoute(key: string, value: string) {
       (k: string, v?: unknown) => {
         return void navigate({
           to: ".",
-          search: (prev) => {
+          search: (prev: Record<string, unknown>) => {
             return { ...prev, [key]: v };
           },
         });

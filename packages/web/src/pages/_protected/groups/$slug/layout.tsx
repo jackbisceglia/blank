@@ -3,8 +3,8 @@ import { PrimaryHeading } from "@/components/prose";
 import { PageHeaderRow } from "@/components/layouts";
 import { underline_defaults } from "@/components/ui/utils";
 import { build, cn, slugify } from "@/lib/utils";
-import { useGetGroupBySlug } from "../@data";
 import { PropsWithChildren } from "react";
+import { useGroupBySlug } from "../../@data/groups";
 
 export const States = {
   Loading: () => null,
@@ -74,7 +74,7 @@ export function GroupBody(props: PropsWithChildren<{ className?: string }>) {
 
 function GroupLayout() {
   const params = Route.useParams();
-  const group = useGetGroupBySlug(params.slug);
+  const group = useGroupBySlug(params.slug);
 
   const title = group.data?.title ?? slugify(params.slug).decode();
 

@@ -12,8 +12,8 @@ import { fromParsed, ValidationError } from "@blank/core/utils";
 import { useState } from "react";
 import { slugify } from "@/lib/utils";
 import { Label } from "@/components/ui/label";
-import { useCreateGroup } from "./@data";
-import { createStackableSearchRoute } from "@/lib/create-search-route";
+import { useCreateGroup } from "../@data/groups";
+import { createStackableSearchRoute } from "@/lib/search-route";
 
 const invalidCharactersMessage =
   "Title must only contain letters, numbers, and spaces";

@@ -3,10 +3,10 @@ import {
   useRecordQuery,
   useZero,
   Zero,
-} from "@/lib/zero.provider";
-import { constants } from "@/lib/utils";
+  ZERO_CACHE_DEFAULT,
+} from "@/lib/zero";
 import { DeleteGroupOptions } from "@/lib/mutators/group-mutators";
-import { useAuthentication } from "@/lib/auth.provider";
+import { useAuthentication } from "@/lib/authentication";
 
 const groupByProperty = (key: "slug" | "id", value: string, z: Zero) =>
   z.query.group
@@ -18,52 +18,33 @@ const groupByProperty = (key: "slug" | "id", value: string, z: Zero) =>
     .related("owner")
     .one();
 
-export function useGetGroupBySlug(slug: string) {
-  const z = useZero();
-  const query = groupByProperty("slug", slug, z);
-
-  const result = useRecordQuery(query, { ttl: constants.zero_ttl });
-
-  return result;
-}
-
-export function useGetGroupById(id: string) {
+export function useGroupById(id: string) {
   const z = useZero();
   const query = groupByProperty("id", id, z);
 
-  const result = useRecordQuery(query, { ttl: constants.zero_ttl });
+  const result = useRecordQuery(query, ZERO_CACHE_DEFAULT);
 
   return result;
 }
 
-export function useGetGroupsList(userId: string) {
+export function useGroupBySlug(slug: string) {
+  const z = useZero();
+  const query = groupByProperty("slug", slug, z);
+
+  const result = useRecordQuery(query, ZERO_CACHE_DEFAULT);
+
+  return result;
+}
+
+export function useGroupListByUserId(userId: string) {
   const z = useZero();
   const query = z.query.group
     .whereExists("members", (members) => members.where("userId", userId))
     .orderBy("createdAt", "desc");
 
-  const result = useListQuery(query, { ttl: constants.zero_ttl });
+  const result = useListQuery(query, ZERO_CACHE_DEFAULT);
 
   return result;
-}
-
-export function useGetExpenseListByGroupSlug(
-  slug: string,
-  filters?: {
-    query?: string;
-  }
-) {
-  const z = useZero();
-  let query = z.query.expense
-    .whereExists("group", (g) => g.where("slug", slug))
-    .orderBy("date", "desc")
-    .related("participants", (p) => p.related("member").related("member"));
-
-  if (filters?.query) {
-    query = query.where("description", "ILIKE", `%${filters.query}%`);
-  }
-
-  return useListQuery(query, { ttl: constants.zero_ttl });
 }
 
 export function useCreateGroup() {
