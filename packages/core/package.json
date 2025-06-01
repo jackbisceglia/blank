@@ -5,7 +5,6 @@
   "exports": {
     "./ai": "./src/ai/index.ts",
     "./db": "./src/db/index.ts",
-    "./zero": "./src/zero/index.ts",
     "./utils": "./src/utils/index.ts"
   },
   "scripts": {
@@ -13,7 +12,6 @@
     "db:reset": "pnpm dlx sst shell tsx src/db/seed/reset.ts",
     "db:seed:expenses": "pnpm dlx sst shell tsx src/db/seed/expenses.ts",
     "ai:eval": "pnpm dlx sst shell braintrust eval ./src/ai/__tests__",
-    "ai:eval:core": "pnpm dlx sst shell braintrust eval ./src/ai/__tests__/nl.expense.core.eval.ts",
     "test": "pnpm dlx sst shell pnpm test",
     "lint": "eslint .",
     "lint:fix": "eslint . --fix"
