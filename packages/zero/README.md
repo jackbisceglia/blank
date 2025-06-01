@@ -1,15 +1,7 @@
-# zero
+# @blank/zero
 
-To install dependencies:
+Zero sync engine configuration
 
-```bash
-bun install
-```
+## Structure
 
-To run:
-
-```bash
-bun run index.ts
-```
-
-This project was created using `bun init` in bun v1.2.1. [Bun](https://bun.sh) is a fast all-in-one JavaScript runtime.
+Configuration, types, and schema for the Zero sync engine

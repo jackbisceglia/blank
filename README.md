@@ -1,15 +1,49 @@
 # blank
 
-To install dependencies:
+## Easy Expense Splitting/Tracking
 
-```bash
-bun install
+add expense like:
+"split lunch with foo, cost bar, 50/50"
+
+parses to structured:
+
+```ts
+{
+    description: "lunch",
+    cost       : <bar>,
+    date       : <today>,
+    participants: [
+        {
+            nickname: "USER",
+            role    : "payer",
+            split   : 0.5
+        },
+        {
+            nickname: <foo>,
+            role    : "participant",
+            split   : 0.5
+        },
+    ]
 ```
 
-To run:
+## Stack
 
-```bash
-bun run index.ts
-```
+#### Web:
 
-This project was created using `bun init` in bun v1.2.0. [Bun](https://bun.sh) is a fast all-in-one JavaScript runtime.
+- Zero Sync Engine
+- TanStack
+  - Start/Router
+  - Form
+  - Query
+  - Table
+- ShadCN/ui
+
+#### Core:
+
+- Effect (and some left over neverthrow)
+- Drizzle/Neon DB
+- ai/sdk
+
+#### Auth:
+
+- OpenAuth

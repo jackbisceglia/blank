@@ -24,7 +24,6 @@ export default $config({
     await import("./infra/web");
 
     return {
-      // web: Web.url,
       auth: Auth.url,
       syncViewSyncer: Sync.url,
     };
