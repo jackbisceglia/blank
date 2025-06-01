@@ -8,6 +8,7 @@
     "./utils": "./src/utils/index.ts"
   },
   "scripts": {
+    "typecheck": "tsc --noEmit",
     "db": "pnpm dlx sst shell drizzle-kit",
     "db:reset": "pnpm dlx sst shell tsx src/db/seed/reset.ts",
     "db:seed:expenses": "pnpm dlx sst shell tsx src/db/seed/expenses.ts",
