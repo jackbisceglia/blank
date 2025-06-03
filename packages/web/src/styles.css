@@ -3,8 +3,6 @@
 
 @plugin "tailwindcss-animate";
 
-@custom-variant dark (&:is(.dark *));
-
 :root {
   --blank-theme: hsl(226, 100%, 76%);
   --blank-theme-disabled: hsl(223, 36%, 47%);

@@ -1,4 +1,4 @@
-export const domain = "withblank.com";
+const domain = "withblank.com";
 
 type DomainType = "sub-domain" | "root-domain";
 type Stage = "production" | string;

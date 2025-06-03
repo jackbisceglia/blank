@@ -5,7 +5,7 @@ import {
   Zero,
   ZERO_CACHE_DEFAULT,
 } from "@/lib/zero";
-import { DeleteGroupOptions } from "@/lib/mutators/group-mutators";
+import { DeleteGroupOptions } from "@/lib/client-mutators/group-mutators";
 import { useAuthentication } from "@/lib/authentication";
 
 const groupByProperty = (key: "slug" | "id", value: string, z: Zero) =>

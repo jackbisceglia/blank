@@ -15,7 +15,7 @@ import { prevented, timestampToDate } from "@/lib/utils";
 import {
   DeleteOptions as DeleteExpenseOptions,
   UpdateOptions as UpdateExpenseOptions,
-} from "@/lib/mutators/expense-mutators";
+} from "@/lib/client-mutators/expense-mutators";
 import { PropsWithChildren } from "react";
 import { Separator } from "@/components/ui/separator";
 import { getPayerFromParticipants } from "@/lib/participants";

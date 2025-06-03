@@ -12,7 +12,7 @@ export type UseSearchRoute = {
   state: () => unknown;
 };
 
-export type SearchRoute = {
+type SearchRoute = {
   useSearchRoute: () => UseSearchRoute;
 };
 

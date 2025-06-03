@@ -4,7 +4,7 @@ import { constants } from "@/lib/utils";
 import { ZeroProvider as ZeroProviderInternal } from "@rocicorp/zero/react";
 import { useAuthentication } from "../authentication";
 import { PropsWithChildren, useEffect, useState } from "react";
-import { createClientMutators } from "../mutators";
+import { createClientMutators } from "../client-mutators";
 import { Result } from "neverthrow";
 import { UnsecuredJWT } from "jose";
 import { useQueryClient } from "@tanstack/react-query";

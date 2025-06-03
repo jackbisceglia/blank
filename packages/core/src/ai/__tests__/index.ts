@@ -13,7 +13,7 @@ export const MODELS: ModelDefintion = {
 
 const PROJECT_BASE = "blank";
 
-export const EXPENSE_EVAL_PROJECT = `${PROJECT_BASE}.expense.eval`;
+const EXPENSE_EVAL_PROJECT = `${PROJECT_BASE}.expense.eval`;
 
 export type Tag =
   | "description.core"
@@ -21,8 +21,8 @@ export type Tag =
   | "description.omit-member-names"
   | "description.include-names-when-not-members";
 
-export type EvaluationDataInput = (typeof data)[number];
-export type EvaluationDataOutput = Omit<(typeof data)[number], "tags">;
+type EvaluationDataInput = (typeof data)[number];
+type EvaluationDataOutput = Omit<(typeof data)[number], "tags">;
 
 type AnswerCorrectnessOptions<T extends object> = {
   input: string;
@@ -30,7 +30,7 @@ type AnswerCorrectnessOptions<T extends object> = {
   expected?: T;
 };
 
-export function AnswerCorrectness<T extends object>(
+function AnswerCorrectness<T extends object>(
   opts: AnswerCorrectnessOptions<T>
 ) {
   return AnswerCorrectnessGeneric({
@@ -82,13 +82,4 @@ export function formatDatasetByTag(dataset: EvaluationDataInput[], tag: Tag) {
       const { tags: _, ...rest } = entry;
       return rest;
     });
-}
-
-export async function withRateLimitDelay<T>(
-  fn: (...args: unknown[]) => Promise<T>,
-  delay?: number
-) {
-  const fallback = 2000;
-  await new Promise((resolve) => setTimeout(resolve, delay ?? fallback));
-  return await fn();
 }

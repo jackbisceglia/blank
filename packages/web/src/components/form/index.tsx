@@ -10,9 +10,9 @@ import {
   SheetPaidByField,
   SheetTextField,
   TextField,
-} from "./form.fields";
+} from "./fields";
 import { cn } from "@/lib/utils";
-import { CancelButton, SubmitButton } from "./form.buttons";
+import { CancelButton, SubmitButton } from "./buttons";
 
 type FieldsErrorsProps = {
   metas: AnyFieldMeta[];

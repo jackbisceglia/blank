@@ -3,7 +3,7 @@ import {
   DeleteAllOptions as DeleteAllExpensesOptions,
   DeleteOptions as DeleteExpenseOptions,
   UpdateOptions as UpdateExpenseOptions,
-} from "@/lib/mutators/expense-mutators";
+} from "@/lib/client-mutators/expense-mutators";
 import { useZero } from "@/lib/zero";
 import { useAuthentication } from "@/lib/authentication";
 import { useParams } from "@tanstack/react-router";

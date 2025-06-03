@@ -1,7 +1,7 @@
 import { Label } from "@/components/ui/label";
 import { cn } from "@/lib/utils";
-import { Input } from "./ui/input";
-import { useFieldContext } from "./form";
+import { Input } from "../ui/input";
+import { useFieldContext } from ".";
 type SharedLabelProps = React.ComponentProps<typeof Label>;
 
 export function SharedLabel(props: SharedLabelProps) {

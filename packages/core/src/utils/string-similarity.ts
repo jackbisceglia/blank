@@ -35,6 +35,7 @@ function levenshteinDistance(a: string, b: string): number {
 }
 
 /**
+ * NOTE: mostly AI gen'd double check & test in the future
  * Finds the most similar string in an array to a target string
  * @param target The string to find a match for
  * @param candidates Array of strings to search through
@@ -74,7 +75,7 @@ export function findClosestMatch(
  * @param b Second string
  * @returns Similarity score between 0 and 1
  */
-export function similarityScore(a: string, b: string): number {
+function similarityScore(a: string, b: string): number {
   const distance = levenshteinDistance(
     a.toLowerCase().trim(),
     b.toLowerCase().trim()

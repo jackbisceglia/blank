@@ -26,28 +26,13 @@ export type PropsWithClassname<T> = T & {
   className?: string;
 };
 
-export function matchOn<T, R>(value: T, fn: (value: T) => R): R {
-  return fn(value);
-}
-
-export function match<T>(fn: () => T): T {
-  return fn();
-}
-
-export const isClient = () => typeof window !== "undefined";
-
 export const constants = {
-  zero_ttl: "1h",
   syncServer: import.meta.env.VITE_SYNC_SERVER_URL as string,
   googleThumbnailSuffix: "=s96-c",
 } as const;
 
 export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
-}
-
-export function log(str: string) {
-  console.log(`\n\n${str}\n\n`);
 }
 
 type RegisterOptions = {
@@ -71,8 +56,6 @@ export const keyboard = {
     };
   },
 };
-
-export const fn = <T>(fn: () => T): T => fn();
 
 /**
  * Executes an immediately invoked function expression (IIFE) for improved readability
@@ -116,7 +99,6 @@ export const prevented = <
 };
 
 export const timestampToDate = (timestamp: number): Date => new Date(timestamp);
-export const dateToTimestamp = (date: Date): number => date.getTime();
 
 export const flags = {
   dev: {

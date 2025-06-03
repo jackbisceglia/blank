@@ -7,7 +7,7 @@ import {
   CommandList,
 } from "@/components/ui/command";
 import { useEffect } from "react";
-import { createPreventDefault, fn, keyboard } from "@/lib/utils";
+import { createPreventDefault, evaluate, keyboard } from "@/lib/utils";
 import { Link, LinkOptions, useNavigate } from "@tanstack/react-router";
 import { useAuthentication } from "@/lib/authentication";
 import * as v from "valibot";
@@ -30,7 +30,7 @@ export function GlobalCommandBar() {
   const createExpenseRoute = CreateExpenseRoute.useSearchRoute();
 
   const commands = {
-    home: fn(() => {
+    home: evaluate(() => {
       const opts = {
         to: "/",
       } as const;
@@ -43,7 +43,7 @@ export function GlobalCommandBar() {
         },
       };
     }),
-    groups: fn(() => {
+    groups: evaluate(() => {
       const opts = {
         to: "/groups",
       } as const;
@@ -56,7 +56,7 @@ export function GlobalCommandBar() {
         },
       };
     }),
-    newExpense: fn(() => {
+    newExpense: evaluate(() => {
       const opts = {
         to: ".",
         search: (previous) => ({

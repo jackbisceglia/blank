@@ -4,7 +4,7 @@ import {
   ClientMutator,
   ClientMutatorGroup,
   ZTransaction,
-} from "../mutators";
+} from ".";
 import { mutators as participantMutators } from "./participant-mutators";
 import { UpdateParticipant } from "./participant-mutators";
 
@@ -30,7 +30,7 @@ const assertExpenseExists = async (tx: ZTransaction, expenseId: string) => {
   return expense;
 };
 
-export type Mutators = ClientMutatorGroup<{
+type Mutators = ClientMutatorGroup<{
   update: ClientMutator<UpdateOptions, void>;
   delete: ClientMutator<DeleteOptions, void>;
   deleteByGroupId: ClientMutator<DeleteAllOptions, void>;

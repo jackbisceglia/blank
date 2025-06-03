@@ -1,7 +1,7 @@
 import { Query } from "@rocicorp/zero";
 import { Schema } from "@blank/zero";
 import { createUseZero, useQuery, UseQueryOptions } from "@rocicorp/zero/react";
-import { ClientMutators } from "../mutators";
+import { ClientMutators } from "../client-mutators";
 
 export type Zero = ReturnType<typeof useZero>;
 export type QueryStatus = "not-found" | "empty" | "loading" | "success";

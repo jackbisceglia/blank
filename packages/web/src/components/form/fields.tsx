@@ -1,25 +1,21 @@
-import { useFieldContext } from "./form";
-import {
-  SharedInputFromField,
-  SharedLabel,
-  SharedSheetLabel,
-} from "./form.shared";
-import { Input } from "./ui/input";
+import { SharedInputFromField, SharedLabel, SharedSheetLabel } from "./shared";
+import { Input } from "../ui/input";
 import { cn } from "@/lib/utils";
-import { Popover, PopoverContent, PopoverTrigger } from "./ui/popover";
+import { Popover, PopoverContent, PopoverTrigger } from "../ui/popover";
 import { format, isWithinInterval, subYears } from "date-fns";
-import { Calendar } from "./ui/calendar";
+import { Calendar } from "../ui/calendar";
 import { CalendarIcon } from "lucide-react";
-import { Button } from "./ui/button";
+import { Button } from "../ui/button";
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "./ui/select";
+} from "../ui/select";
 import { type ParticipantWithMember } from "@/lib/participants";
 import { Member } from "@blank/core/db";
+import { useFieldContext } from ".";
 
 type TextFieldProps = {
   label: string;

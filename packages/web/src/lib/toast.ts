@@ -12,14 +12,21 @@ type WithToastOptions<T> = {
   classNames?: ToastClassnames;
 };
 
-// TODO: this is broken when the error is thrown synchronously
 export function withToast<T>(opts: WithToastOptions<T>): Promise<T> {
-  const getPromise = () =>
-    typeof opts.promise === "function" ? opts.promise() : opts.promise;
+  // i'm not sure if this is good, but i need to wrap the opts.promise in case it throws synchronously
+  // even if it's async, if the throw is synchronous, it will not be caught by the toast promise
+  const wrapPromise = () => {
+    const get = () =>
+      typeof opts.promise === "function" ? opts.promise() : opts.promise;
 
-  // hackily doing this temporarily;
-  // it catches all errors but as a promise and then rethrows whcih the toast promise catches
-  const promise = unwrapOrThrow(ResultAsync.fromThrowable(getPromise)());
+    try {
+      return Promise.resolve(get());
+    } catch (e) {
+      return Promise.reject(e instanceof Error ? e : new Error(String(e)));
+    }
+  };
+
+  const promise = wrapPromise();
 
   toast.promise(promise, {
     ...(opts.classNames ? { classNames: opts.classNames } : {}),

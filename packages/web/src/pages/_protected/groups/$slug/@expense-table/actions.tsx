@@ -5,7 +5,7 @@ import { Link } from "@tanstack/react-router";
 import { Route } from "../page";
 import { X } from "lucide-react";
 import { useRef } from "react";
-import { DeleteAllOptions } from "@/lib/mutators/expense-mutators";
+import { DeleteAllOptions } from "@/lib/client-mutators/expense-mutators";
 import {
   Select,
   SelectTrigger,

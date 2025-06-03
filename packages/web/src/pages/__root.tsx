@@ -4,7 +4,7 @@ import {
   Scripts,
   createRootRouteWithContext,
 } from "@tanstack/react-router";
-import appCss from "@/styles/app.css?url";
+import appCss from "@/styles.css?url";
 import { seo } from "@/lib/seo";
 import { QueryClient } from "@tanstack/react-query";
 
