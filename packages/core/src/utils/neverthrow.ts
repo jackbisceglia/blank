@@ -2,6 +2,8 @@ import { err, ok, ResultAsync } from "neverthrow";
 import * as v from "valibot";
 import { ValidationError } from "./effect";
 
+// in progress of getting rid of this file
+
 // this is useful when interoping with 3rd party libraries where they depend on promises throwing errors for control flow
 export async function unwrapOrThrow<T, E>(
   resultPromise: ResultAsync<T, E>
