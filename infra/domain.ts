@@ -1,4 +1,4 @@
-export const domain = "withblank.com";
+const domain = "withblank.com";
 
 type DomainType = "sub-domain" | "root-domain";
 type Stage = "production" | string;
@@ -68,11 +68,6 @@ export const getDomainConfig = (opts: MakeDomainConfigOpts) => {
 export const domains = {
   web: getDomainConfig({
     type: "root-domain",
-    stage: $app.stage,
-  }),
-  api: getDomainConfig({
-    type: "sub-domain",
-    name: "api",
     stage: $app.stage,
   }),
   auth: getDomainConfig({

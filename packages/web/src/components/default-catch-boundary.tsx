@@ -28,7 +28,7 @@ export function DefaultCatchBoundary({ error }: ErrorComponentProps) {
         </button>
         {isRoot ? (
           <Link
-            search={{ action: undefined, cmd: undefined }}
+            search={{ action: undefined }}
             to="/"
             className={`px-2 py-1 bg-gray-600 dark:bg-gray-700 rounded text-white uppercase font-extrabold`}
           >
@@ -36,7 +36,7 @@ export function DefaultCatchBoundary({ error }: ErrorComponentProps) {
           </Link>
         ) : (
           <Link
-            search={{ action: undefined, cmd: undefined }}
+            search={{ action: undefined }}
             to="/"
             className={`px-2 py-1 bg-gray-600 dark:bg-gray-700 rounded text-white uppercase font-extrabold`}
             onClick={(e) => {

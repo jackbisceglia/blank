@@ -182,7 +182,6 @@ function LandingRoute() {
         <nav className="flex items-center justify-between py-4 mx-auto w-full max-w-screen-2xl">
           <Link
             search={(prev) => ({
-              cmd: prev.cmd,
               action: prev.action,
               ...prev,
             })}

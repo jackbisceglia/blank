@@ -1,15 +1,9 @@
 # @blank/core
 
-To install dependencies:
+Shared backend primitives
 
-```bash
-bun install
-```
+## Structure
 
-To run:
-
-```bash
-bun run index.ts
-```
-
-This project was created using `bun init` in bun v1.2.0. [Bun](https://bun.sh) is a fast all-in-one JavaScript runtime.
+- **`/db/`** - Domain-driven design functions with schema/core modules per entity
+- **`/ai/`** - AI primitives for entity-based AI methods (e.g., `expense.createFromDescription`)
+- **`/utils/`** - Repository-wide utilities (Effect, Neverthrow, etc.)

@@ -1,4 +1,5 @@
 import { Cause, Data, Effect } from "effect";
+import * as v from "valibot";
 
 /**
  * Creates a tagged error class with a specific name and error structure.
@@ -113,4 +114,51 @@ export function requireValueExists<TValue, TError, TSuccess = TValue>(context: {
       ? Effect.succeed(context.success(value as TValue))
       : Effect.succeed(value as TSuccess);
   };
+}
+export class ValidationError<TErrorType> extends Error {
+  constructor(
+    public readonly issues: [
+      v.BaseIssue<TErrorType>,
+      ...v.BaseIssue<TErrorType>[],
+    ],
+    message?: string
+  ) {
+    const formattedMessage =
+      message ??
+      issues
+        .map((issue) => {
+          const path =
+            !!issue.path?.length &&
+            (issue.path as unknown as string[]).join(".");
+
+          if (!path) return issue.message;
+
+          return `${path}: ${issue.message}`;
+        })
+        .join(", ");
+
+    super(formattedMessage);
+    this.name = "ValidationError";
+  }
+}
+
+export function fromParsedEffect<T, R>(
+  schema: v.GenericSchema<T, R>,
+  value: unknown
+) {
+  return Effect.try({
+    try: () => {
+      const result = v.safeParse(schema, value);
+
+      if (!result.success) throw new ValidationError(result.issues);
+
+      return result.output;
+    },
+    catch: (error) => {
+      if (error instanceof ValidationError)
+        return new ValidationError(error.issues);
+
+      throw error;
+    },
+  });
 }

@@ -4,7 +4,7 @@ import { XIcon } from "lucide-react";
 
 import { cn } from "@/lib/utils";
 import { useRef } from "react";
-import { UseSearchRoute } from "@/lib/create-search-route";
+import { UseSearchRoute } from "@/lib/search-route";
 
 function Sheet({
   ...props

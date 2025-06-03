@@ -16,10 +16,9 @@ import { ChevronFirst, ChevronRight, Plus } from "lucide-react";
 import { underline_defaults } from "./ui/utils";
 import { cn, PropsWithClassname } from "@/lib/utils";
 import { Group } from "@blank/zero";
-import { useGetGroupsList } from "@/pages/_protected/groups/@data";
-import { useAuthentication } from "@/lib/auth.provider";
-import { QueryStatus } from "@/lib/zero.provider";
-import { useLogout } from "@/lib/auth.provider";
+import { QueryStatus } from "@/lib/zero";
+import { useAuthentication, useLogout } from "@/lib/authentication";
+import { useGroupListByUserId } from "@/pages/_protected/@data/groups";
 
 type SidebarItemChunk =
   | {
@@ -180,7 +179,7 @@ export function GlobalSidebar(props: SideNavigationProps) {
   const { user } = useAuthentication();
   const logout = useLogout();
 
-  const groups = useGetGroupsList(user.id);
+  const groups = useGroupListByUserId(user.id);
 
   return (
     <Sidebar variant="inset" {...props} className="overflow-x-hidden">

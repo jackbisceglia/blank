@@ -7,11 +7,11 @@ import {
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { PrimaryHeading, SecondaryHeading } from "@/components/prose";
 import { Group } from "@blank/zero";
-import { useGetGroupsList } from "./@data";
+import { useGroupListByUserId } from "../@data/groups";
 import { Loading } from "@/components/loading";
 import { Button } from "@/components/ui/button";
 import { PageHeaderRow } from "@/components/layouts";
-import { useAuthentication } from "@/lib/auth.provider";
+import { useAuthentication } from "@/lib/authentication";
 
 type GroupListProps = {
   groups: Group[];
@@ -43,7 +43,7 @@ const States = {
 };
 function GroupsRoute() {
   const { user } = useAuthentication();
-  const groups = useGetGroupsList(user.id);
+  const groups = useGroupListByUserId(user.id);
 
   return (
     <>

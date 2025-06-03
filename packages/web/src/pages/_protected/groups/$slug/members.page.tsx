@@ -1,14 +1,14 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { SubHeading } from "@/components/prose";
-import { useAuthentication } from "@/lib/auth.provider";
-import { useGetGroupBySlug } from "../@data";
+import { useAuthentication } from "@/lib/authentication";
 import { GroupBody, SecondaryRow } from "./layout";
 import { Badge } from "@/components/ui/badge";
+import { useGroupBySlug } from "../../@data/groups";
 
 function MembersRoute() {
   const auth = useAuthentication();
   const params = Route.useParams();
-  const group = useGetGroupBySlug(params.slug);
+  const group = useGroupBySlug(params.slug);
 
   const isOwner = group.data?.owner?.userId === auth.user.id;
 
