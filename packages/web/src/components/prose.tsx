@@ -1,5 +1,3 @@
-// NOTE: THIS FILE ISN'T SUPER NECESSARY, BUT I'LL SLOWLY POPULATE AS I HAVE DUPLIACATED TYPE STYLES
-
 import { cn } from "@/lib/utils";
 
 export function PrimaryHeading(props: React.ComponentProps<"h1">) {

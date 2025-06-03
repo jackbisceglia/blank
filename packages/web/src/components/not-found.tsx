@@ -24,7 +24,7 @@ export function NotFound<T extends ReactNode = ReactNode>({
         </button>
         <Link
           to="/"
-          search={(prev) => ({ cmd: prev.cmd, action: undefined })}
+          search={() => ({ action: undefined })}
           className="bg-cyan-600 text-white px-2 py-1 rounded uppercase font-black text-sm"
         >
           Start Over

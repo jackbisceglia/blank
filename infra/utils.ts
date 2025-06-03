@@ -1,4 +1,4 @@
-export const isDevOrProduction = ["dev", "production"].includes($app.stage);
+// const isDevOrProduction = ["dev", "production"].includes($app.stage);
 
 export function SecretWithEnvFallback(name: string) {
   // Convert PascalCase name to SNAKE_CASE_ALL_CAPS without leading underscore
@@ -18,7 +18,7 @@ const CreateConditional =
   <T>(fn: () => T) =>
     condition ? fn() : undefined;
 
-export const DevelopmentOnly = CreateConditional($dev);
+// const DevelopmentOnly = CreateConditional($dev);
 export const NonDevelopmentOnly = CreateConditional(!$dev);
 export const ProductionStageOnly = CreateConditional(
   $app.stage === "production"

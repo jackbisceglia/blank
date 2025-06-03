@@ -1,7 +1,7 @@
 import { sql } from "drizzle-orm";
 import { db } from "../index";
 
-export async function reset() {
+async function reset() {
   console.log("⏳ Resetting database...");
   const start = Date.now();
 

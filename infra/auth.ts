@@ -3,7 +3,7 @@ import { Database } from "./database";
 import { domains } from "./domain";
 import { SecretWithEnvFallback } from "./utils";
 
-export const GoogleOAuth = new sst.Linkable("GoogleOAuth", {
+const GoogleOAuth = new sst.Linkable("GoogleOAuth", {
   properties: {
     clientId: SecretWithEnvFallback("GoogleOAuthClientId"),
     clientSecret: SecretWithEnvFallback("GoogleOAuthClientSecret"),

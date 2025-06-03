@@ -20,33 +20,25 @@ import {
   useMatches,
 } from "@tanstack/react-router";
 import { Fragment } from "react/jsx-runtime";
-import { GlobalCommandBar } from "./@command-bar";
-import { ZeroProvider } from "@/lib/zero.provider";
-import { authenticationQueryOptions, AuthProvider } from "@/lib/auth.provider";
-import { getCookie as getCookieTanstackStart } from "@tanstack/react-start/server";
+import { GlobalCommandBar } from "./@command-bar.dialog";
+import { ZeroProvider } from "@/lib/zero/zero-provider";
+import { authenticationQueryOptions } from "@/lib/authentication";
+import { AuthProvider } from "@/lib/authentication/auth-provider";
 import { PropsWithChildren } from "react";
-import { CreateExpenseDialog } from "./@create-expense";
-import { CreateGroupDialog } from "./groups/@create-group";
+import { CreateExpenseDialog } from "./@create-expense.dialog";
+import { CreateGroupDialog } from "./groups/@create-group.dialog";
 import { Toaster } from "@/components/ui/sonner";
-import { SearchRouteSchema as GlobalSearchParams } from "./@command-bar";
-import { SearchRouteSchema as CreateExpenseSearchParams } from "./@create-expense";
-import { SearchRouteSchema as CreateGroupSearchParams } from "./groups/@create-group";
+import { SearchRouteSchema as GlobalSearchParams } from "./@command-bar.dialog";
+import { SearchRouteSchema as CreateExpenseSearchParams } from "./@create-expense.dialog";
+import { SearchRouteSchema as CreateGroupSearchParams } from "./groups/@create-group.dialog";
 import * as v from "valibot";
 
-function getCookie(name: string, fallback?: string) {
-  const getCookieOnServer = getCookieTanstackStart;
-  const getCookieOnClient = (name: string) => {
-    const all = document.cookie.split(";").map((c) => c.trim().split("="));
+function getCookie(name: string, fallback: string) {
+  const all = document.cookie.split(";").map((c) => c.trim().split("="));
 
-    const [, cookieValue] = all.find(([key]) => key === name) ?? [];
+  const values = all.find(([key]) => key === name) ?? undefined;
 
-    return cookieValue;
-  };
-
-  return (
-    (import.meta.env.SSR ? getCookieOnServer : getCookieOnClient)(name) ??
-    fallback
-  );
+  return values?.at(1) ?? fallback;
 }
 
 const data = {

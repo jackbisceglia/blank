@@ -4,13 +4,7 @@ import { expenses } from "../expense";
 const name = "jenna"; // can replace with whatever name of a user is in the group for testing
 const placeholder = `John Doe`;
 
-// function randomDateLast30Days() {
-//   const randomDate = new Date();
-//   randomDate.setDate(randomDate.getDate() - Math.floor(Math.random() * 30));
-//   return randomDate;
-// }
-
-export async function seed() {
+async function seed() {
   const userId = "e39c4049-d908-45ec-bd03-879d4f33ac27"; // make configurable
   const groupId = "e4949a1b-109f-45df-b279-e92687818628"; // automate
 
