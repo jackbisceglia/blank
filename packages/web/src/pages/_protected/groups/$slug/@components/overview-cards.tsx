@@ -9,6 +9,7 @@ import { cn } from "@/lib/utils";
 import { Member } from "@blank/zero";
 import { ComponentProps, PropsWithChildren } from "react";
 import { Button } from "@/components/ui/button";
+import { compareParticipantsCustomOrder } from "@/lib/participants";
 
 function formatUSD(amount: number) {
   return new Intl.NumberFormat("en-US", {
@@ -49,7 +50,7 @@ export function GroupCard(props: CardsProps) {
           <props.header />
         </CardTitle>
       </CardHeader>
-      <CardContent className="px-4 pt-0 pb-0 min-h-8">
+      <CardContent className="px-4 pt-0 pb-0 min-h-9">
         <props.content />
       </CardContent>
       {props.footer && (
@@ -88,13 +89,13 @@ type BalancesCardProps = {
 export function BalancesCard(props: BalancesCardProps) {
   const transformed = props.members
     .map((member) => [member, props.balance(member.userId)] as const)
-    .sort((tupleA) => compare(tupleA[1], -1, 0, 1));
+    .sort(compareParticipantsCustomOrder);
 
   return (
     <GroupCard
       header={() => "Balances"}
       content={() => (
-        <ul className="flex flex-col gap-1 max-h-24 overflow-y-auto">
+        <ul className="flex flex-col gap-1 max-h-24 overflow-y-auto pb-3">
           {transformed.map(([member, balance]) => (
             <li key={member.nickname}>
               <div className="flex justify-between items-center">
@@ -111,13 +112,13 @@ export function BalancesCard(props: BalancesCardProps) {
                     "text-sm font-medium",
                     compare(
                       balance,
-                      "text-blank-theme",
+                      "text-rose-400",
                       "text-muted-foreground",
-                      "text-rose-400"
+                      "text-blank-theme"
                     )
                   )}
                 >
-                  {`${compare(balance, "+", "", "-")} ${formatUSD(Math.abs(balance))}`}
+                  {`${compare(balance, "-", "", "+")} ${formatUSD(Math.abs(balance))}`}
                 </span>
               </div>
             </li>
