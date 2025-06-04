@@ -8,12 +8,13 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import * as v from "valibot";
 import { ok, Result } from "neverthrow";
-import { fromParsed, ValidationError } from "@blank/core/utils";
+import { ValidationError } from "@blank/core/lib/effect/index";
 import { useState } from "react";
 import { slugify } from "@/lib/utils";
 import { Label } from "@/components/ui/label";
 import { useCreateGroup } from "../@data/groups";
 import { createStackableSearchRoute } from "@/lib/search-route";
+import { fromParsed } from "@blank/core/lib/_legacy/neverthrow";
 
 const invalidCharactersMessage =
   "Title must only contain letters, numbers, and spaces";

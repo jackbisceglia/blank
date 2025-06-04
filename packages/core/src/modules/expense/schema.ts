@@ -1,8 +1,9 @@
-import { groupTable } from "./group.schema";
-import { relations, sql } from "drizzle-orm";
-import { integer, pgTable, text, timestamp, uuid } from "drizzle-orm/pg-core";
-import { participantTable } from "./participant.schema";
-import { DrizzleModelTypes } from "./utils";
+import { pgTable, uuid, integer, timestamp, text } from "drizzle-orm/pg-core";
+import { relations } from "drizzle-orm/relations";
+import { sql } from "drizzle-orm/sql";
+import { participantTable } from "../participant/schema";
+import { groupTable } from "../group/schema";
+import { DrizzleModelTypes } from "../../lib/drizzle/utils";
 import { createInsertSchema, createSelectSchema } from "drizzle-valibot";
 
 export const expenseTable = pgTable("expense", {

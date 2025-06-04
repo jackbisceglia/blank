@@ -1,4 +1,3 @@
-import { relations, sql } from "drizzle-orm";
 import {
   check,
   numeric,
@@ -7,10 +6,12 @@ import {
   text,
   uuid,
 } from "drizzle-orm/pg-core";
-import { expenseTable } from "./expense.schema";
-import { memberTable } from "./member.schema";
-import { createSelectSchema, createInsertSchema } from "drizzle-valibot";
-import { DrizzleModelTypes } from "./utils";
+import { relations } from "drizzle-orm/relations";
+import { expenseTable } from "../expense/schema";
+import { memberTable } from "../member/schema";
+import { DrizzleModelTypes } from "../../lib/drizzle/utils";
+import { createInsertSchema, createSelectSchema } from "drizzle-valibot";
+import { sql } from "drizzle-orm/sql";
 
 export const participantTable = pgTable(
   "participant",

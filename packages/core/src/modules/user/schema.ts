@@ -1,8 +1,9 @@
-import { relations, sql } from "drizzle-orm";
 import { pgTable, text, uuid } from "drizzle-orm/pg-core";
-import { DrizzleModelTypes } from "./utils";
+import { relations } from "drizzle-orm/relations";
+import { sql } from "drizzle-orm/sql";
+import { memberTable } from "../member/schema";
+import { DrizzleModelTypes } from "../../lib/drizzle/utils";
 import { createInsertSchema, createSelectSchema } from "drizzle-valibot";
-import { memberTable } from "./member.schema";
 
 export const userTable = pgTable("user", {
   id: uuid()

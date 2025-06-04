@@ -1,8 +1,8 @@
 import { type InferInsertModel, type InferSelectModel } from "drizzle-orm";
 import { PgTable, text } from "drizzle-orm/pg-core";
-import { db } from ".";
-import { TaggedError } from "../utils";
 import { Effect } from "effect";
+import { TaggedError } from "../effect";
+import { db } from ".";
 
 export class DatabaseReadError extends TaggedError("DatabaseReadError") {}
 export class DatabaseWriteError extends TaggedError("DatabaseWriteError") {}
