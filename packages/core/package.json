@@ -2,6 +2,7 @@
   "name": "@blank/core",
   "version": "0.0.0",
   "type": "module",
+  "sideEffects": false,
   "exports": {
     "./ai": "./src/ai/index.ts",
     "./db": "./src/db/index.ts",
