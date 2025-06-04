@@ -1,7 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { SubHeading } from "@/components/prose";
 import { GroupBody, States } from "./layout";
-import { DataTable } from "./@expense-table/table";
+import { DataTable } from "./@components/expense-table";
 import { ExpenseSheet, SearchRoute, SearchRouteSchema } from "./@expense.sheet";
 import { Member, Expense as ZeroExpense } from "@blank/zero";
 import { ParticipantWithMember } from "@/lib/participants";
@@ -12,8 +12,8 @@ import {
   BalancesCard,
   CardsSection,
   SuggestionsCard,
-} from "./@group-cards";
-import { TableActions, useQueryFromSearch } from "./@expense-table/actions";
+} from "./@components/overview-cards";
+import { TableActions, useQueryFromSearch } from "./@components/table-actions";
 import { useDeleteAllExpenses, useUpdateExpense } from "../../@data/expenses";
 import { useGroupBySlug } from "../../@data/groups";
 import { useExpenseListByGroupSlug } from "../../@data/expenses";
