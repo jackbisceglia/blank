@@ -1,5 +1,5 @@
 import { Participant } from "@blank/zero";
-import { Member } from "@blank/core/db";
+import { Member } from "@blank/core/modules/member/schema";
 
 export type ParticipantWithMember = Participant & {
   member: Member | undefined;

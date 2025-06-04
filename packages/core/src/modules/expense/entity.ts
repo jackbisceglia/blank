@@ -1,14 +1,23 @@
-import { db, groups, Member, ParticipantInsert, participants } from ".";
-import { nl } from "../ai";
-import { requireSingleElement, unwrapOrThrow } from "../utils";
-import { ExpenseInsert, expenseTable } from "./expense.schema";
-import { DatabaseWriteError, Transaction, withTransaction } from "./utils";
-import { TaggedError } from "../utils";
 import { Effect, pipe } from "effect";
+import { requireSingleElement, TaggedError } from "../../lib/effect";
 import {
   findClosestMatch,
   MIN_MATCH_THRESHOLD,
-} from "../utils/string-similarity";
+} from "../../lib/utils/string-similarity";
+import {
+  DatabaseWriteError,
+  Transaction,
+  withTransaction,
+} from "../../lib/drizzle/utils";
+import { ParticipantInsert } from "../participant/schema";
+import { expenseTable } from "./schema";
+import { ExpenseInsert } from "./schema";
+import { db } from "../../lib/drizzle";
+import { groups } from "../group/entity";
+import { nl } from "../../lib/ai/nl";
+import { unwrapOrThrow } from "../../lib/_legacy/neverthrow";
+import { participants } from "../participant/entity";
+import { Member } from "../member/schema";
 
 const USER = "USER";
 

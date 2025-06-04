@@ -1,5 +1,5 @@
 import { Effect, pipe } from "effect";
-import { expenses } from "../expense";
+import { expenses } from "../../../modules/expense/entity";
 
 const name = "jenna"; // can replace with whatever name of a user is in the group for testing
 const placeholder = `John Doe`;

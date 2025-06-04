@@ -1,9 +1,8 @@
-import { memberTable } from "./member.schema";
-import { DrizzleModelTypes } from "./utils";
-
 import { relations } from "drizzle-orm";
 import { pgTable, text, timestamp, uuid } from "drizzle-orm/pg-core";
 import { createInsertSchema, createSelectSchema } from "drizzle-valibot";
+import { DrizzleModelTypes } from "../../lib/drizzle/utils";
+import { memberTable } from "../member/schema";
 
 export const groupTable = pgTable("group", {
   id: uuid().primaryKey(), // update to make into ulid

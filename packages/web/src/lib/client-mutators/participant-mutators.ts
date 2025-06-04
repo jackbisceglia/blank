@@ -1,5 +1,5 @@
 import { Participant } from "@blank/zero";
-import { Prettify } from "@blank/core/utils";
+import { Prettify } from "@blank/core/lib/utils/index";
 import { assertIsAuthenticated, ClientMutator, ClientMutatorGroup } from ".";
 
 export type UpdateParticipant = Prettify<

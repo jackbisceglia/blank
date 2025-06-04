@@ -5,13 +5,13 @@ import { handle } from "hono/aws-lambda";
 import theme from "./theme";
 import { subjects } from "./subjects";
 import { GoogleProvider } from "@openauthjs/openauth/provider/google";
-import { users } from "@blank/core/db";
 import { Select } from "@openauthjs/openauth/ui/select";
 import * as jose from "jose";
 import { Resource } from "sst";
 import * as v from "valibot";
-import { fromParsedEffect } from "@blank/core/utils";
 import { Effect, pipe } from "effect";
+import { users } from "@blank/core/modules";
+import { fromParsedEffect } from "@blank/core/lib/effect/index";
 
 const Errors = {
   ProviderNotSupported: (provider: string) =>
@@ -57,6 +57,7 @@ function decodeJwt(token: string) {
 
 function getOrCreateUser(payload: v.InferOutput<typeof JwtPayload>) {
   const result = pipe(
+    // users.getByEmail(payload.email),
     users.getByEmail(payload.email),
     Effect.catchTag("UserNotFoundError", () => users.create(payload))
   );

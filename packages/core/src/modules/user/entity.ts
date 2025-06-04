@@ -1,14 +1,17 @@
-import { db, userTable } from ".";
-
-import { eq } from "drizzle-orm";
-import { UserInsert } from "./user.schema";
-import { DatabaseReadError, DatabaseWriteError, Transaction } from "./utils";
 import { Effect, pipe } from "effect";
+import {
+  DatabaseReadError,
+  DatabaseWriteError,
+  Transaction,
+} from "../../lib/drizzle/utils";
 import {
   requireSingleElement,
   requireValueExists,
   TaggedError,
-} from "../utils";
+} from "../../lib/effect";
+import { UserInsert, userTable } from "./schema";
+import { eq } from "drizzle-orm/sql";
+import { db } from "../../lib/drizzle";
 
 class UserNotFoundError extends TaggedError("UserNotFoundError") {}
 class UserNotCreatedError extends TaggedError("UserNotCreatedError") {}

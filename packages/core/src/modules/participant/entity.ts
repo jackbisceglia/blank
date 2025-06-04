@@ -1,8 +1,8 @@
-import { db } from ".";
-import { DatabaseWriteError, Transaction } from "./utils";
-import { ParticipantInsert, participantTable } from "./participant.schema";
-import { pipe, Effect } from "effect";
-import { requireSingleElement, TaggedError } from "../utils";
+import { db } from "../../lib/drizzle";
+import { DatabaseWriteError, Transaction } from "../../lib/drizzle/utils";
+import { TaggedError, requireSingleElement } from "../../lib/effect";
+import { participantTable, ParticipantInsert } from "./schema";
+import { Effect, pipe } from "effect";
 
 class ParticipantNotCreatedError extends TaggedError(
   "ParticipantNotCreatedError"
