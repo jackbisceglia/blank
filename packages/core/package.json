@@ -4,9 +4,8 @@
   "type": "module",
   "sideEffects": false,
   "exports": {
-    "./ai": "./src/ai/index.ts",
-    "./db": "./src/db/index.ts",
-    "./utils": "./src/utils/index.ts"
+    "./modules": "./src/modules/index.ts",
+    "./*": "./src/*.ts"
   },
   "scripts": {
     "typecheck": "tsc --noEmit",

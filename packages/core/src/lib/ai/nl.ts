@@ -1,10 +1,10 @@
 import { createSafeGenerateObject } from "./utils";
-import { ExpenseInsert } from "../db";
 import { valibotSchema } from "@ai-sdk/valibot";
 import * as v from "valibot";
-import { ParticipantInsert } from "../db/participant.schema";
 import { DEFAULT, DEFAULT_FAST, ModelKeys, models } from "./models";
 import { ResultAsync, err, ok } from "neverthrow";
+import { ExpenseInsert } from "../../modules/expense/schema";
+import { ParticipantInsert } from "../../modules/participant/schema";
 
 function unindent(strings: TemplateStringsArray, ...values: unknown[]) {
   const rawString = strings.reduce(

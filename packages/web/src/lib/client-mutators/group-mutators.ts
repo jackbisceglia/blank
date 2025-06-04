@@ -1,11 +1,11 @@
-import { GroupInsert } from "@blank/core/db";
+import { GroupInsert } from "@blank/core/modules/group/schema";
 import {
   assertIsAuthenticated,
   ClientMutator,
   ClientMutatorGroup,
   ZTransaction,
 } from ".";
-import { Prettify } from "@blank/core/utils";
+import { Prettify } from "@blank/core/lib/utils/index";
 import { slugify } from "../utils";
 
 const CONSTRAINTS = {

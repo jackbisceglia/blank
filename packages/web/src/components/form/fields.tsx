@@ -12,10 +12,10 @@ import {
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "../ui/select";
+} from "@/components/ui/select";
 import { type ParticipantWithMember } from "@/lib/participants";
-import { Member } from "@blank/core/db";
 import { useFieldContext } from ".";
+import { Member } from "@blank/zero";
 
 type TextFieldProps = {
   label: string;

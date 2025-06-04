@@ -1,6 +1,6 @@
 import { err, ok, ResultAsync } from "neverthrow";
 import * as v from "valibot";
-import { ValidationError } from "./effect";
+import { ValidationError } from "../effect";
 
 // in progress of getting rid of this file
 

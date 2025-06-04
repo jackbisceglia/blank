@@ -2,14 +2,7 @@ import { drizzle } from "drizzle-orm/neon-serverless";
 import { Resource } from "sst";
 import ws from "ws";
 
-import * as schemas from "./+schema.register";
-
-export * from "./+schema.register";
-export * from "./expense";
-export * from "./group";
-export * from "./participant";
-export * from "./users";
-export * from "./utils";
+import * as schemas from "./schema";
 
 const {
   host: dbHost,
