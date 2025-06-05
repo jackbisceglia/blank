@@ -346,7 +346,7 @@ function Sidebar({
           // Adjust the padding for floating and inset variants.
 
           variant === "floating" || variant === "inset"
-            ? "bg-background border-r border-border p-2 group-data-[collapsible=icon]:w-[calc(var(--sidebar-width-icon)+(--spacing(4))+2px)]"
+            ? "bg-sidebar border-r border-border p-2 group-data-[collapsible=icon]:w-[calc(var(--sidebar-width-icon)+(--spacing(4))+2px)]"
             : "bg-sidebar group-data-[collapsible=icon]:w-(--sidebar-width-icon) group-data-[side=left]:border-r group-data-[side=right]:border-l",
           className
         )}
