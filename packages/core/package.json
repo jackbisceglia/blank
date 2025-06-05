@@ -11,7 +11,7 @@
     "typecheck": "tsc --noEmit",
     "db": "pnpm dlx sst shell drizzle-kit",
     "db:reset": "pnpm dlx sst shell pnpm dlx tsx src/db/seed/reset.ts",
-    "db:seed:expenses": "pnpm dlx sst shell pnpm dlx tsx src/db/seed/expenses.ts",
+    "db:seed:expenses": "pnpm dlx sst shell pnpm dlx tsx src/lib/drizzle/seed/expenses.ts",
     "ai:eval": "pnpm dlx sst shell braintrust eval ./src/ai/__tests__",
     "test": "pnpm dlx sst shell pnpm test",
     "lint": "eslint .",
