@@ -12,8 +12,11 @@ const groupByProperty = (key: "slug" | "id", value: string, z: Zero) =>
   z.query.group
     .where(key, value)
     .related("expenses", (e) =>
-      e.related("participants", (p) => p.related("member").related("member"))
+      e
+        .orderBy("date", "desc")
+        .related("participants", (p) => p.related("member").related("member"))
     )
+
     .related("members")
     .related("owner")
     .one();

@@ -56,7 +56,7 @@ function TableRow({ className, ...props }: React.ComponentProps<"tr">) {
     <tr
       data-slot="table-row"
       className={cn(
-        "data-[state=selected]:bg-blank-theme-background/50 transition-[color,box-shadow] duration-0 not-focus-within:outline-hidden focus-within:outline-ring/50 focus-within:outline focus:relative focus-within:z-10",
+        "data-[state=selected]:bg-blank-theme-background/50 transition-[color,box-shadow] duration-0 not-focus-within:outline-hidden focus-within:outline-ring/50 focus-within:outline focus:relative focus-within:z-10 has-[button[data-sort]]:focus-within:outline-0",
         className
       )}
       {...props}
@@ -64,7 +64,7 @@ function TableRow({ className, ...props }: React.ComponentProps<"tr">) {
   );
 }
 
-const x_spacing = "pl-2 pr-4 lg:pl-2 lg:pr-10";
+const x_spacing = "pl-2 pr-4 lg:pl-2 lg:pr-8 has-[button[data-sort]]:pr-0";
 
 function TableHead({ className, ...props }: React.ComponentProps<"th">) {
   return (

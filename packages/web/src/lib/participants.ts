@@ -8,7 +8,7 @@ export type ParticipantWithMember = Participant & {
 export function getPayerFromParticipants(
   participants: ParticipantWithMember[]
 ) {
-  return participants.find((p) => p.role === "payer")?.userId;
+  return participants.find((p) => p.role === "payer");
 }
 
 export type MemberBalanceTuple = readonly [Member, number];

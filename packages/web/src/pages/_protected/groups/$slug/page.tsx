@@ -16,7 +16,6 @@ import {
 import { TableActions, useQueryFromSearch } from "./@components/table-actions";
 import { useDeleteAllExpenses, useUpdateExpense } from "../../@data/expenses";
 import { useGroupBySlug } from "../../@data/groups";
-import { useExpenseListByGroupSlug } from "../../@data/expenses";
 
 function createBalanceMap(expenses: ExpenseWithParticipants[]) {
   function initialize() {
@@ -26,7 +25,7 @@ function createBalanceMap(expenses: ExpenseWithParticipants[]) {
       expense.participants.forEach((p) => {
         const balance = map.get(p.userId) ?? 0;
 
-        const delta = p.role === "payer" ? -1 : 1;
+        const delta = p.role === "payer" ? 1 : -1;
         const split = p.split;
 
         map.set(p.userId, balance + delta * split * expense.amount);
@@ -45,11 +44,11 @@ export type ExpenseWithParticipants = ZeroExpense & {
   participants: ParticipantWithMember[];
 };
 
+// @BUG: reimplement query client side
 function useQueries(slug: string, query: string | undefined) {
   const group = useGroupBySlug(slug);
-  const expenses = useExpenseListByGroupSlug(slug, { query });
 
-  return { group, expenses };
+  return { group };
 }
 
 function useMutations() {
@@ -88,7 +87,6 @@ function GroupRoute() {
   }
 
   const group = query.group.data;
-  const expenses = query.expenses.data;
 
   const active = group.expenses.find((e) => e.id === sheet.state());
   const sum = group.expenses.reduce((sum, { amount }) => sum + amount, 0);
@@ -115,7 +113,7 @@ function GroupRoute() {
         <DataTable
           query={term.value}
           expand={sheet.open}
-          data={expenses as ExpenseWithParticipants[]}
+          data={group.expenses as ExpenseWithParticipants[]}
           updateTitle={mutate.expense.randomizeTitle}
         />
       </GroupBody>

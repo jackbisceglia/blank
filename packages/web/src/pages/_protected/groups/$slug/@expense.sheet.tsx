@@ -91,7 +91,7 @@ function useForm(
         schema.amount !== active.amount ||
         schema.description !== active.description ||
         schema.date.getTime() !== active.date ||
-        schema.paidBy !== getPayerFromParticipants(active.participants)
+        schema.paidBy !== getPayerFromParticipants(active.participants)?.userId
       );
     })
   );
@@ -101,7 +101,7 @@ function useForm(
       description: active.description,
       amount: active.amount,
       date: timestampToDate(active.date),
-      paidBy: getPayerFromParticipants(active.participants) ?? "",
+      paidBy: getPayerFromParticipants(active.participants)?.userId ?? "",
     },
     validators: {
       onChange: schema,
@@ -125,7 +125,7 @@ function useForm(
           return { userId, role };
         }
 
-        const payerId = getPayerFromParticipants(active.participants);
+        const payerId = getPayerFromParticipants(active.participants)?.userId;
 
         if (payerId === fields.value.paidBy) return undefined;
 
