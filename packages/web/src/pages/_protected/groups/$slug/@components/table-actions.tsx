@@ -108,6 +108,7 @@ function TableActions(props: TableActionsProps) {
           <Link
             to="."
             search={(prev) => ({
+              ...prev,
               action: ["new-expense", ...(prev.action ?? [])],
             })}
           >

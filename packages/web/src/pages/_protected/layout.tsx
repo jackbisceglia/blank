@@ -125,7 +125,7 @@ function ProtectedLayout() {
   return (
     <>
       <GlobalSidebar groups={data.groups} collapsible="icon" />
-      <main className="flex-1 min-w-0 flex flex-col items-start gap-4 sm:gap-1 py-3 px-2.5 sm:px-6 lg:pl-8 lg:pr-12 min-h-full relative">
+      <main className="flex-1 min-w-0 flex flex-col items-start gap-4 sm:gap-1 py-3 px-2.5 sm:px-6 lg:px-8 min-h-full relative">
         <header className="flex justify-start items-center gap-0.5 sm:gap-2 text-sm w-full pb-1.5">
           <SidebarTrigger />
           <Breadcrumbs />
