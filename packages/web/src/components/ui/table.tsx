@@ -9,7 +9,7 @@ function Table({ className, ...props }: TableProps) {
   return (
     <div
       className={cn(
-        "overflow-x-auto w-full text-foreground/75 duration-0 p-0.5 pt-0"
+        "overflow-x-auto w-full text-foreground/75 duration-0 p-0.5"
       )}
     >
       <table

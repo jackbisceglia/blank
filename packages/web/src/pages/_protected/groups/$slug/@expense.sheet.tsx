@@ -246,6 +246,19 @@ export function ExpenseSheet(props: ExpenseSheetProps) {
                 />
               </div>
               <Separator className="col-span-full my-4" />
+              <ul className="flex flex-col gap-2">
+                <p className="text-xs text-muted-foreground">
+                  just for debugging for now
+                </p>
+                {active.participants
+                  .map((p) => [p.member?.nickname, p.split * 100] as const)
+                  .filter((tuple): tuple is [string, number] => !!tuple[0])
+                  .map(([name, split]) => (
+                    <li>
+                      {name}: {split.toString()}%
+                    </li>
+                  ))}
+              </ul>
             </SheetBody>
             <SheetFooter className="flex-col gap-2 mt-auto">
               <form.api.Subscribe

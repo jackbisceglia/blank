@@ -44,8 +44,7 @@ export type ExpenseWithParticipants = ZeroExpense & {
   participants: ParticipantWithMember[];
 };
 
-// @BUG: reimplement query client side
-function useQueries(slug: string, query: string | undefined) {
+function useQueries(slug: string) {
   const group = useGroupBySlug(slug);
 
   return { group };
@@ -111,7 +110,7 @@ function GroupRoute() {
           actions={{ deleteAll: mutate.expense.deleteAll }}
         />
         <DataTable
-          query={term.value}
+          query={term.value ?? ""}
           expand={sheet.open}
           data={group.expenses as ExpenseWithParticipants[]}
           updateTitle={mutate.expense.randomizeTitle}

@@ -7,6 +7,7 @@ import {
   getSortedRowModel,
   Row,
   Column,
+  getFilteredRowModel,
 } from "@tanstack/react-table";
 import {
   Table,
@@ -33,7 +34,7 @@ import { ChevronDown, ChevronUp } from "lucide-react";
  *  -> this is working, but it's really not a great solution. i'd love to handle this natively in the table
  * [ ] fix table sorts persisting issue
  * [x] fix row focus-within on table header
- * [ ] fix client side search with no duplicate query results
+ * [x] fix client side search with no duplicate query results
  */
 
 type SortButtonProps = PropsWithChildren<{
@@ -246,13 +247,16 @@ export function DataTable(props: DataTableProps) {
   const initialSorting = [{ id: "date", desc: true }];
 
   const table = useReactTable({
-    data: props.data,
     columns,
+    data: props.data,
     getCoreRowModel: getCoreRowModel(),
-    getRowId: (row) => row.id,
-    meta: { expand: props.expand, updateTitle: props.updateTitle },
     getSortedRowModel: getSortedRowModel(),
+    getFilteredRowModel: getFilteredRowModel(),
+    globalFilterFn: "includesString",
+    state: { globalFilter: props.query }, // pull filter from search query prop
     initialState: { sorting: initialSorting },
+    meta: { expand: props.expand, updateTitle: props.updateTitle },
+    getRowId: (row) => row.id,
   });
 
   const rowRefs = useRef<HTMLTableRowElement[]>([]);
