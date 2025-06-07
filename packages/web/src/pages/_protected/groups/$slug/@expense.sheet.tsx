@@ -91,7 +91,7 @@ function useForm(
         schema.amount !== active.amount ||
         schema.description !== active.description ||
         schema.date.getTime() !== active.date ||
-        schema.paidBy !== getPayerFromParticipants(active.participants)
+        schema.paidBy !== getPayerFromParticipants(active.participants)?.userId
       );
     })
   );
@@ -101,7 +101,7 @@ function useForm(
       description: active.description,
       amount: active.amount,
       date: timestampToDate(active.date),
-      paidBy: getPayerFromParticipants(active.participants) ?? "",
+      paidBy: getPayerFromParticipants(active.participants)?.userId ?? "",
     },
     validators: {
       onChange: schema,
@@ -125,7 +125,7 @@ function useForm(
           return { userId, role };
         }
 
-        const payerId = getPayerFromParticipants(active.participants);
+        const payerId = getPayerFromParticipants(active.participants)?.userId;
 
         if (payerId === fields.value.paidBy) return undefined;
 
@@ -246,6 +246,19 @@ export function ExpenseSheet(props: ExpenseSheetProps) {
                 />
               </div>
               <Separator className="col-span-full my-4" />
+              <ul className="flex flex-col gap-2">
+                <p className="text-xs text-muted-foreground">
+                  just for debugging for now
+                </p>
+                {active.participants
+                  .map((p) => [p.member?.nickname, p.split * 100] as const)
+                  .filter((tuple): tuple is [string, number] => !!tuple[0])
+                  .map(([name, split]) => (
+                    <li>
+                      {name}: {split.toString()}%
+                    </li>
+                  ))}
+              </ul>
             </SheetBody>
             <SheetFooter className="flex-col gap-2 mt-auto">
               <form.api.Subscribe

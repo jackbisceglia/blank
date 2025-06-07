@@ -4,6 +4,10 @@ import {
   getCoreRowModel,
   useReactTable,
   createColumnHelper,
+  getSortedRowModel,
+  Row,
+  Column,
+  getFilteredRowModel,
 } from "@tanstack/react-table";
 import {
   Table,
@@ -13,150 +17,188 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { useRef } from "react";
+import { ComponentProps, PropsWithChildren, useRef } from "react";
 import { Button, buttonVariants } from "@/components/ui/button";
-import {
-  Tooltip,
-  TooltipTrigger,
-  TooltipContent,
-} from "@/components/ui/tooltip";
-import React from "react";
 import { ExpenseWithParticipants } from "../page";
+import { getPayerFromParticipants } from "@/lib/participants";
 import { tableNavigationContext } from "@/lib/keyboard-nav";
 import { cn, flags } from "@/lib/utils";
 import { Link } from "@tanstack/react-router";
+import { ParticipantBadge, ParticipantBadgeList } from "./table-badges";
+import { ChevronDown, ChevronUp } from "lucide-react";
 
-function getInitials(name?: string) {
-  if (!name) return "?";
-  const parts = name.trim().split(/\s+/);
-  if (parts.length === 1) return parts[0].slice(0, 2).toUpperCase();
-  return (parts[0][0] + (parts[1]?.[0] ?? "")).toUpperCase();
-}
+/*
+ * TODO TOMORROW
+ * [x] sort by description
+ * [x] fix default sort as date not working issue
+ *  -> this is working, but it's really not a great solution. i'd love to handle this natively in the table
+ * [ ] fix table sorts persisting issue
+ * [x] fix row focus-within on table header
+ * [x] fix client side search with no duplicate query results
+ */
 
-type BadgeSimpleProps = React.PropsWithChildren<{
-  variant: "secondary" | "theme";
-}> &
-  React.ComponentPropsWithoutRef<"span">;
+type SortButtonProps = PropsWithChildren<{
+  column: Column<ExpenseWithParticipants>;
+  rows: Row<ExpenseWithParticipants>[];
+  onClick?: ComponentProps<typeof Button>["onClick"];
+}>;
 
-const BadgeSimple = React.forwardRef<HTMLSpanElement, BadgeSimpleProps>(
-  ({ variant, children, ...rest }, ref) => (
-    <Badge
-      ref={ref}
-      className="overflow-x-hidden truncate block max-w-full lowercase"
-      variant={variant}
-      {...rest}
-    >
-      {children}
-    </Badge>
-  )
-);
+const SortButton = (props: SortButtonProps) => {
+  const sort = {
+    asc: "ascending",
+    desc: "descending",
+    none: "none",
+  } as const;
 
-BadgeSimple.displayName = "BadgeSimple";
+  // this is super ugly, but an edge case check:
+  // tldr; if we are dealing with the date column, we want to check if the data is 'naturally' sorted
+  // this means, if the table is tracking the sort state as false (not sorted), then we want to know if it's still actually sorted by way of the query itself
+  // when this is the case, we just pretend to the user that it's sorted, as it's indistinguishable from the table state in this case
+  // this essentially disallows an 'unsorted' state for the date column and provides a nice fallback for when nothing is explicitly sorted
+  const [direction, toggle] = (() => {
+    const baseIsSorted = props.column.getIsSorted();
+    const baseToggle = props.column.toggleSorting;
 
-type ParticipantBadgeProps = {
-  participant: ExpenseWithParticipants["participants"][number];
-  strategy?: "compact" | "standard";
-};
-function ParticipantBadge(props: ParticipantBadgeProps) {
-  const p = props.participant;
-  const variant = p.role === "participant" ? "secondary" : "theme";
+    if (props.column.id === "date") {
+      const isCaseSortedOutsideOfTableState = props.rows.reduce(
+        (acc, row, index) => {
+          if (index === 0) return acc;
 
-  switch (props.strategy) {
-    case "compact":
-      return (
-        <Tooltip>
-          <TooltipTrigger asChild>
-            <BadgeSimple variant={variant} className="cursor-pointer">
-              {getInitials(p.member?.nickname)}
-            </BadgeSimple>
-          </TooltipTrigger>
-          <TooltipContent side="bottom" align="end">
-            <p className="font-semibold">{p.member?.nickname || "?"}</p>
-          </TooltipContent>
-        </Tooltip>
+          const isDesc =
+            new Date(row.original.date) <=
+            new Date(props.rows[index - 1].original.date);
+
+          return acc && isDesc;
+        },
+        true
       );
-    case "standard":
-      return <BadgeSimple variant={variant}>{p.member?.nickname}</BadgeSimple>;
-  }
-}
 
-type ParticipantBadgeListProps = {
-  participants: ExpenseWithParticipants["participants"];
-};
-function ParticipantBadgeList(props: ParticipantBadgeListProps) {
-  const participants = props.participants.filter(
-    (p): p is typeof p & { member: NonNullable<typeof p.member> } =>
-      p.member !== undefined
-  );
+      const isSortedWithManualCheck = isCaseSortedOutsideOfTableState
+        ? "desc"
+        : baseIsSorted;
+
+      return [
+        sort[isSortedWithManualCheck || "none"],
+        isCaseSortedOutsideOfTableState ? () => baseToggle(false) : baseToggle,
+      ] as const;
+    }
+
+    return [sort[baseIsSorted || "none"], baseToggle] as const;
+  })();
+
+  if (props.column.id === "date") {
+    console.log(direction);
+  }
 
   return (
-    <ul className="space-x-1 w-fit flex">
-      {participants.map((p) => (
-        <li key={p.userId}>
-          <ParticipantBadge participant={p} strategy="compact" />
-        </li>
-      ))}
-    </ul>
+    <Button
+      onClick={props.onClick ?? (() => toggle())}
+      data-sort={direction}
+      size="xs"
+      variant="ghost"
+      className={cn(
+        "gap-1.5 font-normal hover:bg-transparent uppercase !pl-2 !pr-4 lg:!pr-4 lg:!pl-2 sm:px-0 h-full cursor-pointer w-full mr-auto flex justify-start items-center "
+      )}
+      aria-sort={direction}
+    >
+      {props.children}
+
+      {direction === "ascending" && <ChevronUp className="size-3.5" />}
+      {direction === "descending" && <ChevronDown className="size-3.5" />}
+      {direction === "none" && <div aria-hidden className="size-3.5" />}
+    </Button>
   );
-}
+};
 
 const columnHelper = createColumnHelper<ExpenseWithParticipants>();
 
 const columns = [
   columnHelper.accessor("amount", {
-    header: "Cost",
+    sortingFn: "basic",
+    header: (props) => (
+      <SortButton column={props.column} rows={props.table.getRowModel().rows}>
+        Cost
+      </SortButton>
+    ),
     cell: (opts) => `$${opts.getValue().toString()}`,
   }),
   columnHelper.accessor("description", {
+    sortingFn: "alphanumeric",
+    header: (props) => (
+      <SortButton column={props.column} rows={props.table.getRowModel().rows}>
+        Description
+      </SortButton>
+    ),
     cell: (opts) => {
-      const NEG_INF = Number.NEGATIVE_INFINITY;
       const RANGE = 1000 * 60;
 
-      const NewBadge = () =>
-        (opts.row.original.createdAt ?? NEG_INF) > Date.now() - RANGE && (
-          <Badge
-            className="bg-teal-400/90 uppercase text-[9px] px-1 py-0 my-auto"
-            variant="theme"
-          >
-            New
-          </Badge>
-        );
+      const isNew =
+        (opts.row.original.createdAt ?? Number.NEGATIVE_INFINITY) >
+        Date.now() - RANGE;
 
       return (
-        <>
-          <p className="text-foreground font-medium lowercase w-full h-full flex gap-2">
-            <NewBadge />
-            {opts.getValue().toString()}
-          </p>
-        </>
+        <p className="text-foreground font-medium lowercase w-full h-full flex gap-2">
+          {isNew && (
+            <Badge
+              className="bg-teal-400/90 uppercase text-[9px] px-1 py-0 my-auto"
+              variant="theme"
+            >
+              New
+            </Badge>
+          )}
+          {opts.getValue().toString()}
+        </p>
       );
     },
   }),
   columnHelper.accessor("participants", {
     id: "paid-by",
-    header: "Paid By",
-    cell: (opts) => {
-      const payer = opts.getValue().find((p) => p.role === "payer");
+    sortingFn: (rowA, rowB, colId: string) => {
+      const payer = (row: Row<ExpenseWithParticipants>) =>
+        getPayerFromParticipants(row.getValue(colId));
 
-      return payer ? (
-        <ParticipantBadge participant={payer} strategy="standard" />
-      ) : null;
+      const nickname = (row: Row<ExpenseWithParticipants>) =>
+        payer(row)?.member?.nickname.toLowerCase() ?? "";
+
+      return nickname(rowA).localeCompare(nickname(rowB));
+    },
+    header: (props) => (
+      <SortButton column={props.column} rows={props.table.getRowModel().rows}>
+        Paid By
+      </SortButton>
+    ),
+    cell: (opts) => {
+      const payer = getPayerFromParticipants(opts.getValue());
+
+      if (!payer) return null;
+
+      return <ParticipantBadge participant={payer} strategy="standard" />;
     },
   }),
   columnHelper.accessor("participants", {
+    header: "With",
     cell: (opts) => {
       const participants = opts
         .getValue()
         .filter((p) => p.role === "participant");
 
-      return participants.length > 0 ? (
-        <ParticipantBadgeList participants={participants} />
-      ) : (
-        <p className="text-muted-foreground lowercase">None</p>
-      );
+      if (participants.length === 0) {
+        return <p className="text-muted-foreground lowercase">None</p>;
+      }
+
+      return <ParticipantBadgeList participants={participants} />;
     },
   }),
   columnHelper.accessor("date", {
+    sortingFn: "datetime",
+    sortDescFirst: false,
+    header: (props) => {
+      return (
+        <SortButton column={props.column} rows={props.table.getRowModel().rows}>
+          Date
+        </SortButton>
+      );
+    },
     cell: (opts) =>
       new Date(opts.getValue())
         .toLocaleDateString()
@@ -191,7 +233,6 @@ const columns = [
         )}
       </div>
     ),
-    size: 32,
   }),
 ];
 
@@ -203,21 +244,25 @@ type DataTableProps = {
 };
 
 export function DataTable(props: DataTableProps) {
+  const initialSorting = [{ id: "date", desc: true }];
+
   const table = useReactTable({
-    data: props.data,
     columns,
+    data: props.data,
     getCoreRowModel: getCoreRowModel(),
+    getSortedRowModel: getSortedRowModel(),
+    getFilteredRowModel: getFilteredRowModel(),
+    globalFilterFn: "includesString",
+    state: { globalFilter: props.query }, // pull filter from search query prop
+    initialState: { sorting: initialSorting },
+    meta: { expand: props.expand, updateTitle: props.updateTitle },
     getRowId: (row) => row.id,
-    meta: {
-      expand: props.expand,
-      updateTitle: props.updateTitle,
-    },
   });
 
   const rowRefs = useRef<HTMLTableRowElement[]>([]);
 
   return (
-    <Table className="text-sm">
+    <Table className="text-sm mb-2">
       <TableHeader>
         {table.getHeaderGroups().map((headerGroup) => (
           <TableRow key={headerGroup.id} className="hover:bg-transparent">
@@ -241,8 +286,8 @@ export function DataTable(props: DataTableProps) {
         ))}
       </TableHeader>
       <TableBody>
-        {table.getRowModel().rows.length ? (
-          table.getRowModel().rows.map((row) => {
+        {table.getSortedRowModel().rows.length ? (
+          table.getSortedRowModel().rows.map((row) => {
             return (
               <TableRow
                 ref={(el) => {
@@ -251,40 +296,66 @@ export function DataTable(props: DataTableProps) {
                 }}
                 key={row.id}
                 data-state={row.getIsSelected() && "selected"}
-                className="hover:bg-muted focus-within:bg-muted transition-colors"
+                className="hover:bg-muted focus-within:bg-muted transition-colors "
                 tabIndex={0}
                 onKeyDown={(e) => {
                   const navigation = tableNavigationContext(e);
-                  if (navigation) {
-                    e.preventDefault();
-                    const delta = navigation.direction === "up" ? -1 : 1;
 
-                    rowRefs.current
-                      .at((row.index + delta) % rowRefs.current.length)
-                      ?.focus();
+                  if (!navigation) return;
+                  e.preventDefault();
+
+                  const currentRow = () => e.currentTarget;
+                  const tbody = () => e.currentTarget.parentElement;
+
+                  const sibling = (() => {
+                    switch (navigation.direction) {
+                      case "up":
+                        return (
+                          currentRow().previousElementSibling ??
+                          tbody()?.lastElementChild
+                        );
+                      case "down":
+                        return (
+                          currentRow().nextElementSibling ??
+                          tbody()?.firstElementChild
+                        );
+                    }
+                  })() as HTMLTableRowElement | null;
+
+                  if (sibling?.tagName === "TR") {
+                    sibling.focus();
                   }
                 }}
               >
                 {row.getVisibleCells().map((cell) => (
                   <TableCell
                     key={cell.id}
-                    className={`
-                        min-w-fit w-fit max-w-fit
-                        
-                        [&:first-child]:min-w-fit [&:first-child]:w-auto 
-                        
-                        [&:nth-child(2)]:w-auto [&:nth-child(2)]:min-w-fit [&:nth-child(2)]:whitespace-nowrap 
+                    // some custom rules to make these columns more tied to the table structure
+                    className={cn(
+                      // GENERAL
+                      "min-w-fit w-fit max-w-fit",
 
-                        [&:nth-child(3)]:min-w-min [&:nth-child(3)]:w-min [&:nth-child(3)]:max-w-20 [&:nth-child(3)]:truncate
-                        xl:[&:nth-child(3)]:min-w-min xl:[&:nth-child(3)]:w-min xl:[&:nth-child(3)]:max-w-40 xl:[&:nth-child(3)]:truncate
+                      // COST
+                      "[&:first-child]:min-w-fit [&:first-child]:w-auto",
 
-                        [&:nth-child(4)]:min-w-fit [&:nth-child(4)]:w-fit [&:nth-child(4)]:max-w-36 [&:nth-child(4)]:truncate
+                      // DESCRIPTION
+                      "[&:nth-child(2)]:w-auto [&:nth-child(2)]:min-w-fit [&:nth-child(2)]:whitespace-nowrap",
 
-                        lg:[&:nth-child(4)]:min-w-min lg:[&:nth-child(4)]:w-min lg:[&:nth-child(4)]:max-w-44 lg:[&:nth-child(4)]:truncate 
-                        
-                        [&:last-child]:px-4
-                        
-                        `}
+                      // PAID BY
+                      "[&:nth-child(3)]:min-w-min [&:nth-child(3)]:w-min [&:nth-child(3)]:max-w-20 [&:nth-child(3)]:truncate",
+
+                      // PAID BY LARGE
+                      "xl:[&:nth-child(3)]:min-w-min xl:[&:nth-child(3)]:w-min xl:[&:nth-child(3)]:max-w-40 xl:[&:nth-child(3)]:truncate",
+
+                      // WITH
+                      "[&:nth-child(4)]:min-w-fit [&:nth-child(4)]:w-fit [&:nth-child(4)]:max-w-36 [&:nth-child(4)]:truncate",
+
+                      // WITH LARGE
+                      "lg:[&:nth-child(4)]:min-w-min lg:[&:nth-child(4)]:w-min lg:[&:nth-child(4)]:max-w-44 lg:[&:nth-child(4)]:truncate",
+
+                      // MANAGE
+                      "[&:last-child]:px-4"
+                    )}
                   >
                     {flexRender(cell.column.columnDef.cell, cell.getContext())}
                   </TableCell>

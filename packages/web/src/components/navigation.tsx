@@ -103,6 +103,7 @@ function QuickActions(props: QuickActionsProps) {
       opts: {
         to: ".",
         search: (prev) => ({
+          ...prev,
           action: ["new-expense", ...(prev.action ?? [])],
         }),
       },
@@ -220,7 +221,7 @@ export function GlobalSidebar(props: SideNavigationProps) {
           >
             <Link
               to="/groups"
-              search={(previous) => ({ action: previous.action })}
+              search={(previous) => ({ ...previous, action: previous.action })}
             >
               <span>Groups</span>
             </Link>
