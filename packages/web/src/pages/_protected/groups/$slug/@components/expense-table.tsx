@@ -7,7 +7,6 @@ import {
   getSortedRowModel,
   Row,
   Column,
-  RowModel,
 } from "@tanstack/react-table";
 import {
   Table,
@@ -97,7 +96,7 @@ const SortButton = (props: SortButtonProps) => {
       size="xs"
       variant="ghost"
       className={cn(
-        "gap-1.5 font-normal hover:bg-transparent uppercase !pl-0 !pr-4 lg:!pr-4 sm:px-0 h-full cursor-pointer w-full mr-auto flex justify-start items-center"
+        "gap-1.5 font-normal hover:bg-transparent uppercase !pl-2 !pr-4 lg:!pr-4 lg:!pl-2 sm:px-0 h-full cursor-pointer w-full mr-auto flex justify-start items-center "
       )}
       aria-sort={direction}
     >
@@ -283,8 +282,8 @@ export function DataTable(props: DataTableProps) {
         ))}
       </TableHeader>
       <TableBody>
-        {table.getRowModel().rows.length ? (
-          table.getRowModel().rows.map((row) => {
+        {table.getSortedRowModel().rows.length ? (
+          table.getSortedRowModel().rows.map((row) => {
             return (
               <TableRow
                 ref={(el) => {
@@ -293,17 +292,34 @@ export function DataTable(props: DataTableProps) {
                 }}
                 key={row.id}
                 data-state={row.getIsSelected() && "selected"}
-                className="hover:bg-muted focus-within:bg-muted focus-within:outline-transparent transition-colors "
+                className="hover:bg-muted focus-within:bg-muted transition-colors "
                 tabIndex={0}
                 onKeyDown={(e) => {
                   const navigation = tableNavigationContext(e);
-                  if (navigation) {
-                    e.preventDefault();
-                    const delta = navigation.direction === "up" ? -1 : 1;
 
-                    rowRefs.current
-                      .at((row.index + delta) % rowRefs.current.length)
-                      ?.focus();
+                  if (!navigation) return;
+                  e.preventDefault();
+
+                  const currentRow = () => e.currentTarget;
+                  const tbody = () => e.currentTarget.parentElement;
+
+                  const sibling = (() => {
+                    switch (navigation.direction) {
+                      case "up":
+                        return (
+                          currentRow().previousElementSibling ??
+                          tbody()?.lastElementChild
+                        );
+                      case "down":
+                        return (
+                          currentRow().nextElementSibling ??
+                          tbody()?.firstElementChild
+                        );
+                    }
+                  })() as HTMLTableRowElement | null;
+
+                  if (sibling?.tagName === "TR") {
+                    sibling.focus();
                   }
                 }}
               >

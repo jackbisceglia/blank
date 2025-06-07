@@ -64,7 +64,8 @@ function TableRow({ className, ...props }: React.ComponentProps<"tr">) {
   );
 }
 
-const x_spacing = "pl-2 pr-4 lg:pl-2 lg:pr-8 has-[button[data-sort]]:pr-0";
+const x_spacing =
+  "pl-2 pr-4 lg:pl-2 lg:pr-8 has-[button[data-sort]]:pr-0 has-[button[data-sort]]:pl-0";
 
 function TableHead({ className, ...props }: React.ComponentProps<"th">) {
   return (
