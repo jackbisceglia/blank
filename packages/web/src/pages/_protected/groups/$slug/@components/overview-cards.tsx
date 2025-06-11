@@ -10,6 +10,7 @@ import { Member } from "@blank/zero";
 import { ComponentProps, PropsWithChildren } from "react";
 import { Button } from "@/components/ui/button";
 import { compareParticipantsCustomOrder } from "@/lib/participants";
+import { Status } from "./table-status";
 
 function formatUSD(amount: number) {
   return new Intl.NumberFormat("en-US", {
@@ -62,18 +63,30 @@ export function GroupCard(props: CardsProps) {
   );
 }
 
-type ActiveExpensesCardProps = { total: number; count: number };
+type ActiveExpensesCardProps = { total: number; count: number; status: Status };
 
 export function ActiveExpensesCard(props: ActiveExpensesCardProps) {
+  const titles: Record<Status, string> = {
+    active: "Active Expenses",
+    settled: "Settled Expenses",
+    all: "All Expenses",
+  };
+
+  const trailing: Record<Status, (count: number) => string> = {
+    active: (count: number) => `${count.toString()} active expenses`,
+    settled: (count: number) => `${count.toString()} settled expenses`,
+    all: (count: number) => `${count.toString()} total expenses`,
+  };
+
   return (
     <GroupCard
-      header={() => "Active Expenses"}
+      header={() => titles[props.status]}
       content={() => (
         <div className="text-lg font-semibold">{formatUSD(props.total)}</div>
       )}
       footer={() => (
         <p className="text-xs text-muted-foreground h-full">
-          {props.count} expenses
+          {trailing[props.status](props.count)}
         </p>
       )}
     />

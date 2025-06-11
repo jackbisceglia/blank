@@ -14,6 +14,9 @@ export const expenseTable = pgTable("expense", {
   amount: integer().notNull(),
   date: timestamp().defaultNow().notNull(),
   description: text().notNull(),
+  status: text({ enum: ["active", "settled"] })
+    .default("active")
+    .notNull(),
   createdAt: timestamp().defaultNow().notNull(),
 });
 

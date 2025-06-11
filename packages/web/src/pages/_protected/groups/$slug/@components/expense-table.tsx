@@ -31,6 +31,7 @@ import { ParticipantBadge, ParticipantBadgeList } from "./table-badges";
 import { ChevronDown, ChevronUp } from "lucide-react";
 import { useQueryFromSearch } from "./table-query";
 import { useFiltersFromSearch } from "./table-filters";
+import { useStatusFromSearch } from "./table-status";
 
 type Payer = ParticipantWithMember | undefined;
 
@@ -338,7 +339,10 @@ export function DataTable(props: DataTableProps) {
                 }}
                 key={row.id}
                 data-state={row.getIsSelected() && "selected"}
-                className="hover:bg-muted focus-within:bg-muted transition-colors "
+                className={cn(
+                  "hover:bg-muted focus-within:bg-muted transition-colors",
+                  row.original.status === "settled" && "opacity-55"
+                )}
                 tabIndex={0}
                 onKeyDown={(e) => {
                   const navigation = tableNavigationContext(e);

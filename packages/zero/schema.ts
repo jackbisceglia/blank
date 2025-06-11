@@ -30,6 +30,7 @@ const expense = table("expense")
     amount: number(),
     date: number(),
     description: string(),
+    status: enumeration<"active" | "settled">(),
     createdAt: number().optional(),
   })
   .primaryKey("id");

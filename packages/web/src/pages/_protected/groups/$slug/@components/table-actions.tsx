@@ -19,6 +19,7 @@ import {
   TableFiltersDropdown,
 } from "./table-filters";
 import { TableQueryInput } from "./table-query";
+import { TableStatusSelect } from "./table-status";
 
 function useConfirmDeleteAllExpenses(
   groupId: string,
@@ -92,22 +93,7 @@ function TableActions(props: TableActionsProps) {
             Delete All
           </Button>
         )}
-        <Select defaultValue="active">
-          <SelectTrigger className="text-xs uppercase w-24 bg-transparent border border-border py-1.5 pl-3 pr-2 hover:bg-secondary/25 text-foreground h-min ">
-            <SelectValue />
-          </SelectTrigger>
-          <SelectContent className="uppercase">
-            <SelectItem className="text-xs" value="all">
-              All
-            </SelectItem>
-            <SelectItem className="text-xs" value="active">
-              Active
-            </SelectItem>
-            <SelectItem className="text-xs" value="settled">
-              Settled
-            </SelectItem>
-          </SelectContent>
-        </Select>
+        <TableStatusSelect />
       </SecondaryRow>
       <TableFilterBadgeRow />
     </>

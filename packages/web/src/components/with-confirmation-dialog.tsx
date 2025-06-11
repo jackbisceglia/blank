@@ -23,6 +23,7 @@ type UseWithConfirmationOptions = {
         entity: string;
       };
   confirm?: string;
+  confirmVariant?: "destructive" | "theme";
   cancel?: string;
   onConfirm: () => Promise<void>;
 };
@@ -81,7 +82,7 @@ export function useWithConfirmation(options: UseWithConfirmationOptions) {
             <Button
               size="xs"
               className="w-full"
-              variant="destructive"
+              variant={options.confirmVariant ?? "destructive"}
               onClick={() => void handleConfirm()}
             >
               {status === "loading"

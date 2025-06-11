@@ -56,6 +56,41 @@ function useConfirmDeleteExpense(
   });
 }
 
+function useConfirmSettleExpense(
+  expenseId: string,
+  settleMutation: (opts: UpdateExpenseOptions) => Promise<void>,
+  leave: () => void
+) {
+  return useWithConfirmation({
+    title: "Settle expense?",
+    description: {
+      type: "custom",
+      value:
+        "This will settle and archive the expense. Be sure to settle up with all participants.",
+    },
+    confirm: "Settle",
+    confirmVariant: "theme",
+    onConfirm: async () => {
+      return withToast({
+        promise: () => {
+          return settleMutation({
+            expenseId,
+            updates: { expense: { status: "settled" } },
+          });
+        },
+        notify: {
+          loading: "settling expense...",
+          success: "Expense settled successfully",
+          error: "Unable to settle expense",
+        },
+        classNames: {
+          success: "!bg-secondary !border-border",
+        },
+      }).then(() => leave());
+    },
+  });
+}
+
 function useMutators() {
   const updateExpense = useUpdateExpense();
   const deleteExpense = useDeleteOneExpense();
@@ -184,10 +219,30 @@ export function ExpenseSheet(props: ExpenseSheetProps) {
     mutators.expense.delete,
     route.close
   );
+  const settleExpense = useConfirmSettleExpense(
+    active.id,
+    mutators.expense.update,
+    route.close
+  );
+  const unsettleExpense = () =>
+    withToast({
+      promise: async () => {
+        await mutators.expense.update({
+          expenseId: active.id,
+          updates: { expense: { status: "active" } },
+        });
+      },
+      notify: {
+        loading: "updating expense...",
+        success: "Expense marked as active",
+        error: "Unable to mark expense as active",
+      },
+    });
 
   return (
     <>
       <deleteExpense.dialog />
+      <settleExpense.dialog />
       <Sheet route={route}>
         <SheetContent
           className="outline-none bg-background border-sidebar-border/50"
@@ -261,7 +316,7 @@ export function ExpenseSheet(props: ExpenseSheetProps) {
                   ))}
               </ul>
             </SheetBody>
-            <SheetFooter className="flex-col gap-2 mt-auto">
+            <SheetFooter className="flex-col gap-2 mt-auto grid grid-cols-2">
               <form.api.Subscribe
                 selector={(state) => state.fieldMeta}
                 children={(fieldMeta) => (
@@ -272,8 +327,28 @@ export function ExpenseSheet(props: ExpenseSheetProps) {
                 )}
               ></form.api.Subscribe>
               <form.api.AppForm>
-                <form.api.SubmitButton>Save</form.api.SubmitButton>
-                <form.api.CancelButton onClick={deleteExpense.confirm}>
+                <form.api.SubmitButton className="col-start-1 col-end-3">
+                  Save
+                </form.api.SubmitButton>
+                {active.status === "active" ? (
+                  <form.api.SettleButton
+                    className="col-span-1"
+                    onClick={settleExpense.confirm}
+                  >
+                    Settle
+                  </form.api.SettleButton>
+                ) : (
+                  <form.api.SettleButton
+                    className="col-span-1"
+                    onClick={() => void unsettleExpense()}
+                  >
+                    Unsettle
+                  </form.api.SettleButton>
+                )}
+                <form.api.CancelButton
+                  className="col-span-1"
+                  onClick={deleteExpense.confirm}
+                >
                   Delete
                 </form.api.CancelButton>
               </form.api.AppForm>

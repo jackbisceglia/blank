@@ -17,6 +17,7 @@ export type UpdateOptions = {
       amount?: Expense["amount"];
       date?: Expense["date"];
       description?: Expense["description"];
+      status?: Expense["status"];
     };
     participants?: Omit<UpdateParticipant, "expenseId">[];
   };

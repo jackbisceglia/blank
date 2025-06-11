@@ -3,7 +3,7 @@ import { SubHeading } from "@/components/prose";
 import { GroupBody, States } from "./layout";
 import { DataTable } from "./@components/expense-table";
 import { ExpenseSheet, SearchRoute, SearchRouteSchema } from "./@expense.sheet";
-import { Member, Expense as ZeroExpense } from "@blank/zero";
+import { Expense, Member, Expense as ZeroExpense } from "@blank/zero";
 import { ParticipantWithMember } from "@/lib/participants";
 import * as v from "valibot";
 import { slugify } from "@/lib/utils";
@@ -14,10 +14,19 @@ import {
   SuggestionsCard,
 } from "./@components/overview-cards";
 import { TableActions } from "./@components/table-actions";
-import { useDeleteAllExpenses, useUpdateExpense } from "../../@data/expenses";
+import {
+  useDeleteAllExpenses,
+  useExpenseListByGroupSlug,
+  useUpdateExpense,
+} from "../../@data/expenses";
 import { useGroupBySlug } from "../../@data/groups";
 import { FiltersSchema } from "./@components/table-filters";
 import { QuerySchema, useQueryFromSearch } from "./@components/table-query";
+import {
+  Status,
+  StatusSchema,
+  useStatusFromSearch,
+} from "./@components/table-status";
 
 function createBalanceMap(expenses: ExpenseWithParticipants[]) {
   function initialize() {
@@ -52,10 +61,11 @@ export type ExpenseWithParticipants = ZeroExpense & {
   participants: ParticipantWithMember[];
 };
 
-function useQueries(slug: string) {
+function useQueries(slug: string, status: Expense["status"] | "all") {
   const group = useGroupBySlug(slug);
+  const expenses = useExpenseListByGroupSlug(slug, { status });
 
-  return { group };
+  return { group, expenses };
 }
 
 function useMutations() {
@@ -85,8 +95,9 @@ function GroupRoute() {
   const sheet = SearchRoute.useSearchRoute();
   const params = Route.useParams();
   const tableQuery = useQueryFromSearch();
+  const status = useStatusFromSearch();
 
-  const query = useQueries(params.slug);
+  const query = useQueries(params.slug, status.value);
   const mutate = useMutations();
 
   if (!query.group.data || query.group.status === "not-found") {
@@ -94,9 +105,10 @@ function GroupRoute() {
   }
 
   const group = query.group.data;
+  const expenses = query.expenses.data;
 
-  const active = group.expenses.find((e) => e.id === sheet.state());
-  const sum = group.expenses.reduce((sum, { amount }) => sum + amount, 0);
+  const active = expenses.find((e) => e.id === sheet.state());
+  const sum = expenses.reduce((sum, { amount }) => sum + amount, 0);
   const map = createBalanceMap(group.expenses as ExpenseWithParticipants[]);
 
   return (
@@ -104,9 +116,13 @@ function GroupRoute() {
       <SubHeading> {group.description} </SubHeading>
       <GroupBody>
         <CardsSection>
-          <ActiveExpensesCard total={sum} count={group.expenses.length} />
+          <ActiveExpensesCard
+            total={sum}
+            count={expenses.length}
+            status={status.value}
+          />
           <BalancesCard
-            count={group.expenses.length}
+            count={expenses.length}
             members={group.members as Member[]}
             balance={map}
           />
@@ -121,7 +137,7 @@ function GroupRoute() {
         <DataTable
           query={tableQuery.value ?? ""}
           expand={sheet.open}
-          data={group.expenses as ExpenseWithParticipants[]}
+          data={expenses as ExpenseWithParticipants[]}
           updateTitle={mutate.expense.randomizeTitle}
         />
       </GroupBody>
@@ -149,6 +165,7 @@ export const Route = createFileRoute("/_protected/groups/$slug/")({
   validateSearch: v.object({
     expense: SearchRouteSchema.entries.expense,
     ...QuerySchema.entries,
+    ...StatusSchema.entries,
     ...FiltersSchema.entries,
   }),
 });
