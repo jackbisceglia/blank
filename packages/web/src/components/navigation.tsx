@@ -155,9 +155,6 @@ function Groups(props: GroupsProps) {
             opts: {
               to: `/groups/$slug`,
               params: { slug: item.slug },
-              search: (previous) => ({
-                action: previous.action,
-              }),
             },
           }}
           index={props.position + index}
@@ -226,10 +223,7 @@ export function GlobalSidebar(props: SideNavigationProps) {
           >
             <Link
               to="/groups"
-              search={(previous) => ({
-                ...previous,
-                action: previous.action,
-              })}
+              search={(previous) => ({ ...previous, action: previous.action })}
             >
               <span>Groups</span>
             </Link>

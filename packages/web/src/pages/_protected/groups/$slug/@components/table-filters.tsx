@@ -89,7 +89,7 @@ export function useFiltersFromSearch() {
         Object.keys(value).reduce(
           (acc, curr) => ({
             ...acc,
-            [curr]: undefined, // todo: check if this is correct
+            [curr]: undefined,
           }),
           { ...previous }
         ),

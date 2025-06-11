@@ -13,7 +13,7 @@ const GoogleOAuth = new sst.Linkable("GoogleOAuth", {
 export const Auth = new sst.aws.Auth("Auth", {
   issuer: {
     handler: "packages/server/auth/src/index.default",
-    link: [Database, GoogleOAuth], // TODO: treeshaking issue, need to include ai
+    link: [Database, GoogleOAuth],
   },
   domain: domains.auth,
 });
