@@ -8,6 +8,7 @@ import { authenticate, openauth } from "@/server/auth/core";
 import { AuthTokens } from "@/server/utils";
 import { Effect, pipe } from "effect";
 import { evaluate } from "@/lib/utils";
+import { optional } from "@blank/core/lib/utils/index";
 
 class AuthenticatedError extends TaggedError("AuthenticatedError") {}
 
@@ -63,7 +64,9 @@ export const loginRPC = createServerFn().handler(async function () {
   const { access, refresh } = AuthTokens.cookies.get();
 
   if (access) {
-    const verified = await openauth.verify(subjects, access, { refresh });
+    const verified = await openauth.verify(subjects, access, {
+      ...optional({ refresh }),
+    });
 
     if (!verified.err && verified.tokens) {
       AuthTokens.cookies.set(verified.tokens);

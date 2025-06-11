@@ -4,10 +4,10 @@ import {
   getCoreRowModel,
   useReactTable,
   createColumnHelper,
-  getSortedRowModel,
   Row,
   Column,
   getFilteredRowModel,
+  getSortedRowModel,
 } from "@tanstack/react-table";
 import {
   Table,
@@ -17,25 +17,27 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { ComponentProps, PropsWithChildren, useRef } from "react";
+import { ComponentProps, PropsWithChildren, useRef, useMemo } from "react";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { ExpenseWithParticipants } from "../page";
-import { getPayerFromParticipants } from "@/lib/participants";
+import {
+  getPayerFromParticipants,
+  ParticipantWithMember,
+} from "@/lib/participants";
 import { tableNavigationContext } from "@/lib/keyboard-nav";
 import { cn, flags } from "@/lib/utils";
 import { Link } from "@tanstack/react-router";
 import { ParticipantBadge, ParticipantBadgeList } from "./table-badges";
 import { ChevronDown, ChevronUp } from "lucide-react";
+import { useQueryFromSearch } from "./table-query";
+import { useFiltersFromSearch } from "./table-filters";
 
-/*
- * TODO TOMORROW
- * [x] sort by description
- * [x] fix default sort as date not working issue
- *  -> this is working, but it's really not a great solution. i'd love to handle this natively in the table
- * [ ] fix table sorts persisting issue
- * [x] fix row focus-within on table header
- * [x] fix client side search with no duplicate query results
- */
+type Payer = ParticipantWithMember | undefined;
+
+const createGetPayer =
+  (colId: string) =>
+  (row: Row<ExpenseWithParticipants>): Payer =>
+    row.getValue(colId);
 
 type SortButtonProps = PropsWithChildren<{
   column: Column<ExpenseWithParticipants>;
@@ -50,7 +52,7 @@ const SortButton = (props: SortButtonProps) => {
     none: "none",
   } as const;
 
-  // this is super ugly, but an edge case check:
+  // NOTE: this is super ugly, but an edge case check:
   // tldr; if we are dealing with the date column, we want to check if the data is 'naturally' sorted
   // this means, if the table is tracking the sort state as false (not sorted), then we want to know if it's still actually sorted by way of the query itself
   // when this is the case, we just pretend to the user that it's sorted, as it's indistinguishable from the table state in this case
@@ -86,10 +88,6 @@ const SortButton = (props: SortButtonProps) => {
     return [sort[baseIsSorted || "none"], baseToggle] as const;
   })();
 
-  if (props.column.id === "date") {
-    console.log(direction);
-  }
-
   return (
     <Button
       onClick={props.onClick ?? (() => toggle())}
@@ -97,7 +95,7 @@ const SortButton = (props: SortButtonProps) => {
       size="xs"
       variant="ghost"
       className={cn(
-        "gap-1.5 font-normal hover:bg-transparent uppercase !pl-2 !pr-4 lg:!pr-4 lg:!pl-2 sm:px-0 h-full cursor-pointer w-full mr-auto flex justify-start items-center "
+        "gap-1.5 font-normal hover:bg-transparent uppercase !pl-2 !pr-4 lg:!pr-4 lg:!pl-2 sm:px-0 py-1 h-full cursor-pointer w-full mr-auto flex justify-start items-center "
       )}
       aria-sort={direction}
     >
@@ -124,6 +122,7 @@ const columns = [
   }),
   columnHelper.accessor("description", {
     sortingFn: "alphanumeric",
+    filterFn: "includesString",
     header: (props) => (
       <SortButton column={props.column} rows={props.table.getRowModel().rows}>
         Description
@@ -151,12 +150,16 @@ const columns = [
       );
     },
   }),
-  columnHelper.accessor("participants", {
+  columnHelper.accessor((row) => getPayerFromParticipants(row.participants), {
     id: "paid-by",
-    sortingFn: (rowA, rowB, colId: string) => {
-      const payer = (row: Row<ExpenseWithParticipants>) =>
-        getPayerFromParticipants(row.getValue(colId));
+    filterFn: (row, colId, values: string[]) => {
+      if (values.length === 0) return true;
 
+      const nickname = createGetPayer(colId)(row)?.member?.nickname ?? "";
+      return values.includes(nickname);
+    },
+    sortingFn: (rowA, rowB, colId: string) => {
+      const payer = createGetPayer(colId);
       const nickname = (row: Row<ExpenseWithParticipants>) =>
         payer(row)?.member?.nickname.toLowerCase() ?? "";
 
@@ -168,27 +171,40 @@ const columns = [
       </SortButton>
     ),
     cell: (opts) => {
-      const payer = getPayerFromParticipants(opts.getValue());
+      const payer = opts.getValue();
 
       if (!payer) return null;
 
       return <ParticipantBadge participant={payer} strategy="standard" />;
     },
   }),
-  columnHelper.accessor("participants", {
-    header: "With",
-    cell: (opts) => {
-      const participants = opts
-        .getValue()
-        .filter((p) => p.role === "participant");
+  columnHelper.accessor(
+    (row) => row.participants.filter((p) => p.role === "participant"),
+    {
+      id: "with",
+      header: "With",
+      filterFn: (row, colId, values: string[]) => {
+        if (values.length === 0) return true;
 
-      if (participants.length === 0) {
-        return <p className="text-muted-foreground lowercase">None</p>;
-      }
+        const participants: ParticipantWithMember[] = row.getValue(colId);
 
-      return <ParticipantBadgeList participants={participants} />;
-    },
-  }),
+        const nickname = (p: ParticipantWithMember) => p.member?.nickname ?? "";
+
+        return values.some((value) =>
+          participants.some((p) => nickname(p).includes(value))
+        );
+      },
+      cell: (opts) => {
+        const participants = opts.getValue();
+
+        if (participants.length === 0) {
+          return <p className="text-muted-foreground lowercase">None</p>;
+        }
+
+        return <ParticipantBadgeList participants={participants} />;
+      },
+    }
+  ),
   columnHelper.accessor("date", {
     sortingFn: "datetime",
     sortDescFirst: false,
@@ -243,8 +259,35 @@ type DataTableProps = {
   query: string | undefined;
 };
 
+const useColumnFilters = () => {
+  const query = useQueryFromSearch();
+  const filters = useFiltersFromSearch();
+
+  return useMemo(
+    () => [
+      {
+        id: "description",
+        value: query.value ?? "",
+      },
+      {
+        id: "paid-by",
+        value: filters.value.paidBy ?? "",
+      },
+      {
+        id: "with",
+        value: filters.value.with ?? "",
+      },
+    ],
+    [query.value, filters.value]
+  );
+};
+
 export function DataTable(props: DataTableProps) {
-  const initialSorting = [{ id: "date", desc: true }];
+  const columnFilters = useColumnFilters();
+  const initialState = useMemo(
+    () => ({ sorting: [{ id: "date", desc: true }] }),
+    []
+  );
 
   const table = useReactTable({
     columns,
@@ -252,9 +295,8 @@ export function DataTable(props: DataTableProps) {
     getCoreRowModel: getCoreRowModel(),
     getSortedRowModel: getSortedRowModel(),
     getFilteredRowModel: getFilteredRowModel(),
-    globalFilterFn: "includesString",
-    state: { globalFilter: props.query }, // pull filter from search query prop
-    initialState: { sorting: initialSorting },
+    state: { columnFilters: columnFilters },
+    initialState,
     meta: { expand: props.expand, updateTitle: props.updateTitle },
     getRowId: (row) => row.id,
   });
@@ -286,8 +328,8 @@ export function DataTable(props: DataTableProps) {
         ))}
       </TableHeader>
       <TableBody>
-        {table.getSortedRowModel().rows.length ? (
-          table.getSortedRowModel().rows.map((row) => {
+        {table.getRowModel().rows.length ? (
+          table.getRowModel().rows.map((row) => {
             return (
               <TableRow
                 ref={(el) => {

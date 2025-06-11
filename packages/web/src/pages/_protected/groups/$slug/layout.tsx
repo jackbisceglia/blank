@@ -30,7 +30,7 @@ function GroupNavigation(props: GroupNavigationProps) {
     <div className="sm:ml-auto uppercase text-xs sm:text-sm flex items-center justify-center sm:justify-start gap-4">
       {links.map((link) => (
         <Link
-          disabled={props.disable}
+          disabled={props.disable ?? false}
           key={link}
           activeOptions={{ exact: true, includeSearch: false }}
           activeProps={{
@@ -63,7 +63,7 @@ export function GroupBody(props: PropsWithChildren<{ className?: string }>) {
   return (
     <div
       className={cn(
-        "flex flex-col w-full pb-3.5 space-y-6 pt-3 pb-0",
+        "flex flex-col w-full pb-3.5 space-y-5 pt-2.5",
         props.className
       )}
     >

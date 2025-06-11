@@ -18,7 +18,7 @@ export type ClientMutators = ReturnType<typeof createClientMutators>;
 export type CreateMutators = CustomMutatorDefs<typeof schema>;
 
 export function assertIsAuthenticated(auth: OpenAuthToken | undefined) {
-  // if (!auth) throw new Error("Not authenticated: " + auth);
+  if (!auth) throw new Error("Not authenticated");
 
   return auth;
 }

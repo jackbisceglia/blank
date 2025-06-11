@@ -1,4 +1,4 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, retainSearchParams } from "@tanstack/react-router";
 import { SubHeading } from "@/components/prose";
 import { GroupBody, States } from "./layout";
 import { DataTable } from "./@components/expense-table";
@@ -13,9 +13,11 @@ import {
   CardsSection,
   SuggestionsCard,
 } from "./@components/overview-cards";
-import { TableActions, useQueryFromSearch } from "./@components/table-actions";
+import { TableActions } from "./@components/table-actions";
 import { useDeleteAllExpenses, useUpdateExpense } from "../../@data/expenses";
 import { useGroupBySlug } from "../../@data/groups";
+import { FiltersSchema } from "./@components/table-filters";
+import { QuerySchema, useQueryFromSearch } from "./@components/table-query";
 
 function createBalanceMap(expenses: ExpenseWithParticipants[]) {
   function initialize() {
@@ -76,9 +78,9 @@ function useMutations() {
 function GroupRoute() {
   const sheet = SearchRoute.useSearchRoute();
   const params = Route.useParams();
-  const term = useQueryFromSearch();
+  const tableQuery = useQueryFromSearch();
 
-  const query = useQueries(params.slug, term.value);
+  const query = useQueries(params.slug);
   const mutate = useMutations();
 
   if (!query.group.data || query.group.status === "not-found") {
@@ -107,10 +109,11 @@ function GroupRoute() {
         <TableActions
           id={group.id}
           expenseCount={group.expenses.length}
+          members={group.members as Member[]}
           actions={{ deleteAll: mutate.expense.deleteAll }}
         />
         <DataTable
-          query={term.value ?? ""}
+          query={tableQuery.value ?? ""}
           expand={sheet.open}
           data={group.expenses as ExpenseWithParticipants[]}
           updateTitle={mutate.expense.randomizeTitle}
@@ -124,8 +127,22 @@ function GroupRoute() {
 export const Route = createFileRoute("/_protected/groups/$slug/")({
   component: GroupRoute,
   ssr: false,
+  search: {
+    middlewares: [
+      function stripEmptyArrayValues(opts) {
+        const next = { ...opts.next(opts.search) };
+        Object.entries(opts.search).forEach(([key, value]) => {
+          if (Array.isArray(value) && value.length === 0) {
+            next[key as keyof typeof next] = undefined;
+          }
+        });
+        return next;
+      },
+    ],
+  },
   validateSearch: v.object({
     expense: SearchRouteSchema.entries.expense,
-    query: v.optional(v.string()),
+    ...QuerySchema.entries,
+    ...FiltersSchema.entries,
   }),
 });

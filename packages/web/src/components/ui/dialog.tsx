@@ -51,7 +51,7 @@ function DialogContent({
   omitCloseButton,
   ...props
 }: React.ComponentProps<typeof DialogPrimitive.Content> & {
-  omitCloseButton?: boolean;
+  omitCloseButton?: boolean | undefined;
 }) {
   const previous = useRef<HTMLElement | null>(null);
 

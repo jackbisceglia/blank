@@ -22,6 +22,7 @@ import { getPayerFromParticipants } from "@/lib/participants";
 import { withToast } from "@/lib/toast";
 import { Participant } from "@blank/zero";
 import { useDeleteOneExpense, useUpdateExpense } from "../../@data/expenses";
+import { optional } from "@blank/core/lib/utils/index";
 
 const key = "expense" as const;
 export const SearchRouteSchema = v.object({
@@ -148,7 +149,7 @@ function useForm(
             expenseId: active.id,
             updates: {
               expense: makeExpense(),
-              participants: makeParticipants(),
+              ...optional({ participants: makeParticipants() }),
             },
           });
         },
