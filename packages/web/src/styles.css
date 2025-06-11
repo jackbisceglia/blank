@@ -118,6 +118,8 @@
   --color-sidebar-primary: var(--sidebar-primary);
   --color-sidebar-foreground: var(--sidebar-foreground);
   --color-sidebar: var(--sidebar);
+  --text-xs: 0.75rem;
+  --text-sm: 0.8125rem;
 }
 
 @layer base {

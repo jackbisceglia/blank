@@ -67,7 +67,7 @@ function SidebarMenuItemChunk(props: SidebarMenuItemChunkProps) {
             <Link
               activeOptions={{
                 exact: false,
-                includeSearch: props.matchOnSearch,
+                includeSearch: props.matchOnSearch ?? false,
               }}
               activeProps={{ className: `${underline_defaults} text-primary` }}
               {...props.item.opts}
@@ -103,7 +103,6 @@ function QuickActions(props: QuickActionsProps) {
       opts: {
         to: ".",
         search: (prev) => ({
-          ...prev,
           action: ["new-expense", ...(prev.action ?? [])],
         }),
       },
@@ -118,7 +117,7 @@ function QuickActions(props: QuickActionsProps) {
           key={item.title}
           item={item}
           index={props.position + index}
-          matchOnSearch={item.isSearchRelatedAction}
+          matchOnSearch={item.isSearchRelatedAction ?? false}
         />
       ))}
     </>
@@ -153,7 +152,10 @@ function Groups(props: GroupsProps) {
           item={{
             title: item.title,
             type: "link",
-            opts: { to: `/groups/$slug`, params: { slug: item.slug } },
+            opts: {
+              to: `/groups/$slug`,
+              params: { slug: item.slug },
+            },
           }}
           index={props.position + index}
           nested
