@@ -1,0 +1,47 @@
+import { PropsWithChildren, useState } from "react";
+import { useValidateDialogProgression } from "./validate-progression";
+import * as v from "valibot";
+import { Step1 } from "./step-1";
+import { Step2 } from "./step-2";
+import { createStackableSearchRoute } from "@/lib/search-route";
+
+export type Step = `${typeof PREFIX}-${number}`;
+
+export const KEY = "settle" as const;
+
+export const PREFIX = "step" as const;
+export const STEP_ONE: Step = "step-1" as const;
+export const STEP_TWO: Step = "step-2" as const;
+
+export const SearchRouteStep1 = createStackableSearchRoute(KEY, STEP_ONE);
+export const SearchRouteStep2 = createStackableSearchRoute(KEY, STEP_TWO);
+
+export const SearchRouteSchema = v.object({
+  [KEY]: v.optional(
+    v.array(v.union([v.literal<Step>(STEP_ONE), v.literal<Step>(STEP_TWO)]))
+  ),
+});
+
+export function SettleExpensesDialog(_props: PropsWithChildren) {
+  const progression = useValidateDialogProgression();
+  const [selectedExpenseIds, setSelectedExpenseIds] = useState<string[]>([]);
+
+  progression.validate();
+
+  return (
+    <>
+      <Step1
+        previous={progression.getPreviousStep(1)}
+        next={progression.getNextStep(1)}
+        selectedExpenseIds={selectedExpenseIds}
+        setSelectedExpenseIds={setSelectedExpenseIds}
+      />
+      <Step2
+        previous={progression.getPreviousStep(2)}
+        next={progression.getNextStep(2)}
+        selectedExpenseIds={selectedExpenseIds}
+        setSelectedExpenseIds={setSelectedExpenseIds}
+      />
+    </>
+  );
+}
