@@ -18,17 +18,23 @@ import {
 } from "@/lib/client-mutators/expense-mutators";
 import { PropsWithChildren } from "react";
 import { Separator } from "@/components/ui/separator";
-import { getPayerFromParticipants } from "@/lib/participants";
+import {
+  getPayerFromParticipants,
+  ParticipantWithMember,
+} from "@/lib/participants";
 import { withToast } from "@/lib/toast";
 import { Participant } from "@blank/zero";
 import { useDeleteOneExpense, useUpdateExpense } from "../../@data/expenses";
 import { optional } from "@blank/core/lib/utils/index";
+import { ChevronRight } from "lucide-react";
+import { useAuthentication } from "@/lib/authentication";
+import { DialogDescription } from "@/components/ui/dialog";
 
-const key = "expense" as const;
+export const KEY = "expense" as const;
 export const SearchRouteSchema = v.object({
-  [key]: v.optional(v.string()),
+  [KEY]: v.optional(v.string()),
 });
-export const SearchRoute = createSearchRoute(key);
+export const SearchRoute = createSearchRoute(KEY);
 
 function useConfirmDeleteExpense(
   expenseId: string,
@@ -57,16 +63,62 @@ function useConfirmDeleteExpense(
 }
 
 function useConfirmSettleExpense(
-  expenseId: string,
+  expense: ExpenseWithParticipants,
+  userId: string,
   settleMutation: (opts: UpdateExpenseOptions) => Promise<void>,
   leave: () => void
 ) {
+  const payer = getPayerFromParticipants(expense.participants);
+  if (!payer) {
+    throw new Error("Payer not found");
+  }
+
+  const getSettleUpSentence = (
+    p1: ParticipantWithMember,
+    p2: ParticipantWithMember,
+    cost: number,
+    split: number
+  ) => {
+    const payerIsCurrentUser = p1.userId === userId;
+    const payeeIsCurrentUser = p2.userId === userId;
+
+    return [
+      payerIsCurrentUser ? "You" : p1.member?.nickname,
+      payerIsCurrentUser ? "owe" : "owes",
+      payeeIsCurrentUser ? "You" : p2.member?.nickname,
+      `$${(cost * split).toFixed(2)}`,
+    ].join(" ");
+  };
+
   return useWithConfirmation({
     title: "Settle expense?",
+    subtitle: false,
     description: {
-      type: "custom",
-      value:
-        "This will settle and archive the expense. Be sure to settle up with all participants.",
+      type: "jsx",
+      value: () => (
+        <div className="space-y-4">
+          <DialogDescription>
+            This will settle and archive the expense. Be sure to settle up with
+            all participants. The following transaction must be made:
+          </DialogDescription>
+          <ul className="list-inside text-sm text-foreground space-y-1.5 mb-4">
+            {expense.participants
+              .filter((p) => p.role === "participant")
+              .map((p) => (
+                <li
+                  key={p.userId}
+                  className="flex items-center justify-between gap-2 mx-2 text-foreground lowercase"
+                >
+                  <ChevronRight className="size-3.5" />
+                  {getSettleUpSentence(p, payer, expense.amount, p.split)}
+                  <span className="text-blank-theme ml-auto font-bold">
+                    [{Math.round(p.split * 100).toString()}%]
+                  </span>
+                </li>
+              ))}
+          </ul>
+        </div>
+      ),
     },
     confirm: "Settle",
     confirmVariant: "theme",
@@ -74,7 +126,7 @@ function useConfirmSettleExpense(
       return withToast({
         promise: () => {
           return settleMutation({
-            expenseId,
+            expenseId: expense.id,
             updates: { expense: { status: "settled" } },
           });
         },
@@ -86,7 +138,9 @@ function useConfirmSettleExpense(
         classNames: {
           success: "!bg-secondary !border-border",
         },
-      }).then(() => leave());
+      }).then(() => {
+        leave();
+      });
     },
   });
 }
@@ -209,6 +263,7 @@ type ExpenseSheetProps = PropsWithChildren<{
 }>;
 
 export function ExpenseSheet(props: ExpenseSheetProps) {
+  const auth = useAuthentication();
   const route = SearchRoute.useSearchRoute();
   const active = props.expense;
 
@@ -220,12 +275,14 @@ export function ExpenseSheet(props: ExpenseSheetProps) {
     route.close
   );
   const settleExpense = useConfirmSettleExpense(
-    active.id,
+    active,
+    auth.user.id,
     mutators.expense.update,
     route.close
   );
-  const unsettleExpense = () =>
-    withToast({
+  const unsettleExpense = () => {
+    route.close();
+    void withToast({
       promise: async () => {
         await mutators.expense.update({
           expenseId: active.id,
@@ -238,12 +295,13 @@ export function ExpenseSheet(props: ExpenseSheetProps) {
         error: "Unable to mark expense as active",
       },
     });
+  };
 
   return (
     <>
       <deleteExpense.dialog />
       <settleExpense.dialog />
-      <Sheet route={route}>
+      <Sheet route={route} onOpenChange={route.sync}>
         <SheetContent
           className="outline-none bg-background border-sidebar-border/50"
           aria-describedby={undefined}
@@ -271,7 +329,12 @@ export function ExpenseSheet(props: ExpenseSheetProps) {
                 <form.api.AppField
                   name="description"
                   children={(field) => (
-                    <field.SheetTextField label="description" />
+                    <field.SheetTextField
+                      inputProps={{
+                        disabled: active.status === "settled",
+                      }}
+                      label="description"
+                    />
                   )}
                 />
               </div>
@@ -279,14 +342,26 @@ export function ExpenseSheet(props: ExpenseSheetProps) {
                 <form.api.AppField
                   name="amount"
                   children={(field) => (
-                    <field.SheetCostField label="Cost (USD)" />
+                    <field.SheetCostField
+                      inputProps={{
+                        disabled: active.status === "settled",
+                      }}
+                      label="Cost (USD)"
+                    />
                   )}
                 />
               </div>
               <div className="col-span-1">
                 <form.api.AppField
                   name="date"
-                  children={(field) => <field.SheetDateField label="Date" />}
+                  children={(field) => (
+                    <field.SheetDateField
+                      inputProps={{
+                        disabled: active.status === "settled",
+                      }}
+                      label="Date"
+                    />
+                  )}
                 />
               </div>
 
@@ -295,6 +370,9 @@ export function ExpenseSheet(props: ExpenseSheetProps) {
                   name="paidBy"
                   children={(field) => (
                     <field.SheetPaidByField
+                      inputProps={{
+                        disabled: active.status === "settled",
+                      }}
                       participants={active.participants}
                       label="Paid by"
                     />
@@ -310,7 +388,7 @@ export function ExpenseSheet(props: ExpenseSheetProps) {
                   .map((p) => [p.member?.nickname, p.split * 100] as const)
                   .filter((tuple): tuple is [string, number] => !!tuple[0])
                   .map(([name, split]) => (
-                    <li>
+                    <li key={name}>
                       {name}: {split.toString()}%
                     </li>
                   ))}
@@ -340,7 +418,7 @@ export function ExpenseSheet(props: ExpenseSheetProps) {
                 ) : (
                   <form.api.SettleButton
                     className="col-span-1"
-                    onClick={() => void unsettleExpense()}
+                    onClick={() => unsettleExpense()}
                   >
                     Unsettle
                   </form.api.SettleButton>

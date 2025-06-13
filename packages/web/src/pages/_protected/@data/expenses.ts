@@ -3,6 +3,7 @@ import {
   DeleteAllOptions as DeleteAllExpensesOptions,
   DeleteOptions as DeleteExpenseOptions,
   UpdateOptions as UpdateExpenseOptions,
+  BulkSettleOptions as BulkSettleExpensesOptions,
 } from "@/lib/client-mutators/expense-mutators";
 import { useZero } from "@/lib/zero";
 import { useAuthentication } from "@/lib/authentication";
@@ -69,4 +70,11 @@ export function useDeleteAllExpenses() {
 
   return (opts: DeleteAllExpensesOptions) =>
     z.mutate.expense.deleteByGroupId(opts);
+}
+
+export function useBulkSettleExpenses() {
+  const z = useZero();
+
+  return (opts: BulkSettleExpensesOptions) => 
+    z.mutate.expense.bulkSettle(opts);
 }

@@ -2,13 +2,6 @@ import { SecondaryRow } from "../layout";
 import { Button } from "@/components/ui/button";
 import { Link } from "@tanstack/react-router";
 import { DeleteAllOptions } from "@/lib/client-mutators/expense-mutators";
-import {
-  Select,
-  SelectTrigger,
-  SelectValue,
-  SelectContent,
-  SelectItem,
-} from "@/components/ui/select";
 import { useWithConfirmation } from "@/components/with-confirmation-dialog";
 import { withToast } from "@/lib/toast";
 import { flags } from "@/lib/utils";

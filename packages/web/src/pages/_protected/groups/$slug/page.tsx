@@ -2,7 +2,18 @@ import { createFileRoute } from "@tanstack/react-router";
 import { SubHeading } from "@/components/prose";
 import { GroupBody, States } from "./layout";
 import { DataTable } from "./@components/expense-table";
-import { ExpenseSheet, SearchRoute, SearchRouteSchema } from "./@expense.sheet";
+import {
+  ExpenseSheet,
+  KEY as expense,
+  SearchRoute as ExpenseSheetSearchRoute,
+  SearchRouteSchema as ExpenseSheetSearchRouteSchema,
+} from "./@expense.sheet";
+import {
+  SettleExpensesDialog,
+  KEY as settle,
+  SearchRoute1 as SettleExpensesSearchRoute,
+  SearchRouteSchema as SettleExpensesSearchRouteSchema,
+} from "./@settle.dialog";
 import { Expense, Member, Expense as ZeroExpense } from "@blank/zero";
 import { ParticipantWithMember } from "@/lib/participants";
 import * as v from "valibot";
@@ -11,7 +22,7 @@ import {
   ActiveExpensesCard,
   BalancesCard,
   CardsSection,
-  SuggestionsCard,
+  ActionsCard,
 } from "./@components/overview-cards";
 import { TableActions } from "./@components/table-actions";
 import {
@@ -22,11 +33,7 @@ import {
 import { useGroupBySlug } from "../../@data/groups";
 import { FiltersSchema } from "./@components/table-filters";
 import { QuerySchema, useQueryFromSearch } from "./@components/table-query";
-import {
-  Status,
-  StatusSchema,
-  useStatusFromSearch,
-} from "./@components/table-status";
+import { StatusSchema, useStatusFromSearch } from "./@components/table-status";
 
 function createBalanceMap(expenses: ExpenseWithParticipants[]) {
   function initialize() {
@@ -92,7 +99,8 @@ function useMutations() {
 }
 
 function GroupRoute() {
-  const sheet = SearchRoute.useSearchRoute();
+  const sheet = ExpenseSheetSearchRoute.useSearchRoute();
+  const settle = SettleExpensesSearchRoute.useSearchRoute();
   const params = Route.useParams();
   const tableQuery = useQueryFromSearch();
   const status = useStatusFromSearch();
@@ -111,6 +119,11 @@ function GroupRoute() {
   const sum = expenses.reduce((sum, { amount }) => sum + amount, 0);
   const map = createBalanceMap(group.expenses as ExpenseWithParticipants[]);
 
+  // add as property on db entity -> group.lastSettled
+  const lastSettled =
+    group.expenses.filter((e) => e.status === "settled" && e.createdAt).at(0)
+      ?.createdAt ?? undefined;
+
   return (
     <>
       <SubHeading> {group.description} </SubHeading>
@@ -126,11 +139,16 @@ function GroupRoute() {
             members={group.members as Member[]}
             balance={map}
           />
-          <SuggestionsCard members={group.members as Member[]} balance={map} />
+          <ActionsCard
+            members={group.members as Member[]}
+            balance={map}
+            lastSettled={lastSettled ? new Date(lastSettled) : undefined}
+            settle={settle.open}
+          />
         </CardsSection>
         <TableActions
           id={group.id}
-          expenseCount={group.expenses.length}
+          expenseCount={expenses.length}
           members={group.members as Member[]}
           actions={{ deleteAll: mutate.expense.deleteAll }}
         />
@@ -138,10 +156,12 @@ function GroupRoute() {
           query={tableQuery.value ?? ""}
           expand={sheet.open}
           data={expenses as ExpenseWithParticipants[]}
+          totalGroupExpenses={group.expenses.length}
           updateTitle={mutate.expense.randomizeTitle}
         />
       </GroupBody>
       {active && <ExpenseSheet expense={active as ExpenseWithParticipants} />}
+      <SettleExpensesDialog />
     </>
   );
 }
@@ -155,7 +175,10 @@ export const Route = createFileRoute("/_protected/groups/$slug/")({
         const next = { ...opts.next(opts.search) };
         Object.entries(opts.search).forEach(([key, value]) => {
           if (Array.isArray(value) && value.length === 0) {
-            next[key as keyof typeof next] = undefined;
+            type K = keyof typeof next;
+            const k = key as K;
+
+            next[k] = undefined;
           }
         });
         return next;
@@ -163,7 +186,8 @@ export const Route = createFileRoute("/_protected/groups/$slug/")({
     ],
   },
   validateSearch: v.object({
-    expense: SearchRouteSchema.entries.expense,
+    ...ExpenseSheetSearchRouteSchema.entries,
+    ...SettleExpensesSearchRouteSchema.entries,
     ...QuerySchema.entries,
     ...StatusSchema.entries,
     ...FiltersSchema.entries,

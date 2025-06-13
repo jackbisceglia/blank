@@ -31,7 +31,7 @@ import { ParticipantBadge, ParticipantBadgeList } from "./table-badges";
 import { ChevronDown, ChevronUp } from "lucide-react";
 import { useQueryFromSearch } from "./table-query";
 import { useFiltersFromSearch } from "./table-filters";
-import { useStatusFromSearch } from "./table-status";
+import { Status, useStatusFromSearch } from "./table-status";
 
 type Payer = ParticipantWithMember | undefined;
 
@@ -257,6 +257,7 @@ type DataTableProps = {
   expand: (id: string) => void;
   updateTitle: (id: string) => void;
   data: ExpenseWithParticipants[];
+  totalGroupExpenses: number;
   query: string | undefined;
 };
 
@@ -283,8 +284,61 @@ const useColumnFilters = () => {
   );
 };
 
+type EmptyStateProps = {
+  totalCount: number;
+  status: Status;
+};
+
+function EmptyState(props: EmptyStateProps) {
+  const CreateExpenseLink = (props: PropsWithChildren) => {
+    return (
+      <Link
+        to="."
+        className={cn(
+          buttonVariants({ variant: "link" }),
+          "p-0 text-blank-theme-text"
+        )}
+        search={(prev) => ({
+          action: ["new-expense", ...(prev.action ?? [])],
+        })}
+      >
+        {props.children}
+      </Link>
+    );
+  };
+
+  // no matter what, if there are no expenses, we want to show the "create an expense" link
+  console.log(props.totalCount, props.status);
+  if (props.totalCount === 0) {
+    return (
+      <p className="text-muted-foreground">
+        No expenses yet,{" "}
+        <CreateExpenseLink>create an expense</CreateExpenseLink> to get started.
+      </p>
+    );
+  }
+
+  switch (props.status) {
+    case "all":
+    case "active":
+      return (
+        <p className="text-muted-foreground">
+          No expenses yet,{" "}
+          <CreateExpenseLink>create an expense</CreateExpenseLink> to get
+          started.
+        </p>
+      );
+    case "settled":
+      return <p>No expenses settled.</p>;
+    default:
+      throw new Error(`Invalid Empty State`);
+  }
+}
+
 export function DataTable(props: DataTableProps) {
+  const status = useStatusFromSearch();
   const columnFilters = useColumnFilters();
+
   const initialState = useMemo(
     () => ({ sorting: [{ id: "date", desc: true }] }),
     []
@@ -415,26 +469,14 @@ export function DataTable(props: DataTableProps) {
               colSpan={columns.length}
               className="h-24 text-center uppercase"
             >
-              {props.data.length === 0 ? (
-                <p className="text-muted-foreground">
-                  No expenses yet,{" "}
-                  <Link
-                    to="."
-                    className={cn(
-                      buttonVariants({ variant: "link" }),
-                      "p-0 text-blank-theme-text"
-                    )}
-                    search={(prev) => ({
-                      action: ["new-expense", ...(prev.action ?? [])],
-                    })}
-                  >
-                    create an expense
-                  </Link>{" "}
-                  to get started.
-                </p>
+              <EmptyState
+                totalCount={props.totalGroupExpenses}
+                status={status.value}
+              />
+              {/* {props.data.length === 0 ? (
               ) : (
                 "No results found."
-              )}
+              )} */}
             </TableCell>
           </TableRow>
         )}

@@ -145,10 +145,11 @@ export function BalancesCard(props: BalancesCardProps) {
 type SuggestionsCardProps = {
   members: Member[];
   balance: (id: string) => number;
+  lastSettled: Date | undefined;
+  settle: () => void;
 };
 
-export function SuggestionsCard(props: SuggestionsCardProps) {
-  const lastSettled = "04/02/25"; // TODO: compute from db
+export function ActionsCard(props: SuggestionsCardProps) {
   const hasBalances = props.members.some(
     (member) => props.balance(member.userId) !== 0
   );
@@ -156,12 +157,13 @@ export function SuggestionsCard(props: SuggestionsCardProps) {
   const SettleOption = (
     props: PropsWithChildren & ComponentProps<typeof Button>
   ) => {
+    const { className, ...rest } = props;
     return (
       <Button
-        disabled
         variant="outline"
         size="xs"
-        className="flex-1 border-border"
+        className={cn("flex-1 border-border", className)}
+        {...rest}
       >
         {props.children}
       </Button>
@@ -176,16 +178,18 @@ export function SuggestionsCard(props: SuggestionsCardProps) {
           <p className="text-sm lowercase text-muted-foreground">All settled</p>
         ) : (
           <div className="flex flex-wrap w-full h-full justify-evenly items-center gap-x-2 gap-y-2 py-0">
-            <SettleOption>Manual</SettleOption>
-            <SettleOption>Venmo</SettleOption>
-            <SettleOption>Zelle</SettleOption>
+            <SettleOption onClick={props.settle}>Manual</SettleOption>
+            <SettleOption disabled>Venmo</SettleOption>
+            <SettleOption disabled>Zelle</SettleOption>
           </div>
         )
       }
       footer={() => (
         <p className="text-xs text-muted-foreground lowercase">
           {hasBalances
-            ? `last settled ${lastSettled}`
+            ? props.lastSettled
+              ? `last settled ${props.lastSettled.toLocaleDateString()}`
+              : "settle up for the first time"
             : "No outstanding balances"}
         </p>
       )}
