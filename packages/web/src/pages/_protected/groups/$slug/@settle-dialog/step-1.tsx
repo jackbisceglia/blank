@@ -8,38 +8,43 @@ import {
   DialogTitle,
   DialogDescription,
 } from "@/components/ui/dialog";
-import { useParams } from "@tanstack/react-router";
 import { Button } from "@/components/ui/button";
 import { SearchRouteStep1 } from ".";
+import { Route } from "../page";
 
-export function Step1(
-  props: PropsWithChildren<{
-    previous: () => void;
-    next: () => void;
-    selectedExpenseIds: string[];
-    setSelectedExpenseIds: (ids: string[]) => void;
-  }>
-) {
-  const { slug } = useParams({ strict: false });
-  const expenses = useExpenseListByGroupSlug(slug ?? "", { status: "active" });
+type Step1Props = PropsWithChildren<{
+  previous: () => void;
+  next: () => void;
+  selectedExpenseIds: string[];
+  setSelectedExpenseIds: (ids: (previous: string[]) => string[]) => void;
+}>;
+
+export function Step1(props: Step1Props) {
+  const params = Route.useParams();
   const route = SearchRouteStep1.useSearchRoute({
     hooks: {
-      onOpen: () => props.setSelectedExpenseIds(expenses.data.map((e) => e.id)),
+      onOpen: () => selectAll(),
     },
   });
 
-  const handleExpenseToggle = (expenseId: string, checked: boolean) => {
-    if (checked) {
-      props.setSelectedExpenseIds([...props.selectedExpenseIds, expenseId]);
-    } else {
-      props.setSelectedExpenseIds(
-        props.selectedExpenseIds.filter((id) => id !== expenseId)
-      );
-    }
-  };
+  const expenses = useExpenseListByGroupSlug(params.slug, { status: "active" });
 
-  const selectAll = () =>
-    props.setSelectedExpenseIds(expenses.data.map((e) => e.id));
+  function toggle(expenseId: string, checked: boolean) {
+    props.setSelectedExpenseIds((previous) =>
+      (() => {
+        switch (checked) {
+          case true:
+            return [...previous, expenseId];
+          case false:
+            return previous.filter((id) => id !== expenseId);
+        }
+      })()
+    );
+  }
+
+  function selectAll() {
+    props.setSelectedExpenseIds(() => expenses.data.map((e) => e.id));
+  }
 
   return (
     <Dialog open={route.view() === "open"} onOpenChange={route.sync}>
@@ -108,14 +113,12 @@ export function Step1(
                     <div
                       key={expense.id}
                       className="flex items-center space-x-3 px-3 py-2 border rounded-lg hover:bg-accent/50 transition-colors cursor-pointer"
-                      onClick={() =>
-                        handleExpenseToggle(expense.id, !isSelected)
-                      }
+                      onClick={() => toggle(expense.id, !isSelected)}
                     >
                       <Checkbox
                         checked={isSelected}
                         onCheckedChange={(checked) =>
-                          handleExpenseToggle(expense.id, checked === true)
+                          toggle(expense.id, checked === true)
                         }
                         onClick={(e) => e.stopPropagation()}
                       />
