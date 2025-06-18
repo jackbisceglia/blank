@@ -1,4 +1,4 @@
-import { PropsWithChildren, ReactNode } from "react";
+import { PropsWithChildren } from "react";
 import { DialogHeader, DialogFooter } from "@/components/ui/dialog";
 import { useExpenseListByGroupSlug } from "@/pages/_protected/@data/expenses";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -15,6 +15,7 @@ import { SearchRouteStep1 } from ".";
 import { Route } from "../page";
 import { cn } from "@/lib/utils";
 import { CollapsibleNotification } from "@/components/collapsible-notification";
+import { DialogButton } from "@/components/dialog-button";
 
 type Step1Props = PropsWithChildren<{
   previous: () => void;
@@ -49,6 +50,8 @@ export function Step1(props: Step1Props) {
   }
 
   if (expenses.data.length === 0) return null;
+
+  const someSelected = props.selectedExpenseIds.length > 0;
 
   return (
     <Dialog open={route.view() === "open"} onOpenChange={route.sync}>
@@ -86,7 +89,6 @@ export function Step1(props: Step1Props) {
               Select All
             </Button>
           </div>
-
           {expenses.data.length === 0 ? (
             <p className="text-sm text-muted-foreground py-4 text-center">
               No active expenses to settle.
@@ -152,26 +154,13 @@ export function Step1(props: Step1Props) {
           )}
         </div>
 
-        <DialogFooter className="[&>*]:w-full py-3 flex gap-2 flex-none">
-          <Button
-            size="xs"
-            className="w-full"
-            variant="outline"
-            onClick={() => props.previous()}
-          >
+        <DialogFooter className="py-3 flex gap-2 flex-none">
+          <DialogButton variant="outline" onClick={() => props.previous()}>
             Cancel
-          </Button>
-          <Button
-            size="xs"
-            className="w-full"
-            variant="default"
-            onClick={() => props.next()}
-            disabled={props.selectedExpenseIds.length === 0}
-          >
-            {props.selectedExpenseIds.length === 0
-              ? "No Expenses"
-              : "Review Settlement"}
-          </Button>
+          </DialogButton>
+          <DialogButton onClick={() => props.next()} disabled={!someSelected}>
+            {someSelected ? "Review Settlement" : "None Selected"}
+          </DialogButton>
         </DialogFooter>
       </DialogContent>
     </Dialog>
