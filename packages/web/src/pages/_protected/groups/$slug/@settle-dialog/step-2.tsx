@@ -57,47 +57,50 @@ function useQueries(slug: string) {
 }
 
 function useSettlements(balances: Array<[Member, number]>) {
-  const creditors = balances.filter(([, balance]) => balance > 0);
-  const debtors = balances.filter(([, balance]) => balance < 0);
+  const creditors = balances
+    .filter(([, balance]) => balance > 0)
+    .map(([member, balance]) => ({ member, balance }));
 
-  const payments: Array<{
+  const debtors = balances
+    .filter(([, balance]) => balance < 0)
+    .map(([member, balance]) => ({ member, balance: Math.abs(balance) }));
+
+  const settlements: {
     from: string;
     to: string;
     amount: number;
     fromName: string;
     toName: string;
-  }> = [];
+  }[] = [];
 
-  let creditorIndex = 0;
-  let debtorIndex = 0;
+  for (const creditor of creditors) {
+    for (const debtor of debtors) {
+      if (creditor.member.userId === debtor.member.userId) continue;
+      if (creditor.balance <= 0 || debtor.balance <= 0) continue;
 
-  while (creditorIndex < creditors.length && debtorIndex < debtors.length) {
-    const [creditor, cBalance] = creditors[creditorIndex];
-    const [debtor, dBalance] = debtors[debtorIndex];
+      const paymentAmount = Math.min(creditor.balance, debtor.balance);
 
-    const amount = Math.min(cBalance, Math.abs(dBalance));
+      console.log(
+        creditor.member.nickname,
+        debtor.member.nickname,
+        paymentAmount
+      );
+      if (paymentAmount <= 0.01) continue;
 
-    if (amount > 0.01) {
-      payments.push({
-        from: debtor.userId,
-        to: creditor.userId,
-        amount: Math.round(amount * 100) / 100,
-        fromName: debtor.nickname,
-        toName: creditor.nickname,
+      settlements.push({
+        from: debtor.member.userId,
+        to: creditor.member.userId,
+        amount: Math.round(paymentAmount * 100) / 100,
+        fromName: debtor.member.nickname,
+        toName: creditor.member.nickname,
       });
+
+      creditor.balance -= paymentAmount;
+      debtor.balance -= paymentAmount;
     }
-
-    let creditorBalance = cBalance;
-    let debtorBalance = dBalance;
-
-    creditorBalance = cBalance - amount;
-    debtorBalance = dBalance + amount;
-
-    if (creditorBalance < 0.01) creditorIndex++;
-    if (Math.abs(debtorBalance) < 0.01) debtorIndex++;
   }
 
-  return payments;
+  return settlements;
 }
 
 type Step2Props = PropsWithChildren<{
