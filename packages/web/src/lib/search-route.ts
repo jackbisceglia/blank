@@ -146,6 +146,17 @@ export function createSearchRoute(key: string): SearchRoute {
       }
     }, [view()]);
 
+    // if the dialog is closed and the value is still in the stack close it
+    // this means that for some reason the dialog mounted was unable to open itself (eg. invalid state)
+    // in this case, we need to make sure to remove the value from the stack
+    // NOTE: this is slightly different than the stackable case; this should be fine because dialogs registered with this should have unique keys.
+    // so the fact that the state is undefined tells us that the dialog could not open but the unique key/val pair persists in the url
+    useEffect(() => {
+      if (view() === "closed" && state() !== undefined) {
+        close();
+      }
+    }, [view()]);
+
     return { open, close, view, state, sync };
   }
 
@@ -242,7 +253,7 @@ export function createStackableSearchRoute(key: string, value: string) {
 
     // nav utility for open/close to use
     function go(k: string, v?: unknown) {
-      return navigate({
+      void navigate({
         to: ".",
         search: (prev) => ({ ...prev, [k]: v }),
       });
@@ -260,14 +271,14 @@ export function createStackableSearchRoute(key: string, value: string) {
       (solo?: boolean) => {
         const current = !solo ? (stack ?? []) : [];
         const added = new Set([...current, value]);
-        void go(key, Array.from(added));
+        go(key, Array.from(added));
       },
       [stack, value, go, key]
     );
 
     const close = useCallback(() => {
       const removed = stack?.filter((v) => v !== value) ?? [];
-      void go(key, removed.length > 0 ? removed : undefined);
+      go(key, removed.length > 0 ? removed : undefined);
     }, [stack, go, key]);
 
     const sync = (opening: boolean) => (opening ? open() : close());
@@ -279,6 +290,15 @@ export function createStackableSearchRoute(key: string, value: string) {
         options?.hooks?.onClose?.();
       }
     }, [view()]);
+
+    // if the dialog is closed and the value is still in the stack close it
+    // this means that for some reason the dialog mounted was unable to open itself (eg. invalid state)
+    // in this case, we need to make sure to remove the value from the stack
+    useEffect(() => {
+      if (view() === "closed" && stack?.includes(value)) {
+        close();
+      }
+    }, [view(), stack]);
 
     return { open, close, sync, view, state };
   }

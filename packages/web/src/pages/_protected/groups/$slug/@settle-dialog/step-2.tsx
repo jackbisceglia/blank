@@ -131,6 +131,8 @@ export function Step2(props: Step2Props) {
     });
   };
 
+  if (settlements.length === 0) return null;
+
   return (
     <Dialog open={route.view() === "open"} onOpenChange={route.sync}>
       <DialogContent className="py-4 px-6 sm:max-w-2xl min-h-[30rem] h-[75vh] flex flex-col">
@@ -209,7 +211,7 @@ export function Step2(props: Step2Props) {
             size="xs"
             className="w-full"
             variant="outline"
-            onClick={props.previous}
+            onClick={() => props.previous()}
           >
             Go Back
           </Button>

@@ -1,4 +1,4 @@
-import { PropsWithChildren, useState } from "react";
+import { useState } from "react";
 import { useValidateDialogProgression } from "./validate-progression";
 import * as v from "valibot";
 import { Step1 } from "./step-1";
@@ -18,15 +18,24 @@ export const SearchRouteStep2 = createStackableSearchRoute(KEY, STEP_TWO);
 
 export const SearchRouteSchema = v.object({
   [KEY]: v.optional(
-    v.array(v.union([v.literal<Step>(STEP_ONE), v.literal<Step>(STEP_TWO)]))
+    v.fallback(
+      v.array(v.union([v.literal<Step>(STEP_ONE), v.literal<Step>(STEP_TWO)])),
+      [STEP_TWO]
+    )
   ),
 });
 
-export function SettleExpensesDialog(_props: PropsWithChildren) {
+export function SettleExpensesDialog() {
   const progression = useValidateDialogProgression();
   const [selectedExpenseIds, setSelectedExpenseIds] = useState<string[]>([]);
 
-  progression.validate();
+  const valid = progression.validate();
+
+  if (!valid) {
+    throw new Error(
+      "Invalid Dialog Progression. Please start over and try again."
+    );
+  }
 
   return (
     <>

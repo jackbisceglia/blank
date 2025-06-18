@@ -15,7 +15,7 @@ export function useValidateDialogProgression() {
   });
 
   function validate() {
-    if ((search?.length ?? 0) === 0) return; // nothing to validate
+    if ((search?.length ?? 0) === 0) return true;
 
     const current = v.safeParse(
       // parses the progression of steps, validates they're correctly in order, returns the current step
@@ -39,11 +39,7 @@ export function useValidateDialogProgression() {
       search
     );
 
-    if (!current.success) {
-      throw new Error(
-        "Invalid Dialog Progression. Please start over and try again."
-      );
-    }
+    return current.success;
   }
 
   const reset = () => {
@@ -92,5 +88,6 @@ export function useValidateDialogProgression() {
     validate,
     getNextStep,
     getPreviousStep,
+    routes,
   };
 }

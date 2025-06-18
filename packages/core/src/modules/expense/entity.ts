@@ -1,4 +1,4 @@
-import { Effect, pipe } from "effect";
+import { Console, Effect, pipe } from "effect";
 import { requireSingleElement, TaggedError } from "../../lib/effect";
 import {
   findClosestMatch,
@@ -174,6 +174,10 @@ export namespace expenses {
       return Effect.fail(consolidate());
     }
 
-    return pipe(create, Effect.catchAll(flatten));
+    return pipe(
+      create,
+      Effect.tapError(Console.error),
+      Effect.catchAll(flatten)
+    );
   }
 }

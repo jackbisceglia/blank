@@ -308,7 +308,6 @@ function EmptyState(props: EmptyStateProps) {
   };
 
   // no matter what, if there are no expenses, we want to show the "create an expense" link
-  console.log(props.totalCount, props.status);
   if (props.totalCount === 0) {
     return (
       <p className="text-muted-foreground">
