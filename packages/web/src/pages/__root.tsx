@@ -10,11 +10,11 @@ import { QueryClient } from "@tanstack/react-query";
 
 function Document() {
   return (
-    <html>
+    <html className="dark">
       <head>
         <HeadContent />
       </head>
-      <body className="dark">
+      <body className="">
         <Children />
         {/* <TanStackRouterDevtools position="bottom-right" /> */}
         <Scripts />

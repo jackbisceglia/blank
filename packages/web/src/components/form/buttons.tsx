@@ -3,6 +3,25 @@ import { useStore } from "@tanstack/react-form";
 import { cn } from "@/lib/utils";
 import { useFormContext } from ".";
 
+type SettleButtonProps = React.ComponentProps<typeof Button>;
+
+export const SettleButton = (props: SettleButtonProps) => {
+  const { className, ...rest } = props;
+
+  return (
+    <Button
+      type="button"
+      variant="secondary"
+      size="xs"
+      className={cn(
+        "col-span-1 mb-auto py-2.5 w-full border-border",
+        className
+      )}
+      {...rest}
+    />
+  );
+};
+
 type CancelButtonProps = React.ComponentProps<typeof Button>;
 
 export const CancelButton = (props: CancelButtonProps) => {

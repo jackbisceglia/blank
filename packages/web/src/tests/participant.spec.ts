@@ -1,9 +1,8 @@
 import { Member } from "@blank/core/modules/member/schema";
-import {
-  compareParticipantsCustomOrder,
-  MemberBalanceTuple,
-} from "@/lib/participants";
+import { compareParticipantsCustomOrder } from "@/lib/participants";
 import { describe, it, expect } from "bun:test";
+import { withBalance } from "@/lib/balances";
+import { pipe, Array, Number } from "effect";
 
 // sort order:
 // 1. positive balances first, descending
@@ -16,16 +15,14 @@ const MEMBER: Member = {
 };
 
 function sortWithTransformations(input: number[]) {
-  const toMembers = (arr: number[]) =>
-    arr.map((balance) => [MEMBER, balance] as const);
-  const fromMembers = (arr: MemberBalanceTuple[]) =>
-    arr.map(([_member, balance]) => balance);
-
-  const asParticipants = toMembers(input);
-  const sorted = asParticipants.sort(compareParticipantsCustomOrder);
-  const asBalances = fromMembers(sorted);
-
-  return asBalances;
+  return pipe(
+    input,
+    Array.map((balance) => withBalance(MEMBER, balance)),
+    Array.sortBy((a, b) =>
+      Number.sign(compareParticipantsCustomOrder(a.balance, b.balance))
+    ),
+    Array.map((member) => member.balance)
+  );
 }
 
 describe("Sort participants by balance in custom sort order", () => {
@@ -111,14 +108,8 @@ describe("Sort participants by balance in custom sort order", () => {
   });
 
   it("Should sort correctly with large and small numbers", () => {
-    const INPUT = [Number.MAX_SAFE_INTEGER, Number.MIN_SAFE_INTEGER, 0, 1, -1];
-    const EXPECTED = [
-      Number.MAX_SAFE_INTEGER,
-      1,
-      Number.MIN_SAFE_INTEGER,
-      -1,
-      0,
-    ];
+    const INPUT = [Infinity, -Infinity, 0, 1, -1];
+    const EXPECTED = [Infinity, 1, -Infinity, -1, 0];
 
     const balances = sortWithTransformations(INPUT);
     expect(balances).toEqual(EXPECTED);

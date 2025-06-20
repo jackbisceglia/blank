@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { ReactNode, useState } from "react";
 import { Button } from "./ui/button";
 import {
   Dialog,
@@ -13,16 +13,22 @@ type DialogState = "open" | "closed";
 type UseWithConfirmationOptions = {
   default?: DialogState;
   title?: string;
+  subtitle?: false | string;
   description:
     | {
         type: "custom";
         value: string;
       }
     | {
+        type: "jsx";
+        value: () => ReactNode;
+      }
+    | {
         type: "default";
         entity: string;
       };
   confirm?: string;
+  confirmVariant?: "destructive" | "theme";
   cancel?: string;
   onConfirm: () => Promise<void>;
 };
@@ -46,6 +52,7 @@ export function useWithConfirmation(options: UseWithConfirmationOptions) {
 
   const defaults = {
     title: "Are you sure?",
+    subtitle: "This action cannot be undone",
     description: (entity: string) =>
       `This will permanently delete the ${entity}, along with all of its associated data. Be sure to backup your data before permanently deleting.`,
     confirm: "Delete",
@@ -66,22 +73,36 @@ export function useWithConfirmation(options: UseWithConfirmationOptions) {
             <DialogTitle className="uppercase">
               {options.title ?? defaults.title}
             </DialogTitle>
-            <DialogDescription className="lowercase">
-              This action cannot be undone
-            </DialogDescription>
+            {typeof options.subtitle !== "boolean" && (
+              <DialogDescription className="lowercase">
+                {options.subtitle ?? defaults.subtitle}
+              </DialogDescription>
+            )}
           </DialogHeader>
-          <div className="space-y-2 py-2">
-            <DialogDescription className="lowercase">
-              {options.description.type === "custom"
-                ? options.description.value
-                : defaults.description(options.description.entity)}
-            </DialogDescription>
-          </div>
+
+          {options.description.type === "jsx" && <options.description.value />}
+
+          {options.description.type === "custom" && (
+            <div className="space-y-2 py-2">
+              <DialogDescription className="lowercase">
+                {options.description.value}
+              </DialogDescription>
+            </div>
+          )}
+
+          {options.description.type === "default" && (
+            <div className="space-y-2 py-2">
+              <DialogDescription className="lowercase">
+                {defaults.description(options.description.entity)}
+              </DialogDescription>
+            </div>
+          )}
+
           <DialogFooter className="[&>*]:w-full py-3 flex gap-2">
             <Button
               size="xs"
               className="w-full"
-              variant="destructive"
+              variant={options.confirmVariant ?? "destructive"}
               onClick={() => void handleConfirm()}
             >
               {status === "loading"

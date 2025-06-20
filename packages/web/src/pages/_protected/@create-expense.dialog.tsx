@@ -11,10 +11,11 @@ import { FieldsErrors, useAppForm } from "@/components/form";
 import { createStackableSearchRoute } from "@/lib/search-route";
 import { prevented } from "@/lib/utils";
 import { withToast } from "@/lib/toast";
-import { PropsWithChildren, useEffect } from "react";
+import { PropsWithChildren } from "react";
 
+const KEY = "action" as const;
 const ENTRY = "new-expense" as const;
-export const SearchRoute = createStackableSearchRoute("action", ENTRY);
+export const SearchRoute = createStackableSearchRoute(KEY, ENTRY);
 export type SearchRouteSchema = v.InferOutput<typeof SearchRouteSchema>;
 export const SearchRouteSchema = v.object({
   action: v.literal(ENTRY),
@@ -70,7 +71,13 @@ function useForm(options: UseFormOptions) {
 
 export function CreateExpenseDialog(props: PropsWithChildren) {
   const create = useCreateExpense();
-  const route = SearchRoute.useSearchRoute();
+  const route = SearchRoute.useSearchRoute({
+    hooks: {
+      onClose: () => {
+        setTimeout(() => form.api.reset(), 0);
+      },
+    },
+  });
 
   const form = useForm({
     create: create,
@@ -79,21 +86,8 @@ export function CreateExpenseDialog(props: PropsWithChildren) {
     view: route.view,
   });
 
-  useEffect(() => {
-    if (route.view() === "closed") {
-      setTimeout(() => form.api.reset(), 0);
-    }
-  }, [route.view()]);
-
   return (
-    <Dialog
-      open={route.view() === "open"}
-      onOpenChange={(opening) => {
-        if (!opening) {
-          route.close();
-        }
-      }}
-    >
+    <Dialog open={route.view() === "open"} onOpenChange={route.sync}>
       <DialogTrigger asChild>{props.children}</DialogTrigger>
       <DialogHeader className="sr-only">
         <DialogTitle>Create New Group</DialogTitle>

@@ -3,6 +3,7 @@ import {
   DeleteAllOptions as DeleteAllExpensesOptions,
   DeleteOptions as DeleteExpenseOptions,
   UpdateOptions as UpdateExpenseOptions,
+  BulkSettleOptions as BulkSettleExpensesOptions,
 } from "@/lib/client-mutators/expense-mutators";
 import { useZero } from "@/lib/zero";
 import { useAuthentication } from "@/lib/authentication";
@@ -10,12 +11,11 @@ import { useParams } from "@tanstack/react-router";
 import { useGroupBySlug } from "./groups";
 import { useUserPreferences } from "./users";
 import { createFromDescriptionServerFn } from "@/server/expense.route";
+import { Expense } from "@blank/zero";
 
 export function useExpenseListByGroupSlug(
   slug: string,
-  filters?: {
-    query?: string;
-  }
+  options?: { status?: Expense["status"] | "all" }
 ) {
   const z = useZero();
   let query = z.query.expense
@@ -23,8 +23,8 @@ export function useExpenseListByGroupSlug(
     .orderBy("date", "desc")
     .related("participants", (p) => p.related("member").related("member"));
 
-  if (filters?.query) {
-    query = query.where("description", "ILIKE", `%${filters.query}%`);
+  if (options?.status !== "all") {
+    query = query.where("status", options?.status ?? "active");
   }
 
   return useListQuery(query, ZERO_CACHE_DEFAULT);
@@ -70,4 +70,11 @@ export function useDeleteAllExpenses() {
 
   return (opts: DeleteAllExpensesOptions) =>
     z.mutate.expense.deleteByGroupId(opts);
+}
+
+export function useBulkSettleExpenses() {
+  const z = useZero();
+
+  return (opts: BulkSettleExpensesOptions) => 
+    z.mutate.expense.bulkSettle(opts);
 }

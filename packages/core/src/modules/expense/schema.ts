@@ -1,4 +1,11 @@
-import { pgTable, uuid, integer, timestamp, text } from "drizzle-orm/pg-core";
+import {
+  pgTable,
+  uuid,
+  integer,
+  timestamp,
+  text,
+  varchar,
+} from "drizzle-orm/pg-core";
 import { relations } from "drizzle-orm/relations";
 import { sql } from "drizzle-orm/sql";
 import { participantTable } from "../participant/schema";
@@ -13,7 +20,10 @@ export const expenseTable = pgTable("expense", {
   groupId: uuid().notNull(), // update to make into ulid
   amount: integer().notNull(),
   date: timestamp().defaultNow().notNull(),
-  description: text().notNull(),
+  description: varchar({ length: 48 }).notNull(),
+  status: text({ enum: ["active", "settled"] })
+    .default("active")
+    .notNull(),
   createdAt: timestamp().defaultNow().notNull(),
 });
 

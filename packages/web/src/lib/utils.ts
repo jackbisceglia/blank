@@ -1,5 +1,16 @@
+import { Participant } from "@blank/core/modules/participant/schema";
 import { clsx, type ClassValue } from "clsx";
 import { twMerge } from "tailwind-merge";
+
+export function fraction(split: Participant["split"]) {
+  const [numerator, denominator] = split;
+
+  const apply = (amount: number) => amount * (numerator / denominator);
+  const inverse = () => fraction([denominator - numerator, denominator]);
+  const percent = () => apply(100);
+
+  return { apply, inverse, percent };
+}
 
 /**
  * Creates a function that joins a list of strings with a specified delimiter, filtering out any falsey values.
@@ -102,7 +113,7 @@ export const timestampToDate = (timestamp: number): Date => new Date(timestamp);
 
 export const flags = {
   dev: {
-    deleteAllExpenses: false,
+    deleteAllExpenses: true,
     inlineRandomizeExpense: false,
   },
 };

@@ -10,6 +10,7 @@ import { UpdateParticipant } from "./participant-mutators";
 
 export type DeleteOptions = { expenseId: string };
 export type DeleteAllOptions = { groupId: string };
+export type BulkSettleOptions = { groupId: string; expenseIds: string[] };
 export type UpdateOptions = {
   expenseId: string;
   updates: {
@@ -17,6 +18,7 @@ export type UpdateOptions = {
       amount?: Expense["amount"];
       date?: Expense["date"];
       description?: Expense["description"];
+      status?: Expense["status"];
     };
     participants?: Omit<UpdateParticipant, "expenseId">[];
   };
@@ -34,6 +36,7 @@ type Mutators = ClientMutatorGroup<{
   update: ClientMutator<UpdateOptions, void>;
   delete: ClientMutator<DeleteOptions, void>;
   deleteByGroupId: ClientMutator<DeleteAllOptions, void>;
+  bulkSettle: ClientMutator<BulkSettleOptions, void>;
 }>;
 
 export const mutators: Mutators = (auth) => ({
@@ -85,6 +88,25 @@ export const mutators: Mutators = (auth) => ({
 
     for (const expense of expenses) {
       await mutators(auth).delete(tx, { expenseId: expense.id });
+    }
+  },
+  bulkSettle: async (tx, opts) => {
+    assertIsAuthenticated(auth);
+
+    const expenses = await tx.query.expense
+      .where("groupId", opts.groupId)
+      .where("status", "active")
+      .run();
+
+    const expensesToSettle = expenses.filter(expense => 
+      opts.expenseIds.includes(expense.id)
+    );
+
+    for (const expense of expensesToSettle) {
+      await tx.mutate.expense.update({
+        id: expense.id,
+        status: "settled",
+      });
     }
   },
 });

@@ -15,11 +15,12 @@ import { createStackableSearchRoute } from "@/lib/search-route";
 import { SearchRoute as CreateExpenseRoute } from "./@create-expense.dialog";
 import { useGroupListByUserId } from "./@data/groups";
 
+const KEY = "action";
 const ENTRY = "command" as const;
-export const SearchRoute = createStackableSearchRoute("action", ENTRY);
+export const SearchRoute = createStackableSearchRoute(KEY, ENTRY);
 export type SearchRouteSchema = v.InferOutput<typeof SearchRouteSchema>;
 export const SearchRouteSchema = v.object({
-  action: v.literal(ENTRY),
+  [KEY]: v.literal(ENTRY),
 });
 
 export function GlobalCommandBar() {
@@ -121,9 +122,7 @@ export function GlobalCommandBar() {
     <CommandDialog
       omitCloseButton
       open={route.view() === "open"}
-      onOpenChange={(bool) => {
-        (bool ? route.open : route.close)();
-      }}
+      onOpenChange={route.sync}
     >
       <CommandInput placeholder="type a command or search..." />
       <CommandList>

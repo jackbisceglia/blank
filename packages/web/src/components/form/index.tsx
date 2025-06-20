@@ -12,7 +12,7 @@ import {
   TextField,
 } from "./fields";
 import { cn } from "@/lib/utils";
-import { CancelButton, SubmitButton } from "./buttons";
+import { CancelButton, SettleButton, SubmitButton } from "./buttons";
 
 type FieldsErrorsProps = {
   metas: AnyFieldMeta[];
@@ -58,6 +58,7 @@ export const { useAppForm } = createFormHook({
   },
   formComponents: {
     SubmitButton,
+    SettleButton,
     CancelButton,
   },
   fieldContext,

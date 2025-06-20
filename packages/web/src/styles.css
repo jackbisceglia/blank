@@ -47,7 +47,7 @@
   --primary: hsl(225, 35%, 90%);
   --primary-foreground: hsl(224 5.9% 10%);
   --secondary: hsl(224 18% 17%);
-  --secondary-foreground: hsl(225, 35%, 90%);
+  --secondary-foreground: hsl(223, 15%, 78%);
   --muted-alt: hsl(224, 35%, 90%, 0.5);
   --muted: hsl(224, 19%, 11.5%);
   --muted-foreground: hsl(224 5% 70%);
@@ -126,6 +126,7 @@
   * {
     @apply border-border outline-ring/50;
     font-family: "IBM Plex Mono", monospace;
+    color-scheme: dark;
   }
   body {
     @apply bg-background text-foreground;
