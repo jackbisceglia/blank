@@ -18,7 +18,7 @@ export const authenticateRPC = createServerFn().handler(async function () {
 
 export const meRPC = createServerFn().handler(async function () {
   const authenticated = Effect.tryPromise(() =>
-    authenticate({ cookies: AuthTokens.cookies })
+    authenticate({ cookies: AuthTokens.cookies }),
   );
 
   const user = pipe(
@@ -26,15 +26,15 @@ export const meRPC = createServerFn().handler(async function () {
     Effect.flatMap(
       requireValueExists({
         error: () => new AuthenticatedError("Could not authenticate user"),
-      })
+      }),
     ),
     Effect.map((result) => result.subject.properties.userID),
     Effect.flatMap(users.getById),
     Effect.flatMap(
       requireValueExists({
         error: () => new AuthenticatedError("Could not fetch current user"),
-      })
-    )
+      }),
+    ),
   );
 
   const token = pipe(
@@ -43,8 +43,8 @@ export const meRPC = createServerFn().handler(async function () {
     Effect.flatMap(
       requireValueExists({
         error: () => new AuthenticatedError("Could not fetch access token"),
-      })
-    )
+      }),
+    ),
   );
 
   const result = pipe(
@@ -53,8 +53,8 @@ export const meRPC = createServerFn().handler(async function () {
     Effect.mapError((e) =>
       e._tag === "UserNotFoundError" || e._tag === "AuthenticatedError"
         ? notFound({ data: e.data })
-        : e
-    )
+        : e,
+    ),
   );
 
   return Effect.runPromise(result);

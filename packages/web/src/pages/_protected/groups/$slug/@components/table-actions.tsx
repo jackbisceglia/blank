@@ -17,7 +17,7 @@ import { TableStatusSelect } from "./table-status";
 function useConfirmDeleteAllExpenses(
   groupId: string,
   deleteAllMutation: (opts: DeleteAllOptions) => Promise<unknown>,
-  leave: () => void
+  leave: () => void,
 ) {
   return useWithConfirmation({
     title: "Delete all expenses?",
@@ -53,7 +53,7 @@ function TableActions(props: TableActionsProps) {
   const deleteAll = useConfirmDeleteAllExpenses(
     props.id,
     props.actions.deleteAll,
-    () => {}
+    () => {},
   );
 
   return (

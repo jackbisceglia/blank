@@ -19,9 +19,9 @@ function sortWithTransformations(input: number[]) {
     input,
     Array.map((balance) => withBalance(MEMBER, balance)),
     Array.sortBy((a, b) =>
-      Number.sign(compareParticipantsCustomOrder(a.balance, b.balance))
+      Number.sign(compareParticipantsCustomOrder(a.balance, b.balance)),
     ),
-    Array.map((member) => member.balance)
+    Array.map((member) => member.balance),
   );
 }
 
@@ -51,7 +51,7 @@ describe("Sort participants by balance in custom sort order", () => {
       const balances = sortWithTransformations(INPUT);
 
       expect(balances).toEqual(EXPECTED);
-    }
+    },
   );
 
   it("Should sort correctly when balances are all positive", () => {

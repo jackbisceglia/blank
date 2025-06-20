@@ -37,7 +37,7 @@ const JwtPayload = v.pipe(
   v.transform(({ picture, ...rest }) => ({
     ...rest,
     image: picture,
-  }))
+  })),
 );
 
 function decodeJwt(token: string) {
@@ -48,10 +48,10 @@ function decodeJwt(token: string) {
 
       return (
         Object.values(jose.errors).find(
-          (joseError) => e instanceof joseError
+          (joseError) => e instanceof joseError,
         ) ?? undefined
       );
-    })
+    }),
   );
 }
 
@@ -59,7 +59,7 @@ function getOrCreateUser(payload: v.InferOutput<typeof JwtPayload>) {
   const result = pipe(
     // users.getByEmail(payload.email),
     users.getByEmail(payload.email),
-    Effect.catchTag("UserNotFoundError", () => users.create(payload))
+    Effect.catchTag("UserNotFoundError", () => users.create(payload)),
   );
 
   return result;
@@ -76,7 +76,7 @@ const app = issuer({
     code: CodeProvider(
       CodeUI({
         async sendCode() {},
-      })
+      }),
     ),
   },
   select: Select({
@@ -103,7 +103,7 @@ const app = issuer({
                 ? err
                 : new Error("Authentication Error", { cause: err });
             },
-          })
+          }),
         );
 
         return Effect.runPromise(result);

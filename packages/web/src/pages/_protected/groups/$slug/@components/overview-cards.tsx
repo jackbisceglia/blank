@@ -117,7 +117,7 @@ export function BalancesCard(props: BalancesCardProps) {
                   className={cn(
                     "text-sm text-foreground lowercase",
                     !props.balances.get(member.userId) &&
-                      "text-muted-foreground"
+                      "text-muted-foreground",
                   )}
                 >
                   {member.nickname}
@@ -129,8 +129,8 @@ export function BalancesCard(props: BalancesCardProps) {
                       props.balances.get(member.userId),
                       "text-rose-400",
                       "text-muted-foreground",
-                      "text-blank-theme"
-                    )
+                      "text-blank-theme",
+                    ),
                   )}
                 >
                   {`${compare(member.balance, "-", "", "+")} ${formatUSD(Math.abs(member.balance))}`}
@@ -153,11 +153,11 @@ type SuggestionsCardProps = {
 
 export function ActionsCard(props: SuggestionsCardProps) {
   const hasBalances = props.members.some(
-    (member) => props.balances.get(member.userId) !== 0
+    (member) => props.balances.get(member.userId) !== 0,
   );
 
   const SettleOption = (
-    props: PropsWithChildren & ComponentProps<typeof Button>
+    props: PropsWithChildren & ComponentProps<typeof Button>,
   ) => {
     const { className, ...rest } = props;
     return (

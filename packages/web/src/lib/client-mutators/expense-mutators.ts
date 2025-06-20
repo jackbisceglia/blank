@@ -98,8 +98,8 @@ export const mutators: Mutators = (auth) => ({
       .where("status", "active")
       .run();
 
-    const expensesToSettle = expenses.filter(expense => 
-      opts.expenseIds.includes(expense.id)
+    const expensesToSettle = expenses.filter((expense) =>
+      opts.expenseIds.includes(expense.id),
     );
 
     for (const expense of expensesToSettle) {

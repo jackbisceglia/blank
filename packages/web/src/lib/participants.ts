@@ -7,7 +7,7 @@ export type ParticipantWithMember = Participant & {
 };
 
 export function getPayerFromParticipants(
-  participants: ParticipantWithMember[]
+  participants: ParticipantWithMember[],
 ) {
   return participants.find((p) => p.role === "payer");
 }

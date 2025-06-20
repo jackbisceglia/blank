@@ -120,14 +120,14 @@ export function createSearchRoute(key: string): SearchRoute {
       function open(value: unknown) {
         go(key, value);
       },
-      [go, key]
+      [go, key],
     );
 
     const close = useCallback(
       function close() {
         go(key, undefined);
       },
-      [go, key]
+      [go, key],
     );
 
     function sync(opening: boolean) {
@@ -273,7 +273,7 @@ export function createStackableSearchRoute(key: string, value: string) {
         const added = new Set([...current, value]);
         go(key, Array.from(added));
       },
-      [stack, value, go, key]
+      [stack, value, go, key],
     );
 
     const close = useCallback(() => {

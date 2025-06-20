@@ -14,7 +14,7 @@ function getBearer() {
     v.string("Authorization header is required"),
     v.startsWith("Bearer ", "Authorization header must start with Bearer"),
     v.transform((s) => s.split(" ").at(1)),
-    v.string("Bearer Token is required")
+    v.string("Bearer Token is required"),
   );
 
   const authorization = v.safeParse(header, getHeader("Authorization"));
@@ -36,7 +36,7 @@ export const APIRoute = createAPIFileRoute("/api/sync/push")({
         const result = await processor.process(
           createServerMutators(auth?.subject.properties),
           Object.fromEntries(new URL(request.url).searchParams),
-          await request.json()
+          await request.json(),
         );
         return json(result);
       } catch (error) {

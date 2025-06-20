@@ -23,7 +23,7 @@ export function TaggedError<T extends string>(name: T) {
     A extends Record<string, unknown> = Record<string, unknown>,
   >(
     message: string,
-    cause?: unknown
+    cause?: unknown,
   ) => Cause.YieldableError & { readonly _tag: T } & Readonly<A>;
 }
 
@@ -121,7 +121,7 @@ export class ValidationError<TErrorType> extends Error {
       v.BaseIssue<TErrorType>,
       ...v.BaseIssue<TErrorType>[],
     ],
-    message?: string
+    message?: string,
   ) {
     const formattedMessage =
       message ??
@@ -144,7 +144,7 @@ export class ValidationError<TErrorType> extends Error {
 
 export function fromParsedEffect<T, R>(
   schema: v.GenericSchema<T, R>,
-  value: unknown
+  value: unknown,
 ) {
   return Effect.try({
     try: () => {

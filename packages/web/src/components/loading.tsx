@@ -20,7 +20,7 @@ export function Loading(props: LoadingProps) {
     <div
       className={cn(
         "flex h-full items-center justify-center w-full",
-        props.className
+        props.className,
       )}
     >
       <div className="flex flex-col items-center gap-4">

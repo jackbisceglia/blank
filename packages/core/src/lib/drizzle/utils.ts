@@ -7,7 +7,7 @@ import { db } from ".";
 export class DatabaseReadError extends TaggedError("DatabaseReadError") {}
 export class DatabaseWriteError extends TaggedError("DatabaseWriteError") {}
 class DatabaseTransactionError extends TaggedError(
-  "DatabaseTransactionError"
+  "DatabaseTransactionError",
 ) {}
 
 export type Transaction = Parameters<
@@ -15,7 +15,7 @@ export type Transaction = Parameters<
 >[0];
 
 export const withTransaction = <A, E>(
-  effect: (tx: Transaction) => Effect.Effect<A, E | DatabaseTransactionError>
+  effect: (tx: Transaction) => Effect.Effect<A, E | DatabaseTransactionError>,
 ): Effect.Effect<A, E | DatabaseTransactionError> =>
   Effect.async<A, E | DatabaseTransactionError>((resume) => {
     db.transaction(async (tx) => {
@@ -31,9 +31,9 @@ export const withTransaction = <A, E>(
         Effect.fail(
           new DatabaseTransactionError(
             dbError instanceof Error ? dbError.message : "Unknown error",
-            { cause: dbError }
-          )
-        )
+            { cause: dbError },
+          ),
+        ),
       );
     });
   });

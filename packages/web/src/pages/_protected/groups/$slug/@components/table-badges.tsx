@@ -29,7 +29,7 @@ const BadgeSimple = React.forwardRef<HTMLSpanElement, BadgeSimpleProps>(
     >
       {children}
     </Badge>
-  )
+  ),
 );
 
 BadgeSimple.displayName = "BadgeSimple";
@@ -69,7 +69,7 @@ type ParticipantBadgeListProps = {
 export function ParticipantBadgeList(props: ParticipantBadgeListProps) {
   const participants = props.participants.filter(
     (p): p is typeof p & { member: NonNullable<typeof p.member> } =>
-      p.member !== undefined
+      p.member !== undefined,
   );
 
   return (

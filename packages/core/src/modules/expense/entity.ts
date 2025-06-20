@@ -51,7 +51,7 @@ function findClosestName(name: string, names: string[]) {
     onTrue: () => Effect.succeed(bestMatch),
     onFalse: () =>
       Effect.fail(
-        new NoMemberMatchFound("Member from parse not found in group")
+        new NoMemberMatchFound("Member from parse not found in group"),
       ),
   });
 }
@@ -79,18 +79,18 @@ export namespace expenses {
         (tx ?? db)
           .insert(expenseTable)
           .values(expense)
-          .returning({ id: expenseTable.id })
+          .returning({ id: expenseTable.id }),
       ),
       Effect.flatMap(
         requireSingleElement({
           empty: () => new ExpenseNotCreatedError("Expense not created"),
           dup: () => new DuplicateExpenseError("Duplicate expense found"),
-        })
+        }),
       ),
       Effect.catchTag(
         "UnknownException",
-        (e) => new DatabaseWriteError("Failed creating expense", e)
-      )
+        (e) => new DatabaseWriteError("Failed creating expense", e),
+      ),
     );
   }
 
@@ -114,7 +114,7 @@ export namespace expenses {
 
       if (!user) {
         return yield* Effect.fail(
-          new UserMissingInParse("User omitted from parse")
+          new UserMissingInParse("User omitted from parse"),
         );
       }
 
@@ -122,7 +122,7 @@ export namespace expenses {
 
       const restMapped = yield* normalize(
         generated.members.filter((m) => m.name !== USER),
-        members
+        members,
       );
 
       const merged = [userMapped, ...restMapped];
@@ -136,7 +136,7 @@ export namespace expenses {
               groupId: options.groupId,
               date: options.date,
             },
-            tx
+            tx,
           );
 
           const newParticipants = yield* participants.createMany(
@@ -145,14 +145,14 @@ export namespace expenses {
               expenseId: newExpense.id,
               ...m,
             })),
-            tx
+            tx,
           );
 
           return {
             expense: newExpense,
             participants: newParticipants,
           };
-        })
+        }),
       );
 
       return result;
@@ -181,7 +181,7 @@ export namespace expenses {
     return pipe(
       create,
       Effect.tapError(Console.error),
-      Effect.catchAll(flatten)
+      Effect.catchAll(flatten),
     );
   }
 }

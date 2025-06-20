@@ -19,7 +19,7 @@ export const preferenceTable = pgTable(
     userId: uuid().notNull().unique(), // update to make into ulid
     defaultGroupId: uuid().notNull(), // update to make into ulid
   },
-  (table) => [primaryKey({ columns: [table.userId, table.defaultGroupId] })]
+  (table) => [primaryKey({ columns: [table.userId, table.defaultGroupId] })],
 );
 
 type PreferenceTypes = DrizzleModelTypes<typeof preferenceTable>;

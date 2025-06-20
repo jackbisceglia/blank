@@ -15,7 +15,7 @@ const groupByProperty = (key: "slug" | "id", value: string, z: Zero) =>
       e
         .where("status", "active")
         .orderBy("date", "desc")
-        .related("participants", (p) => p.related("member").related("member"))
+        .related("participants", (p) => p.related("member").related("member")),
     )
 
     .related("members")

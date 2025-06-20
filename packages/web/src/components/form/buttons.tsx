@@ -15,7 +15,7 @@ export const SettleButton = (props: SettleButtonProps) => {
       size="xs"
       className={cn(
         "col-span-1 mb-auto py-2.5 w-full border-border",
-        className
+        className,
       )}
       {...rest}
     />

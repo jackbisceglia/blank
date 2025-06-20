@@ -10,7 +10,7 @@ export type Balances = {
 };
 
 export function createBalanceMap(
-  expenses: ExpenseWithParticipants[]
+  expenses: ExpenseWithParticipants[],
 ): Balances {
   function initialize() {
     const map: Balances["map"] = new Map();
@@ -45,7 +45,7 @@ export function createBalanceMap(
 
 export function withBalance(
   member: Member,
-  balance: number
+  balance: number,
 ): MemberWithBalance {
   return { ...member, balance };
 }
@@ -66,14 +66,14 @@ function split(members: readonly Member[], balances: Balances): Splits {
         Match.value,
         Match.when(Number.greaterThan(0), () => arrays[0]),
         Match.when(Number.lessThan(0), () => arrays[1]),
-        Match.orElse(() => undefined)
+        Match.orElse(() => undefined),
       );
 
       array?.push(mapped);
 
       return arrays;
     },
-    [[], []]
+    [[], []],
   );
 }
 
@@ -87,7 +87,7 @@ export type Settlement = {
 
 export function calculateSettlements(
   members: readonly Member[],
-  balances: Balances
+  balances: Balances,
 ): Settlement[] {
   const [creditors, debtors] = split(members, balances);
 
