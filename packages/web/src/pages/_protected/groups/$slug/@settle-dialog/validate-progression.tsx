@@ -2,7 +2,7 @@ import { Route } from "../page";
 import * as v from "valibot";
 import { KEY, PREFIX, SearchRouteStep1, SearchRouteStep2 } from ".";
 
-export function useValidateDialogProgression() {
+export function useValidateDialogProgression(activeExpenseCount: number) {
   const routes = [
     SearchRouteStep1.useSearchRoute(),
     SearchRouteStep2.useSearchRoute(),
@@ -15,7 +15,8 @@ export function useValidateDialogProgression() {
   });
 
   function validate() {
-    if ((search?.length ?? 0) === 0) return true;
+    if (!search?.length) return true;
+    if (activeExpenseCount <= 0) return false;
 
     const current = v.safeParse(
       // parses the progression of steps, validates they're correctly in order, returns the current step
@@ -34,9 +35,9 @@ export function useValidateDialogProgression() {
         }),
         v.transform((value) => value.at(-1)),
         v.nonNullable(v.number()),
-        v.integer()
+        v.integer(),
       ),
-      search
+      search,
     );
 
     return current.success;
@@ -61,7 +62,7 @@ export function useValidateDialogProgression() {
 
     if (!next) {
       throw new Error(
-        `Step ${(step + 1).toString()} is not a valid step. Please close the dialog and try again.`
+        `Step ${(step + 1).toString()} is not a valid step. Please close the dialog and try again.`,
       );
     }
 
@@ -77,7 +78,7 @@ export function useValidateDialogProgression() {
 
     if (!previous) {
       throw new Error(
-        `Step ${(step - 1).toString()} is not a valid step. Please close the dialog and try again.`
+        `Step ${(step - 1).toString()} is not a valid step. Please close the dialog and try again.`,
       );
     }
 

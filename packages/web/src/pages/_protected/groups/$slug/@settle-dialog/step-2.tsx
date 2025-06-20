@@ -71,11 +71,11 @@ export function Step2(props: Step2Props) {
   if (!q.group.data?.members) return null;
 
   const selectedExpenses = q.expenses.data.filter((e) =>
-    props.selectedExpenseIds.includes(e.id)
+    props.selectedExpenseIds.includes(e.id),
   );
 
   const balances = createBalanceMap(
-    selectedExpenses as ExpenseWithParticipants[]
+    selectedExpenses as ExpenseWithParticipants[],
   );
 
   const settlements = calculateSettlements(q.group.data.members, balances);

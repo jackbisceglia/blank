@@ -4,6 +4,7 @@ import * as v from "valibot";
 import { Step1 } from "./step-1";
 import { Step2 } from "./step-2";
 import { createStackableSearchRoute } from "@/lib/search-route";
+import { ExpenseWithParticipants } from "../page";
 
 export type Step = `${typeof PREFIX}-${number}`;
 
@@ -20,20 +21,24 @@ export const SearchRouteSchema = v.object({
   [KEY]: v.optional(
     v.fallback(
       v.array(v.union([v.literal<Step>(STEP_ONE), v.literal<Step>(STEP_TWO)])),
-      [STEP_TWO]
-    )
+      [STEP_TWO],
+    ),
   ),
 });
 
-export function SettleExpensesDialog() {
-  const progression = useValidateDialogProgression();
+type SettleExpensesDialogProps = {
+  active: ExpenseWithParticipants[];
+};
+
+export function SettleExpensesDialog(props: SettleExpensesDialogProps) {
+  const progression = useValidateDialogProgression(props.active.length);
   const [selectedExpenseIds, setSelectedExpenseIds] = useState<string[]>([]);
 
   const valid = progression.validate();
 
   if (!valid) {
     throw new Error(
-      "Invalid Dialog Progression. Please start over and try again."
+      "Sorry, we couldn’t settle your expenses. Please refresh the page or try again.",
     );
   }
 

@@ -41,7 +41,7 @@ export function Step1(props: Step1Props) {
           case false:
             return previous.filter((id) => id !== expenseId);
         }
-      })()
+      })(),
     );
   }
 
@@ -90,17 +90,17 @@ export function Step1(props: Step1Props) {
             </Button>
           </div>
           {expenses.data.length === 0 ? (
-            <p className="text-sm text-muted-foreground py-4 text-center">
+            <p className="text-sm text-muted-foreground py-4 text-center uppercase">
               No active expenses to settle.
             </p>
           ) : (
             <div className="space-y-2 flex-1 overflow-y-auto min-h-0 p-0.5 [&::-webkit-scrollbar]:w-2 [&::-webkit-scrollbar-track]:bg-transparent [&::-webkit-scrollbar-thumb]:bg-muted-foreground/20 [&::-webkit-scrollbar-thumb]:rounded-full">
               {expenses.data.map((expense) => {
                 const isSelected = props.selectedExpenseIds.includes(
-                  expense.id
+                  expense.id,
                 );
                 const payer = expense.participants.find(
-                  (p) => p.role === "payer"
+                  (p) => p.role === "payer",
                 );
 
                 return (
@@ -108,7 +108,7 @@ export function Step1(props: Step1Props) {
                     key={expense.id}
                     className={cn(
                       "cursor-pointer hover:bg-accent/50 transition-[color,box-shadow] duration-0 not-focus-within:outline-hidden focus-visible:outline-2 focus:relative focus-visible:z-10 bg-accent/30  focus-visible:outline-primary/50",
-                      !isSelected && "text-foreground/50 border-border/50"
+                      !isSelected && "text-foreground/50 border-border/50",
                     )}
                     role="button"
                     tabIndex={0}

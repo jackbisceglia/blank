@@ -131,7 +131,7 @@ function GroupRoute() {
         />
       </GroupBody>
       {active && <ExpenseSheet expense={active as ExpenseWithParticipants} />}
-      <SettleExpensesDialog />
+      <SettleExpensesDialog active={expenses as ExpenseWithParticipants[]} />
     </>
   );
 }
