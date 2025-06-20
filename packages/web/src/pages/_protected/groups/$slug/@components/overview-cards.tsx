@@ -10,6 +10,8 @@ import { Member } from "@blank/zero";
 import { ComponentProps, PropsWithChildren } from "react";
 import { Button } from "@/components/ui/button";
 import { compareParticipantsCustomOrder } from "@/lib/participants";
+import { Status } from "./table-status";
+import { Balances, withBalance } from "@/lib/balances";
 
 function formatUSD(amount: number) {
   return new Intl.NumberFormat("en-US", {
@@ -62,18 +64,30 @@ export function GroupCard(props: CardsProps) {
   );
 }
 
-type ActiveExpensesCardProps = { total: number; count: number };
+type ActiveExpensesCardProps = { total: number; count: number; status: Status };
 
 export function ActiveExpensesCard(props: ActiveExpensesCardProps) {
+  const titles: Record<Status, string> = {
+    active: "Active Expenses",
+    settled: "Settled Expenses",
+    all: "All Expenses",
+  };
+
+  const trailing: Record<Status, (count: number) => string> = {
+    active: (count: number) => `${count.toString()} active expenses`,
+    settled: (count: number) => `${count.toString()} settled expenses`,
+    all: (count: number) => `${count.toString()} total expenses`,
+  };
+
   return (
     <GroupCard
-      header={() => "Active Expenses"}
+      header={() => titles[props.status]}
       content={() => (
         <div className="text-lg font-semibold">{formatUSD(props.total)}</div>
       )}
       footer={() => (
         <p className="text-xs text-muted-foreground h-full">
-          {props.count} expenses
+          {trailing[props.status](props.count)}
         </p>
       )}
     />
@@ -83,26 +97,27 @@ export function ActiveExpensesCard(props: ActiveExpensesCardProps) {
 type BalancesCardProps = {
   members: Member[];
   count: number;
-  balance: (id: string) => number;
+  balances: Balances;
 };
 
 export function BalancesCard(props: BalancesCardProps) {
   const transformed = props.members
-    .map((member) => [member, props.balance(member.userId)] as const)
-    .sort(compareParticipantsCustomOrder);
+    .map((member) => withBalance(member, props.balances.get(member.userId)))
+    .sort((a, b) => compareParticipantsCustomOrder(a.balance, b.balance));
 
   return (
     <GroupCard
       header={() => "Balances"}
       content={() => (
         <ul className="flex flex-col gap-1 max-h-24 overflow-y-auto pb-3">
-          {transformed.map(([member, balance]) => (
+          {transformed.map((member) => (
             <li key={member.nickname}>
               <div className="flex justify-between items-center">
                 <span
                   className={cn(
                     "text-sm text-foreground lowercase",
-                    !balance && "text-muted-foreground"
+                    !props.balances.get(member.userId) &&
+                      "text-muted-foreground"
                   )}
                 >
                   {member.nickname}
@@ -111,14 +126,14 @@ export function BalancesCard(props: BalancesCardProps) {
                   className={cn(
                     "text-sm font-medium",
                     compare(
-                      balance,
+                      props.balances.get(member.userId),
                       "text-rose-400",
                       "text-muted-foreground",
                       "text-blank-theme"
                     )
                   )}
                 >
-                  {`${compare(balance, "-", "", "+")} ${formatUSD(Math.abs(balance))}`}
+                  {`${compare(member.balance, "-", "", "+")} ${formatUSD(Math.abs(member.balance))}`}
                 </span>
               </div>
             </li>
@@ -131,24 +146,26 @@ export function BalancesCard(props: BalancesCardProps) {
 
 type SuggestionsCardProps = {
   members: Member[];
-  balance: (id: string) => number;
+  balances: Balances;
+  lastSettled: Date | undefined;
+  settle: () => void;
 };
 
-export function SuggestionsCard(props: SuggestionsCardProps) {
-  const lastSettled = "04/02/25"; // TODO: compute from db
+export function ActionsCard(props: SuggestionsCardProps) {
   const hasBalances = props.members.some(
-    (member) => props.balance(member.userId) !== 0
+    (member) => props.balances.get(member.userId) !== 0
   );
 
   const SettleOption = (
     props: PropsWithChildren & ComponentProps<typeof Button>
   ) => {
+    const { className, ...rest } = props;
     return (
       <Button
-        disabled
         variant="outline"
         size="xs"
-        className="flex-1 border-border"
+        className={cn("flex-1 border-border", className)}
+        {...rest}
       >
         {props.children}
       </Button>
@@ -163,16 +180,18 @@ export function SuggestionsCard(props: SuggestionsCardProps) {
           <p className="text-sm lowercase text-muted-foreground">All settled</p>
         ) : (
           <div className="flex flex-wrap w-full h-full justify-evenly items-center gap-x-2 gap-y-2 py-0">
-            <SettleOption>Manual</SettleOption>
-            <SettleOption>Venmo</SettleOption>
-            <SettleOption>Zelle</SettleOption>
+            <SettleOption onClick={props.settle}>Manual</SettleOption>
+            <SettleOption disabled>Venmo</SettleOption>
+            <SettleOption disabled>Zelle</SettleOption>
           </div>
         )
       }
       footer={() => (
         <p className="text-xs text-muted-foreground lowercase">
           {hasBalances
-            ? `last settled ${lastSettled}`
+            ? props.lastSettled
+              ? `last settled ${props.lastSettled.toLocaleDateString()}`
+              : "settle up for the first time"
             : "No outstanding balances"}
         </p>
       )}

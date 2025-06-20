@@ -1,4 +1,4 @@
-import { Effect, pipe } from "effect";
+import { Console, Effect, pipe } from "effect";
 import { requireSingleElement, TaggedError } from "../../lib/effect";
 import {
   findClosestMatch,
@@ -28,14 +28,18 @@ class UserMissingInParse extends TaggedError("UserMissingInParse") {}
 class NoMemberMatchFound extends TaggedError("NoMemberMatchFound") {}
 
 type Participant = Required<Omit<ParticipantInsert, "expenseId" | "groupId">>;
-type ParticipantParse = { role: string; split: number; name: string };
+type ParticipantParse = {
+  role: string;
+  split: [number, number];
+  name: string;
+};
 
 function createMapping(member: ParticipantParse, userId: string) {
   type Roles = "participant" | "payer";
 
   return {
     role: member.role as Roles,
-    split: member.split.toString(),
+    split: member.split,
     userId: userId,
   } satisfies Participant;
 }
@@ -174,6 +178,10 @@ export namespace expenses {
       return Effect.fail(consolidate());
     }
 
-    return pipe(create, Effect.catchAll(flatten));
+    return pipe(
+      create,
+      Effect.tapError(Console.error),
+      Effect.catchAll(flatten)
+    );
   }
 }

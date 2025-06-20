@@ -5,6 +5,10 @@ import { DEFAULT, DEFAULT_FAST, ModelKeys, models } from "./models";
 import { ResultAsync, err, ok } from "neverthrow";
 import { ExpenseInsert } from "../../modules/expense/schema";
 import { ParticipantInsert } from "../../modules/participant/schema";
+import { fromParsed } from "../_legacy/neverthrow";
+
+const toDecimalSplit = (split: readonly [number, number]) =>
+  split[0] / split[1];
 
 function unindent(strings: TemplateStringsArray, ...values: unknown[]) {
   const rawString = strings.reduce(
@@ -27,20 +31,44 @@ function unindent(strings: TemplateStringsArray, ...values: unknown[]) {
 }
 
 export namespace nl {
+  const expenseSchema = v.omit(ExpenseInsert, [
+    "groupId",
+    "id",
+    "createdAt",
+    "date",
+  ]);
+
+  const memberSchemaBase = v.object({
+    ...v.omit(ParticipantInsert, ["expenseId", "groupId", "userId"]).entries,
+    name: v.pipe(v.string(), v.minLength(1)),
+    role: v.string(),
+  });
+
+  const llmSplit = v.pipe(v.array(v.number()), v.length(2));
+  const mappedSplit = v.tuple([v.number(), v.number()]);
+
   export const expense = {
     config: {
-      schema: v.object({
-        expense: v.omit(ExpenseInsert, ["groupId", "id", "createdAt", "date"]),
-        members: v.array(
-          v.object({
-            ...v.omit(ParticipantInsert, ["expenseId", "groupId", "userId"])
-              .entries,
-            name: v.pipe(v.string(), v.minLength(1)),
-            split: v.pipe(v.number(), v.minValue(0), v.maxValue(1)),
-            role: v.string(),
-          })
-        ),
-      }),
+      schema: {
+        internal: v.object({
+          expense: expenseSchema,
+          members: v.array(
+            v.object({
+              ...memberSchemaBase.entries,
+              split: mappedSplit,
+            })
+          ),
+        }),
+        llm: v.object({
+          expense: expenseSchema,
+          members: v.array(
+            v.object({
+              ...memberSchemaBase.entries,
+              split: llmSplit,
+            })
+          ),
+        }),
+      },
       grounding: unindent`
         # Expense Parser
 
@@ -68,6 +96,7 @@ export namespace nl {
         - Total of all splits must equal 1.0
         - ALWAYS ASSUME EQUAL SPLITS WHEN NOT SPECIFIED (with 2 people, this means 0.5 each)
         - Default to equal splits when not specified
+        - For each split, output the value as a tuple [numerator, denominator] representing the fraction (e.g., 1/2 as [1, 2])
 
         ## Examples
 
@@ -95,12 +124,12 @@ export namespace nl {
 
       // TODO: split the context into two parts
       const fastLLMParser = createSafeGenerateObject({
-        schema: valibotSchema(this.config.schema),
+        schema: valibotSchema(this.config.schema.llm),
         system: this.config.grounding,
         model: fastModel,
       });
       const qualityLLMParser = createSafeGenerateObject({
-        schema: valibotSchema(this.config.schema),
+        schema: valibotSchema(this.config.schema.llm),
         system: this.config.grounding,
         model: qualityModel,
       });
@@ -115,6 +144,9 @@ export namespace nl {
             members: quality.object.members,
           };
         })
+        .andThen((generated) =>
+          fromParsed(this.config.schema.internal, generated)
+        )
         .andThen((parsed) => {
           // TODO: Replace these basic validation checks with more robust validation system
 
@@ -138,9 +170,18 @@ export namespace nl {
 
           // Check: Splits add up to 1.0 (allowing small floating point tolerance)
           const totalSplit = parsed.members.reduce(
-            (sum, member) => sum + member.split,
+            (sum, member) => sum + toDecimalSplit(member.split),
             0
           );
+
+          if (parsed.members.some(({ split }) => split[0] > split[1])) {
+            return err(
+              new Error(
+                `All splits must be have a larger denominator than numberator`
+              )
+            );
+          }
+
           if (Math.abs(totalSplit - 1.0) > 0.0001) {
             return err(
               new Error(

@@ -148,7 +148,11 @@ export const SheetPaidByField = (props: SheetPaidByFieldProps) => {
       >
         {label}
       </SharedSheetLabel>
-      <Select value={field.state.value} onValueChange={field.handleChange}>
+      <Select
+        value={field.state.value}
+        onValueChange={field.handleChange}
+        disabled={rest.inputProps?.disabled ?? false}
+      >
         <SelectTrigger className="bg-accent/50 border-border/50 border-[1.5px] text-foreground hover:bg-secondary/80 placeholder:text-muted-foreground/60 h-10">
           <SelectValue />
         </SelectTrigger>
@@ -189,9 +193,10 @@ export const SheetDateField = (props: SheetDateFieldProps) => {
       <Popover modal>
         <PopoverTrigger asChild>
           <Button
+            disabled={rest.inputProps?.disabled ?? false}
             variant="secondary"
             className={cn(
-              "w-full justify-start text-left font-normal lowercase bg-accent/50 border h-full border-[1.5px] border-border/50 text-foreground h-10",
+              "w-full justify-start text-left font-normal lowercase bg-accent/50 border border-border/50 text-foreground h-10",
               !field.state.value && "text-muted-foreground"
             )}
           >

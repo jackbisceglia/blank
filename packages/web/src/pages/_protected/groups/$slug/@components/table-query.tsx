@@ -4,6 +4,7 @@ import * as v from "valibot";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { X } from "lucide-react";
+import { Expense } from "@blank/core/modules/expense/schema";
 
 // config
 const TableQuery = {
@@ -41,12 +42,15 @@ export function TableQueryInput() {
   const query = useQueryFromSearch();
   const inputRef = useRef<HTMLInputElement>(null);
 
+  const maxLengthAction = Expense.entries.description.pipe[1];
+
   return (
     <div className="relative max-w-72 w-full">
       <Input
         ref={inputRef}
         className="bg-transparent border border-border hover:bg-secondary/25 py-1 h-min text-xs text-foreground w-full pr-8 pl-2 placeholder:h-min placeholder:text-xs placeholder:p-0 placeholder:m-0 placeholder:text-foreground/40 placeholder:uppercase "
         placeholder="Search expenses..."
+        maxLength={maxLengthAction.requirement}
         value={query.value ?? ""}
         onChange={(e) => query.set(e.target.value)}
       />

@@ -2,13 +2,6 @@ import { SecondaryRow } from "../layout";
 import { Button } from "@/components/ui/button";
 import { Link } from "@tanstack/react-router";
 import { DeleteAllOptions } from "@/lib/client-mutators/expense-mutators";
-import {
-  Select,
-  SelectTrigger,
-  SelectValue,
-  SelectContent,
-  SelectItem,
-} from "@/components/ui/select";
 import { useWithConfirmation } from "@/components/with-confirmation-dialog";
 import { withToast } from "@/lib/toast";
 import { flags } from "@/lib/utils";
@@ -19,6 +12,7 @@ import {
   TableFiltersDropdown,
 } from "./table-filters";
 import { TableQueryInput } from "./table-query";
+import { TableStatusSelect } from "./table-status";
 
 function useConfirmDeleteAllExpenses(
   groupId: string,
@@ -92,22 +86,7 @@ function TableActions(props: TableActionsProps) {
             Delete All
           </Button>
         )}
-        <Select defaultValue="active">
-          <SelectTrigger className="text-xs uppercase w-24 bg-transparent border border-border py-1.5 pl-3 pr-2 hover:bg-secondary/25 text-foreground h-min ">
-            <SelectValue />
-          </SelectTrigger>
-          <SelectContent className="uppercase">
-            <SelectItem className="text-xs" value="all">
-              All
-            </SelectItem>
-            <SelectItem className="text-xs" value="active">
-              Active
-            </SelectItem>
-            <SelectItem className="text-xs" value="settled">
-              Settled
-            </SelectItem>
-          </SelectContent>
-        </Select>
+        <TableStatusSelect />
       </SecondaryRow>
       <TableFilterBadgeRow />
     </>

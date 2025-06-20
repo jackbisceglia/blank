@@ -2,13 +2,14 @@ import {
   ANYONE_CAN_DO_ANYTHING,
   createSchema,
   definePermissions,
+  PermissionsConfig,
+  Row,
   enumeration,
   number,
-  PermissionsConfig,
-  relationships,
-  Row,
+  json,
   string,
   table,
+  relationships,
 } from "@rocicorp/zero";
 
 type AuthData = {
@@ -30,6 +31,7 @@ const expense = table("expense")
     amount: number(),
     date: number(),
     description: string(),
+    status: enumeration<"active" | "settled">(),
     createdAt: number().optional(),
   })
   .primaryKey("id");
@@ -60,7 +62,7 @@ const participant = table("participant")
     groupId: string(),
     userId: string(),
     role: enumeration<"payer" | "participant">(),
-    split: number(),
+    split: json<[number, number]>(),
   })
   .primaryKey("expenseId", "userId");
 

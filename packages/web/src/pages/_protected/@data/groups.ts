@@ -13,6 +13,7 @@ const groupByProperty = (key: "slug" | "id", value: string, z: Zero) =>
     .where(key, value)
     .related("expenses", (e) =>
       e
+        .where("status", "active")
         .orderBy("date", "desc")
         .related("participants", (p) => p.related("member").related("member"))
     )
