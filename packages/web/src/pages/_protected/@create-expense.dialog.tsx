@@ -25,7 +25,7 @@ const schema = v.object({
   description: v.pipe(
     v.string("Description is required"),
     v.minLength(1, `Description is required`),
-    v.maxLength(180, `Description must be at most 180 characters`)
+    v.maxLength(180, `Description must be at most 180 characters`),
   ),
 });
 

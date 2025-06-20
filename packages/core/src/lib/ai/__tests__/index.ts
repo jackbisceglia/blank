@@ -31,7 +31,7 @@ type AnswerCorrectnessOptions<T extends object> = {
 };
 
 function AnswerCorrectness<T extends object>(
-  opts: AnswerCorrectnessOptions<T>
+  opts: AnswerCorrectnessOptions<T>,
 ) {
   return AnswerCorrectnessGeneric({
     input: opts.input,
@@ -46,7 +46,7 @@ function AnswerCorrectness<T extends object>(
 export function createExpenseEvalRunner(
   modelFast: ModelKeys,
   modelQuality: ModelKeys,
-  experiment: string
+  experiment: string,
 ) {
   return async (dataset: EvaluationDataOutput[]) => {
     if (dataset.length === 0) {

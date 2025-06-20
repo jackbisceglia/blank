@@ -8,7 +8,7 @@ const EXPERIMENT = `${TAG}.${Date.now().toString()}`;
 const evaluate = createExpenseEvalRunner(
   MODELS.fast,
   MODELS.quality,
-  EXPERIMENT
+  EXPERIMENT,
 );
 
 const dataset = formatDatasetByTag(data, TAG);

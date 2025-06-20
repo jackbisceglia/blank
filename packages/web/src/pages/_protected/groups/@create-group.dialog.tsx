@@ -26,16 +26,16 @@ const schemas = {
     v.maxLength(32, "Title must be at most 32 characters"),
     v.custom(
       (value) => slugify(value as string).isLossless(),
-      invalidCharactersMessage
+      invalidCharactersMessage,
     ),
     v.transform((value) => slugify(value).encode()),
     v.slug(invalidCharactersMessage),
-    v.transform((value) => slugify(value).decode())
+    v.transform((value) => slugify(value).decode()),
   ),
   description: v.pipe(
     v.string(),
     v.minLength(1, "Description must not be empty"),
-    v.maxLength(128, "Description must be at most 128 characters")
+    v.maxLength(128, "Description must be at most 128 characters"),
   ),
 };
 
@@ -69,7 +69,7 @@ export function CreateGroupDialog() {
         Result.combine([
           fromParsed(schemas.title, form.get(formKeys.title)),
           fromParsed(schemas.description, form.get(formKeys.description)),
-        ])
+        ]),
       )
       .andThrough((values) => safeSubmitForm(...values))
       .match(
@@ -82,7 +82,7 @@ export function CreateGroupDialog() {
           } else {
             setError("Failed to create group. Please try again.");
           }
-        }
+        },
       );
   }
 

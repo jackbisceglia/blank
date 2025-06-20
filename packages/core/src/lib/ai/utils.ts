@@ -33,7 +33,7 @@ type SafeGenerateOptions<TSchema> = {
 
 export function createSafeGenerateObject<TSchema>(
   opts: SafeGenerateOptions<TSchema>,
-  errorHandler?: (error: unknown) => AISDKError
+  errorHandler?: (error: unknown) => AISDKError,
 ) {
   const defaults = { output: "object", model: create() } as const;
 

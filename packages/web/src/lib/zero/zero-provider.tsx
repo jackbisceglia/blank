@@ -22,7 +22,7 @@ export const ZeroProvider = (props: PropsWithChildren) => {
       auth: async () => {
         const payload = Result.fromThrowable(
           () => UnsecuredJWT.decode(auth.token),
-          (e) => (e instanceof JWTExpired ? e : undefined)
+          (e) => (e instanceof JWTExpired ? e : undefined),
         )();
 
         if (payload.isErr() && payload.error instanceof JWTExpired) {

@@ -6,7 +6,7 @@ export function PrimaryHeading(props: React.ComponentProps<"h1">) {
     <h1
       className={cn(
         className,
-        "text-lg sm:text-xl font-medium uppercase min-w-fit"
+        "text-lg sm:text-xl font-medium uppercase min-w-fit",
       )}
       {...rest}
     />
@@ -19,7 +19,7 @@ export function SecondaryHeading(props: React.ComponentProps<"h2">) {
     <h2
       className={cn(
         "text-lg font-medium uppercase text-foreground/80",
-        className
+        className,
       )}
       {...rest}
     />
@@ -32,7 +32,7 @@ export function SubHeading(props: React.ComponentProps<"h3">) {
     <h3
       className={cn(
         "font-base leading-none lowercase text-muted-foreground text-sm sm:text-base",
-        className
+        className,
       )}
       {...rest}
     />

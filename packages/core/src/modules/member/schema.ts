@@ -11,7 +11,7 @@ export const memberTable = pgTable(
     userId: uuid().notNull(), // update to make into ulid
     nickname: text().notNull(),
   },
-  (table) => [primaryKey({ columns: [table.groupId, table.userId] })]
+  (table) => [primaryKey({ columns: [table.groupId, table.userId] })],
 );
 
 export const memberRelation = relations(memberTable, ({ one }) => ({

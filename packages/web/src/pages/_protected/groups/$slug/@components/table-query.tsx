@@ -12,7 +12,7 @@ const TableQuery = {
 } as const;
 
 export const TableQueryKeys = Object.keys(
-  TableQuery
+  TableQuery,
 ) as (keyof typeof TableQuery)[];
 
 export const QuerySchema = v.object({

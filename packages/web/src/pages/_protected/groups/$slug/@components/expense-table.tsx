@@ -73,7 +73,7 @@ const SortButton = (props: SortButtonProps) => {
 
           return acc && isDesc;
         },
-        true
+        true,
       );
 
       const isSortedWithManualCheck = isCaseSortedOutsideOfTableState
@@ -96,7 +96,7 @@ const SortButton = (props: SortButtonProps) => {
       size="xs"
       variant="ghost"
       className={cn(
-        "gap-1.5 font-normal hover:bg-transparent uppercase !pl-2 !pr-4 lg:!pr-4 lg:!pl-2 sm:px-0 py-1 h-full cursor-pointer w-full mr-auto flex justify-start items-center "
+        "gap-1.5 font-normal hover:bg-transparent uppercase !pl-2 !pr-4 lg:!pr-4 lg:!pl-2 sm:px-0 py-1 h-full cursor-pointer w-full mr-auto flex justify-start items-center ",
       )}
       aria-sort={direction}
     >
@@ -192,7 +192,7 @@ const columns = [
         const nickname = (p: ParticipantWithMember) => p.member?.nickname ?? "";
 
         return values.some((value) =>
-          participants.some((p) => nickname(p).includes(value))
+          participants.some((p) => nickname(p).includes(value)),
         );
       },
       cell: (opts) => {
@@ -204,7 +204,7 @@ const columns = [
 
         return <ParticipantBadgeList participants={participants} />;
       },
-    }
+    },
   ),
   columnHelper.accessor("date", {
     sortingFn: "datetime",
@@ -221,7 +221,7 @@ const columns = [
         .toLocaleDateString()
         .split("/")
         .map((part, index) =>
-          index === 2 ? [part.at(-2), part.at(-1)].join("") : part
+          index === 2 ? [part.at(-2), part.at(-1)].join("") : part,
         )
         .join("/"),
   }),
@@ -280,7 +280,7 @@ const useColumnFilters = () => {
         value: filters.value.with ?? "",
       },
     ],
-    [query.value, filters.value]
+    [query.value, filters.value],
   );
 };
 
@@ -296,7 +296,7 @@ function EmptyState(props: EmptyStateProps) {
         to="."
         className={cn(
           buttonVariants({ variant: "link" }),
-          "p-0 text-blank-theme-text"
+          "p-0 text-blank-theme-text",
         )}
         search={(prev) => ({
           action: ["new-expense", ...(prev.action ?? [])],
@@ -340,7 +340,7 @@ export function DataTable(props: DataTableProps) {
 
   const initialState = useMemo(
     () => ({ sorting: [{ id: "date", desc: true }] }),
-    []
+    [],
   );
 
   const table = useReactTable({
@@ -373,7 +373,7 @@ export function DataTable(props: DataTableProps) {
                     ? null
                     : flexRender(
                         header.column.columnDef.header,
-                        header.getContext()
+                        header.getContext(),
                       )}
                 </TableHead>
               );
@@ -394,7 +394,7 @@ export function DataTable(props: DataTableProps) {
                 data-state={row.getIsSelected() && "selected"}
                 className={cn(
                   "hover:bg-muted focus-within:bg-muted transition-colors",
-                  row.original.status === "settled" && "opacity-55"
+                  row.original.status === "settled" && "opacity-55",
                 )}
                 tabIndex={0}
                 onKeyDown={(e) => {
@@ -453,7 +453,7 @@ export function DataTable(props: DataTableProps) {
                       "lg:[&:nth-child(4)]:min-w-min lg:[&:nth-child(4)]:w-min lg:[&:nth-child(4)]:max-w-44 lg:[&:nth-child(4)]:truncate",
 
                       // MANAGE
-                      "[&:last-child]:px-4"
+                      "[&:last-child]:px-4",
                     )}
                   >
                     {flexRender(cell.column.columnDef.cell, cell.getContext())}

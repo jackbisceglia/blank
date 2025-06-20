@@ -22,7 +22,7 @@ type TableNavigationContext =
     };
 
 export const tableNavigationContext = <T,>(
-  e: AcceptableKeyboardEvent<T>
+  e: AcceptableKeyboardEvent<T>,
 ): TableNavigationContext => {
   if (isModKey(e)) return false;
   if (!isTableNavUp(e.key) && !isTableNavDown(e.key)) return false;

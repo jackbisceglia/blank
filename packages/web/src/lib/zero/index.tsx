@@ -25,7 +25,7 @@ type StatusType = "complete" | "unknown";
 
 export const computeListQueryStatus = function (
   type: StatusType,
-  data: unknown
+  data: unknown,
 ) {
   if (type === "unknown") {
     return "loading";
@@ -48,7 +48,7 @@ export function useListQuery<
 
 export const computeRecordQueryStatus = function (
   type: StatusType,
-  data: unknown
+  data: unknown,
 ) {
   if (type === "unknown") {
     return "loading";

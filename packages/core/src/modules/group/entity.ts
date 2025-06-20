@@ -19,24 +19,24 @@ export namespace groups {
         (tx ?? db).query.groupTable.findFirst({
           where: eq(groupTable.id, groupId),
           with: { members: true },
-        })
+        }),
       ),
       Effect.flatMap(
         requireValueExists({
           success: (group) => group.members,
           error: () => new GroupNotFoundError("Group not found"),
-        })
+        }),
       ),
       Effect.flatMap(
         requireManyElements({
           success: (members) => members,
           empty: () => new MembersNotFoundError("Members not found"),
-        })
+        }),
       ),
       Effect.catchTag(
         "UnknownException",
-        (e) => new DatabaseReadError("Failed fetching members by group id", e)
-      )
+        (e) => new DatabaseReadError("Failed fetching members by group id", e),
+      ),
     );
   }
 }

@@ -11,7 +11,7 @@ export function SharedLabel(props: SharedLabelProps) {
     <Label
       className={cn(
         "uppercase font-base text-xs col-span-full mt-auto",
-        className
+        className,
       )}
       {...rest}
     />
@@ -27,7 +27,7 @@ export function SharedSheetLabel(props: SharedSheetLabelProps) {
     <Label
       className={cn(
         "uppercase font-medium text-xs text-muted-foreground",
-        className
+        className,
       )}
       {...rest}
     />
@@ -40,7 +40,7 @@ type SharedInputFromFieldProps<T extends string | number> = {
 } & React.ComponentProps<typeof Input>;
 
 export function SharedInputFromField<T extends string | number>(
-  props: SharedInputFromFieldProps<T>
+  props: SharedInputFromFieldProps<T>,
 ) {
   const { className, field, transform, ...rest } = props;
   return (
@@ -50,7 +50,7 @@ export function SharedInputFromField<T extends string | number>(
       value={field.state.value}
       onChange={(e) => {
         field.handleChange(
-          transform?.(e.target.value) ?? (e.target.value as T)
+          transform?.(e.target.value) ?? (e.target.value as T),
         );
       }}
       onBlur={field.handleBlur}

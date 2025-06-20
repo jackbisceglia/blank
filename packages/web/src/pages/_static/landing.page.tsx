@@ -87,7 +87,7 @@ function LandingRoute() {
       () => {
         generateRandomPosition();
       },
-      Math.random() * 2500 + 500 // Random interval between 0.5s and 3s
+      Math.random() * 2500 + 500, // Random interval between 0.5s and 3s
       // 1000
     );
 

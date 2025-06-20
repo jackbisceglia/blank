@@ -100,7 +100,7 @@ export function createPreventDefault(fn: () => void, e: KeyboardEvent) {
 export const prevented = <
   E extends { preventDefault: () => void; stopPropagation: () => void },
 >(
-  callback?: (e: E) => unknown
+  callback?: (e: E) => unknown,
 ) => {
   return (e: E) => {
     e.preventDefault();

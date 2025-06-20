@@ -6,7 +6,7 @@ import { ValidationError } from "../effect";
 
 // this is useful when interoping with 3rd party libraries where they depend on promises throwing errors for control flow
 export async function unwrapOrThrow<T, E>(
-  resultPromise: ResultAsync<T, E>
+  resultPromise: ResultAsync<T, E>,
 ): Promise<T> {
   const result = await resultPromise;
   if (result.isErr()) {
@@ -17,7 +17,7 @@ export async function unwrapOrThrow<T, E>(
 
 export function fromParsed<T, R>(
   schema: v.GenericSchema<T, R>,
-  value: unknown
+  value: unknown,
 ) {
   const result = v.safeParse(schema, value);
 

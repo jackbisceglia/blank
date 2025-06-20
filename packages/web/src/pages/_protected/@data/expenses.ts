@@ -15,7 +15,7 @@ import { Expense } from "@blank/zero";
 
 export function useExpenseListByGroupSlug(
   slug: string,
-  options?: { status?: Expense["status"] | "all" }
+  options?: { status?: Expense["status"] | "all" },
 ) {
   const z = useZero();
   let query = z.query.expense
@@ -75,6 +75,5 @@ export function useDeleteAllExpenses() {
 export function useBulkSettleExpenses() {
   const z = useZero();
 
-  return (opts: BulkSettleExpensesOptions) => 
-    z.mutate.expense.bulkSettle(opts);
+  return (opts: BulkSettleExpensesOptions) => z.mutate.expense.bulkSettle(opts);
 }

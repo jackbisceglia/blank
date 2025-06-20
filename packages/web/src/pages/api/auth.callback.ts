@@ -14,7 +14,7 @@ export const APIRoute = createAPIFileRoute("/api/auth/callback")({
 
     const exchanged = await openauth.exchange(
       code,
-      `${url.origin}/api/auth/callback`
+      `${url.origin}/api/auth/callback`,
     );
 
     if (exchanged.err) return json(exchanged.err, { status: 400 });

@@ -14,7 +14,7 @@ const TableStatus = {
 } as const;
 
 export const TableStatusKeys = Object.keys(
-  TableStatus
+  TableStatus,
 ) as (keyof typeof TableStatus)[];
 
 const statuses = ["all", "active", "settled"] as const;

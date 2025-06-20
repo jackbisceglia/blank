@@ -26,7 +26,7 @@ const TableFilters = {
 } as const;
 
 export const TableFiltersKeys = Object.keys(
-  TableFilters
+  TableFilters,
 ) as (keyof typeof TableFilters)[];
 
 export const FiltersSchema = v.object({
@@ -91,13 +91,13 @@ export function useFiltersFromSearch() {
             ...acc,
             [curr]: undefined,
           }),
-          { ...previous }
+          { ...previous },
         ),
     });
   }
 
   const entries: FilterEntries = Object.entries(value).filter(
-    ([, list]) => list && list.length > 0
+    ([, list]) => list && list.length > 0,
   ) as Array<[keyof typeof value, (typeof value)[keyof typeof value]]>;
 
   return { value, entries, toggle, clear };
@@ -195,7 +195,7 @@ export function TableFilterBadgeRow() {
                 <X className="size-4" />
               </Button>
             </Badge>
-          ))
+          )),
         )}
       </div>
       <Button
