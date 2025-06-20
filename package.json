@@ -8,7 +8,8 @@
     "typecheck": "pnpm -r run typecheck",
     "test": "pnpm -r run test",
     "lint": "pnpm -r run lint",
-    "lint:fix": "pnpm -r run lint:fix"
+    "lint:fix": "pnpm -r run lint:fix",
+    "format": "pnpm -r run format"
   },
   "packageManager": "pnpm@10.6.2",
   "devDependencies": {
