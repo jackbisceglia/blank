@@ -9,7 +9,8 @@
     "start": "vinxi start",
     "lint": "eslint .",
     "lint:fix": "eslint . --fix",
-    "test": "pnpm dlx sst shell -- bun test"
+    "test": "pnpm dlx sst shell -- bun test",
+    "format": "prettier --write ."
   },
   "dependencies": {
     "@blank/auth": "workspace:*",

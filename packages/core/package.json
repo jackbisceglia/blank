@@ -15,7 +15,8 @@
     "ai:eval": "pnpm dlx sst shell braintrust eval ./src/ai/__tests__",
     "test": "pnpm dlx sst shell pnpm test",
     "lint": "eslint .",
-    "lint:fix": "eslint . --fix"
+    "lint:fix": "eslint . --fix",
+    "format": "prettier --write ."
   },
   "dependencies": {
     "@ai-sdk/google": "^1.2.10",

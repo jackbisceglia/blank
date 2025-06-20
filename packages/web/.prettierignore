@@ -2,3 +2,4 @@
 **/public
 pnpm-lock.yaml
 routes.generated.ts
+sst-env.d.ts

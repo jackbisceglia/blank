@@ -12,7 +12,7 @@
     "isolatedModules": true,
     "resolveJsonModule": true,
     "skipLibCheck": true,
-    "target": "ES2023",
+    "target": "ESNext",
     "allowJs": true,
     "forceConsistentCasingInFileNames": true,
     "baseUrl": ".",
