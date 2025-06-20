@@ -8,10 +8,10 @@ export type Prettify<T> = {
  * @returns The object with defined values only, or false if no defined values
  */
 export function optional<T extends Record<string, unknown>>(
-  obj: T
+  obj: T,
 ): { [K in keyof T]: NonNullable<T[K]> } | false {
   const entries = Object.entries(obj).filter(
-    ([, value]) => value !== undefined
+    ([, value]) => value !== undefined,
   );
 
   if (entries.length === 0) return false;

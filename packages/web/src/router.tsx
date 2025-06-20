@@ -31,7 +31,7 @@ export function createRouter() {
       defaultNotFoundComponent: () => <NotFound />,
       defaultStructuralSharing: true,
     }),
-    queryClient
+    queryClient,
   );
 }
 

@@ -23,7 +23,7 @@ function SettingsRoute() {
           void navigate({ to: "/groups" });
         })
         .catch((error: unknown) =>
-          console.error("DELETE_ERROR", JSON.stringify(error, null, 2))
+          console.error("DELETE_ERROR", JSON.stringify(error, null, 2)),
         );
 
       return promise;

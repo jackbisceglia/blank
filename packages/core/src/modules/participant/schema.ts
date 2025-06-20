@@ -14,7 +14,7 @@ export const participantTable = pgTable(
     role: text({ enum: ["payer", "participant"] }).default("payer"),
     split: json().$type<[number, number]>().notNull(),
   },
-  (table) => [primaryKey({ columns: [table.expenseId, table.userId] })]
+  (table) => [primaryKey({ columns: [table.expenseId, table.userId] })],
 );
 
 export const participantRelation = relations(participantTable, ({ one }) => ({

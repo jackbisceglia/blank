@@ -13,13 +13,13 @@ const avatarSrc = v.parser(
       if (url.endsWith(constants.googleThumbnailSuffix)) {
         return url.slice(
           0,
-          url.length - constants.googleThumbnailSuffix.length
+          url.length - constants.googleThumbnailSuffix.length,
         );
       }
 
       return url;
-    })
-  )
+    }),
+  ),
 );
 
 const avatarFallback = v.parser(
@@ -36,10 +36,10 @@ const avatarFallback = v.parser(
           default:
             return name.at(0) as string;
         }
-      })
+      }),
     ),
-    "U"
-  )
+    "U",
+  ),
 );
 
 function HomeRoute() {

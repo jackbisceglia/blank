@@ -65,7 +65,7 @@ function Breadcrumbs() {
           <BreadcrumbLink
             asChild
             className={cn(
-              "uppercase data-[status=active]:font-medium data-[status=active]:text-foreground data-[status=active]:underline underline-offset-4"
+              "uppercase data-[status=active]:font-medium data-[status=active]:text-foreground data-[status=active]:underline underline-offset-4",
             )}
           >
             <Link
@@ -96,7 +96,7 @@ function Breadcrumbs() {
             <BreadcrumbLink
               asChild
               className={cn(
-                "uppercase data-[status=active]:font-medium data-[status=active]:text-foreground data-[status=active]:underline underline-offset-4"
+                "uppercase data-[status=active]:font-medium data-[status=active]:text-foreground data-[status=active]:underline underline-offset-4",
               )}
             >
               <Link
@@ -173,8 +173,8 @@ export const Route = createFileRoute("/_protected")({
           GlobalSearchParams.entries.action,
           CreateGroupSearchParams.entries.action,
           CreateExpenseSearchParams.entries.action,
-        ])
-      )
+        ]),
+      ),
     ),
   }),
 });

@@ -41,5 +41,5 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       links: [{ rel: "stylesheet", href: appCss }],
     }),
     component: () => <Document />,
-  }
+  },
 );

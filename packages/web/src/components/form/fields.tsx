@@ -45,7 +45,7 @@ export const TextField = (props: TextFieldProps) => {
         field={field}
         className={cn(
           inputClassName,
-          "sm:px-3 sm:py-2 w-full bg-popover space-y-0.5 col-span-full border-0 p-0 focus-visible:ring-0 placeholder:text-muted-foreground/60 flex-1"
+          "sm:px-3 sm:py-2 w-full bg-popover space-y-0.5 col-span-full border-0 p-0 focus-visible:ring-0 placeholder:text-muted-foreground/60 flex-1",
         )}
         {...restInputProps}
       />
@@ -77,7 +77,7 @@ export const SheetTextField = (props: SheetTextFieldProps) => {
         field={field}
         className={cn(
           inputClassName,
-          "bg-accent/50 border-border/50 text-foreground placeholder:text-muted-foreground/60 h-10"
+          "bg-accent/50 border-border/50 text-foreground placeholder:text-muted-foreground/60 h-10",
         )}
         {...restInputProps}
       />
@@ -115,7 +115,7 @@ export const SheetCostField = (props: SheetCostFieldProps) => {
           field={field}
           className={cn(
             inputClassName,
-            "bg-accent/50 border-border/50 text-foreground placeholder:text-muted-foreground/60 h-10 pl-8"
+            "bg-accent/50 border-border/50 text-foreground placeholder:text-muted-foreground/60 h-10 pl-8",
           )}
           {...restInputProps}
         />
@@ -197,7 +197,7 @@ export const SheetDateField = (props: SheetDateFieldProps) => {
             variant="secondary"
             className={cn(
               "w-full justify-start text-left font-normal lowercase bg-accent/50 border border-border/50 text-foreground h-10",
-              !field.state.value && "text-muted-foreground"
+              !field.state.value && "text-muted-foreground",
             )}
           >
             <CalendarIcon />

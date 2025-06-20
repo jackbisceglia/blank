@@ -23,7 +23,7 @@ function Calendar({
         nav: "flex items-center gap-1",
         nav_button: cn(
           buttonVariants({ variant: "outline" }),
-          "size-7 bg-transparent p-0 opacity-60 hover:opacity-100 transition-opacity"
+          "size-7 bg-transparent p-0 opacity-60 hover:opacity-100 transition-opacity",
         ),
         nav_button_previous: "absolute left-1",
         nav_button_next: "absolute right-1",
@@ -37,13 +37,13 @@ function Calendar({
           "[&:has([aria-selected].day-range-end)]:rounded-r-md",
           props.mode === "range"
             ? "[&:has(>.day-range-end)]:rounded-r-md [&:has(>.day-range-start)]:rounded-l-md first:[&:has([aria-selected])]:rounded-l-md last:[&:has([aria-selected])]:rounded-r-md"
-            : "[&:has([aria-selected])]:rounded-md"
+            : "[&:has([aria-selected])]:rounded-md",
         ),
         day: cn(
           buttonVariants({ variant: "ghost" }),
           "size-8 p-0 font-normal text-foreground",
           "hover:bg-secondary/30 hover:text-foreground",
-          "aria-selected:opacity-100"
+          "aria-selected:opacity-100",
         ),
         day_range_start:
           "day-range-start aria-selected:bg-primary aria-selected:text-primary-foreground aria-selected:hover:bg-primary aria-selected:hover:text-primary-foreground",
@@ -55,7 +55,7 @@ function Calendar({
           "bg-secondary/40 text-foreground font-medium border border-border/50",
           // When today is also selected, ensure proper contrast
           "aria-selected:bg-primary aria-selected:text-primary-foreground aria-selected:border-primary",
-          "aria-selected:hover:bg-primary aria-selected:hover:text-primary-foreground"
+          "aria-selected:hover:bg-primary aria-selected:hover:text-primary-foreground",
         ),
         day_outside:
           "day-outside text-muted-foreground opacity-40 aria-selected:text-muted-foreground",

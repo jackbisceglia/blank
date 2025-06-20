@@ -36,7 +36,7 @@ function GroupNavigation(props: GroupNavigationProps) {
           activeProps={{
             className: cn(
               underline_defaults,
-              "text-blank-theme font-semibold hover:text-blank-theme"
+              "text-blank-theme font-semibold hover:text-blank-theme",
             ),
           }}
           params={{ title: props.title }}
@@ -64,7 +64,7 @@ export function GroupBody(props: PropsWithChildren<{ className?: string }>) {
     <div
       className={cn(
         "flex flex-col w-full pb-3.5 space-y-5 pt-2.5",
-        props.className
+        props.className,
       )}
     >
       {props.children}

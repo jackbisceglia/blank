@@ -7,7 +7,7 @@ import { Resource } from "sst";
 
 export const processor = new PushProcessor(
   schema,
-  connectionProvider(postgres(Resource.Database.connection))
+  connectionProvider(postgres(Resource.Database.connection)),
 );
 
 // whenever this grows, we can break it out the same way as client-mutators

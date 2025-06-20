@@ -20,7 +20,7 @@ const assertUserCanCreateGroup = async (tx: ZTransaction, userId: string) => {
 
   if (groupsUserOwns.length >= CONSTRAINTS.GROUPS.MAX_USER_CAN_OWN) {
     throw new Error(
-      `User can not own more than ${CONSTRAINTS.GROUPS.MAX_USER_CAN_OWN.toString()} groups`
+      `User can not own more than ${CONSTRAINTS.GROUPS.MAX_USER_CAN_OWN.toString()} groups`,
     );
   }
 };
@@ -32,7 +32,7 @@ const assertUserCanJoinGroup = async (tx: ZTransaction, userId: string) => {
 
   if (groupsUserBelongsTo.length >= CONSTRAINTS.GROUPS.MAX_USER_CAN_OWN) {
     throw new Error(
-      `User can not be a member of more than ${CONSTRAINTS.GROUPS.MAX_USER_CAN_BE_MEMBER_OF.toString()} groups`
+      `User can not be a member of more than ${CONSTRAINTS.GROUPS.MAX_USER_CAN_BE_MEMBER_OF.toString()} groups`,
     );
   }
 };

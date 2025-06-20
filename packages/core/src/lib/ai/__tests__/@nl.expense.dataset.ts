@@ -19,7 +19,7 @@ function entry(
   input: string,
   expense: OutputWithRoleConstraints["expense"],
   members: OutputWithRoleConstraints["members"],
-  tags?: Tag[]
+  tags?: Tag[],
 ) {
   const t: Tag[] = tags ? [...tags, "description.core"] : ["description.core"]; // TODO: check core isn't dup
   return { input, expected: { expense, members }, tags: t };
@@ -36,7 +36,7 @@ export const data = [
         role: "participant",
         split: [1, 2],
       },
-    ]
+    ],
   ),
   entry(
     "Got Annie a haircut, split with Jane Doe, $71",
@@ -49,7 +49,7 @@ export const data = [
         split: [1, 2],
       },
     ],
-    ["description.include-names-when-not-members"]
+    ["description.include-names-when-not-members"],
   ),
   entry(
     "Split beans and coffee with Jane Doe, $29",
@@ -61,7 +61,7 @@ export const data = [
         role: "participant",
         split: [1, 2],
       },
-    ]
+    ],
   ),
   entry(
     "Grocery store this week cost 67. Split with John.",
@@ -74,7 +74,7 @@ export const data = [
         split: [1, 2],
       },
     ],
-    ["description.omit-date-time-info"]
+    ["description.omit-date-time-info"],
   ),
   entry(
     "Movie tickets on Saturday with Jane, $30",
@@ -87,7 +87,7 @@ export const data = [
         split: [1, 2],
       },
     ],
-    ["description.omit-date-time-info"]
+    ["description.omit-date-time-info"],
   ),
   entry(
     "Cleaning supplies at Superstore with John. $23",
@@ -99,6 +99,6 @@ export const data = [
         role: "participant",
         split: [1, 2],
       },
-    ]
+    ],
   ),
 ];

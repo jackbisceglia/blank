@@ -136,7 +136,7 @@ function Groups(props: GroupsProps) {
       <SidebarMenuItem
         className={cn(
           sidebarMenuButtonVariants({}),
-          "text-muted-alt active:text-muted-alt hover:text-muted-alt active:bg-transparent hover:no-underline lowercase"
+          "text-muted-alt active:text-muted-alt hover:text-muted-alt active:bg-transparent hover:no-underline lowercase",
         )}
       >
         No Groups Yet

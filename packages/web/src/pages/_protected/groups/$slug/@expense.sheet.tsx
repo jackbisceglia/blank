@@ -39,7 +39,7 @@ export const SearchRoute = createSearchRoute(KEY);
 function useConfirmDeleteExpense(
   expenseId: string,
   deleteMutation: (opts: DeleteExpenseOptions) => Promise<void>,
-  leave: () => void
+  leave: () => void,
 ) {
   return useWithConfirmation({
     title: "Delete expense?",
@@ -66,7 +66,7 @@ function useConfirmSettleExpense(
   expense: ExpenseWithParticipants,
   userId: string,
   settleMutation: (opts: UpdateExpenseOptions) => Promise<void>,
-  leave: () => void
+  leave: () => void,
 ) {
   const payer = getPayerFromParticipants(expense.participants);
   if (!payer) {
@@ -76,7 +76,7 @@ function useConfirmSettleExpense(
   const getSettleUpSentence = (
     p1: ParticipantWithMember,
     p2: ParticipantWithMember,
-    amount: number
+    amount: number,
   ) => {
     const payerIsCurrentUser = p1.userId === userId;
     const payeeIsCurrentUser = p2.userId === userId;
@@ -112,7 +112,7 @@ function useConfirmSettleExpense(
                   {getSettleUpSentence(
                     p,
                     payer,
-                    fraction(p.split).apply(expense.amount)
+                    fraction(p.split).apply(expense.amount),
                   )}
                   <span className="text-blank-theme ml-auto font-bold">
                     [{Math.round(fraction(p.split).percent()).toString()}%]
@@ -163,7 +163,7 @@ function useMutators() {
 function useForm(
   active: ExpenseWithParticipants,
   updateMutation: (opts: UpdateExpenseOptions) => Promise<void>,
-  leave: () => void
+  leave: () => void,
 ) {
   const schema = v.pipe(
     v.object({
@@ -171,12 +171,12 @@ function useForm(
       amount: v.pipe(
         v.number(),
         v.minValue(0.01, "Item must cost at least $0.01"),
-        v.maxValue(100_000, "Item must not exceed $100,000")
+        v.maxValue(100_000, "Item must not exceed $100,000"),
       ),
       date: v.date(),
       paidBy: v.picklist(
         active.participants.map((p) => p.userId),
-        "paidBy must be a valid member"
+        "paidBy must be a valid member",
       ),
     }),
     v.check((schema) => {
@@ -186,7 +186,7 @@ function useForm(
         schema.date.getTime() !== active.date ||
         schema.paidBy !== getPayerFromParticipants(active.participants)?.userId
       );
-    })
+    }),
   );
 
   const api = useAppForm({
@@ -275,13 +275,13 @@ export function ExpenseSheet(props: ExpenseSheetProps) {
   const deleteExpense = useConfirmDeleteExpense(
     active.id,
     mutators.expense.delete,
-    route.close
+    route.close,
   );
   const settleExpense = useConfirmSettleExpense(
     active,
     auth.user.id,
     mutators.expense.update,
-    route.close
+    route.close,
   );
   const unsettleExpense = () => {
     route.close();
@@ -390,7 +390,10 @@ export function ExpenseSheet(props: ExpenseSheetProps) {
                 {active.participants
                   .map(
                     (p) =>
-                      [p.member?.nickname, fraction(p.split).percent()] as const
+                      [
+                        p.member?.nickname,
+                        fraction(p.split).percent(),
+                      ] as const,
                   )
                   .filter((tuple): tuple is [string, number] => !!tuple[0])
                   .map(([name, split]) => (

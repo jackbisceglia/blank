@@ -13,7 +13,7 @@ const toDecimalSplit = (split: readonly [number, number]) =>
 function unindent(strings: TemplateStringsArray, ...values: unknown[]) {
   const rawString = strings.reduce(
     (acc, str, i) => acc + str + ((values[i] || "") as string),
-    ""
+    "",
   );
   const lineIsOnlyWhitespace = (line: string) =>
     line.length !== line.trim().length;
@@ -24,7 +24,7 @@ function unindent(strings: TemplateStringsArray, ...values: unknown[]) {
   const lines = rawString.split("\n");
 
   const prefix = " ".repeat(
-    Math.min(...lines.filter(lineIsOnlyWhitespace).map(lengthPostTrim))
+    Math.min(...lines.filter(lineIsOnlyWhitespace).map(lengthPostTrim)),
   );
 
   return lines.map((line) => line.replace(prefix, "")).join("\n");
@@ -56,7 +56,7 @@ export namespace nl {
             v.object({
               ...memberSchemaBase.entries,
               split: mappedSplit,
-            })
+            }),
           ),
         }),
         llm: v.object({
@@ -65,7 +65,7 @@ export namespace nl {
             v.object({
               ...memberSchemaBase.entries,
               split: llmSplit,
-            })
+            }),
           ),
         }),
       },
@@ -117,7 +117,7 @@ export namespace nl {
     },
     parse: function (
       description: string,
-      opts?: { fastModel?: ModelKeys; qualityModel?: ModelKeys }
+      opts?: { fastModel?: ModelKeys; qualityModel?: ModelKeys },
     ) {
       const fastModel = models[opts?.fastModel ?? DEFAULT_FAST]();
       const qualityModel = models[opts?.qualityModel ?? DEFAULT]();
@@ -145,7 +145,7 @@ export namespace nl {
           };
         })
         .andThen((generated) =>
-          fromParsed(this.config.schema.internal, generated)
+          fromParsed(this.config.schema.internal, generated),
         )
         .andThen((parsed) => {
           // TODO: Replace these basic validation checks with more robust validation system
@@ -157,7 +157,7 @@ export namespace nl {
 
           // Check: Has a payer
           const payer = parsed.members.find(
-            (member) => member.role === "payer"
+            (member) => member.role === "payer",
           );
           if (!payer) {
             return err(new Error("Expense must have a payer"));
@@ -171,22 +171,22 @@ export namespace nl {
           // Check: Splits add up to 1.0 (allowing small floating point tolerance)
           const totalSplit = parsed.members.reduce(
             (sum, member) => sum + toDecimalSplit(member.split),
-            0
+            0,
           );
 
           if (parsed.members.some(({ split }) => split[0] > split[1])) {
             return err(
               new Error(
-                `All splits must be have a larger denominator than numberator`
-              )
+                `All splits must be have a larger denominator than numberator`,
+              ),
             );
           }
 
           if (Math.abs(totalSplit - 1.0) > 0.0001) {
             return err(
               new Error(
-                `Member splits must add up to 1.0, got ${totalSplit.toString()}`
-              )
+                `Member splits must add up to 1.0, got ${totalSplit.toString()}`,
+              ),
             );
           }
 

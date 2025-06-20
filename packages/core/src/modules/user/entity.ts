@@ -23,36 +23,36 @@ export namespace users {
       Effect.tryPromise(() =>
         (tx ?? db).query.userTable.findFirst({
           where: eq(userTable.email, email),
-        })
+        }),
       ),
       Effect.flatMap(
         requireValueExists({
           success: (user) => user.id,
           error: () => new UserNotFoundError("User not found"),
-        })
+        }),
       ),
       Effect.catchTag(
         "UnknownException",
-        (e) => new DatabaseReadError("Failed fetching user by email", e)
-      )
+        (e) => new DatabaseReadError("Failed fetching user by email", e),
+      ),
     );
   }
 
   export function getById(id: string, tx?: Transaction) {
     return pipe(
       Effect.tryPromise(() =>
-        (tx ?? db).query.userTable.findFirst({ where: eq(userTable.id, id) })
+        (tx ?? db).query.userTable.findFirst({ where: eq(userTable.id, id) }),
       ),
       Effect.flatMap(
         requireValueExists({
           success: (user) => user,
           error: () => new UserNotFoundError("User not found"),
-        })
+        }),
       ),
       Effect.catchTag(
         "UnknownException",
-        (e) => new DatabaseReadError("Failed fetching user by id", e)
-      )
+        (e) => new DatabaseReadError("Failed fetching user by id", e),
+      ),
     );
   }
 
@@ -62,19 +62,19 @@ export namespace users {
         (tx ?? db)
           .insert(userTable)
           .values(user)
-          .returning({ id: userTable.id })
+          .returning({ id: userTable.id }),
       ),
       Effect.flatMap(
         requireSingleElement({
           empty: () => new UserNotCreatedError("User not created"),
           success: (row) => row.id,
           dup: () => new DuplicateUserError("Duplicate user found"),
-        })
+        }),
       ),
       Effect.catchTag(
         "UnknownException",
-        (e) => new DatabaseWriteError("Failed creating user", e)
-      )
+        (e) => new DatabaseWriteError("Failed creating user", e),
+      ),
     );
   }
 }

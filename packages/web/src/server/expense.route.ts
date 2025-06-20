@@ -7,7 +7,7 @@ import { AuthTokens } from "@/server/utils";
 import { Effect, pipe } from "effect";
 
 class UserNotAuthenticatedError extends TaggedError(
-  "UserNotAuthenticatedError"
+  "UserNotAuthenticatedError",
 ) {}
 
 const inputs = {
@@ -25,15 +25,15 @@ export const createFromDescriptionServerFn = createServerFn()
       Effect.flatMap(
         requireValueExists({
           error: () => new UserNotAuthenticatedError("User not authenticated"),
-        })
+        }),
       ),
       Effect.flatMap((result) =>
         expenses.createFromDescription({
           userId: result.subject.properties.userID,
           groupId: ctx.data.groupId,
           description: ctx.data.description,
-        })
-      )
+        }),
+      ),
     );
 
     return Effect.runPromise(result);

@@ -25,7 +25,7 @@ function levenshteinDistance(a: string, b: string): number {
         matrix[i][j] = Math.min(
           matrix[i - 1][j - 1] + 1,
           matrix[i][j - 1] + 1,
-          matrix[i - 1][j] + 1
+          matrix[i - 1][j] + 1,
         );
       }
     }
@@ -43,7 +43,7 @@ function levenshteinDistance(a: string, b: string): number {
  */
 export function findClosestMatch(
   target: string,
-  candidates: string[]
+  candidates: string[],
 ): [string, number] {
   if (candidates.length === 0) return [target, 0];
 
@@ -58,7 +58,7 @@ export function findClosestMatch(
   for (let i = 0; i < normalizedCandidates.length; i++) {
     const distance = levenshteinDistance(
       normalizedTarget,
-      normalizedCandidates[i]
+      normalizedCandidates[i],
     );
     if (distance < minDistance) {
       minDistance = distance;
@@ -78,7 +78,7 @@ export function findClosestMatch(
 function similarityScore(a: string, b: string): number {
   const distance = levenshteinDistance(
     a.toLowerCase().trim(),
-    b.toLowerCase().trim()
+    b.toLowerCase().trim(),
   );
   const maxLength = Math.max(a.length, b.length);
   return 1 - distance / maxLength;

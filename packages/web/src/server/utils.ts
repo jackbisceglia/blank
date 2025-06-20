@@ -12,7 +12,7 @@ const normalizeServerUrl = (url: string) =>
 export const constants = {
   authClientId: "blank-auth-web",
   authServerUrl: normalizeServerUrl(
-    import.meta.env.VITE_AUTH_SERVER_URL as string
+    import.meta.env.VITE_AUTH_SERVER_URL as string,
   ),
 };
 
@@ -49,7 +49,7 @@ export const AuthTokens = {
     set(tokens: Tokens, options?: Options) {
       const [shouldOmitAccess, shouldOmitRefresh] = AuthTokens.shouldOmit(
         options,
-        ...AuthTokens.tokens
+        ...AuthTokens.tokens,
       );
 
       if (!shouldOmitAccess) {
@@ -62,7 +62,7 @@ export const AuthTokens = {
     get(options?: Options) {
       const [shouldOmitAccess, shouldOmitRefresh] = AuthTokens.shouldOmit(
         options,
-        ...AuthTokens.tokens
+        ...AuthTokens.tokens,
       );
 
       return {
@@ -77,7 +77,7 @@ export const AuthTokens = {
     delete(options?: Options) {
       const [shouldOmitAccess, shouldOmitRefresh] = AuthTokens.shouldOmit(
         options,
-        ...AuthTokens.tokens
+        ...AuthTokens.tokens,
       );
 
       if (!shouldOmitAccess) {
