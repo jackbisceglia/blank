@@ -2,7 +2,7 @@ import * as v from "valibot";
 import { nl } from "../nl";
 import { Tag } from ".";
 
-type Output = v.InferOutput<typeof nl.expense.config.schema>;
+type Output = v.InferOutput<typeof nl.expense.config.schema.internal>;
 
 type RoleOptions = "payer" | "participant";
 
@@ -10,10 +10,10 @@ type OutputWithRoleConstraints = Output & {
   members: { role: RoleOptions }[];
 };
 const USER = {
-  name: "USER",
-  role: "payer",
-  split: 0.5,
-} as const;
+  name: "USER" as const,
+  role: "payer" as const,
+  split: [1, 2] as [number, number],
+};
 
 function entry(
   input: string,
@@ -34,7 +34,7 @@ export const data = [
       {
         name: "John",
         role: "participant",
-        split: 0.5,
+        split: [1, 2],
       },
     ]
   ),
@@ -46,7 +46,7 @@ export const data = [
       {
         name: "Jane Doe",
         role: "participant",
-        split: 0.5,
+        split: [1, 2],
       },
     ],
     ["description.include-names-when-not-members"]
@@ -59,7 +59,7 @@ export const data = [
       {
         name: "Jane Doe",
         role: "participant",
-        split: 0.5,
+        split: [1, 2],
       },
     ]
   ),
@@ -71,7 +71,7 @@ export const data = [
       {
         name: "John",
         role: "participant",
-        split: 0.5,
+        split: [1, 2],
       },
     ],
     ["description.omit-date-time-info"]
@@ -84,7 +84,7 @@ export const data = [
       {
         name: "Jane",
         role: "participant",
-        split: 0.5,
+        split: [1, 2],
       },
     ],
     ["description.omit-date-time-info"]
@@ -97,7 +97,7 @@ export const data = [
       {
         name: "John",
         role: "participant",
-        split: 0.5,
+        split: [1, 2],
       },
     ]
   ),

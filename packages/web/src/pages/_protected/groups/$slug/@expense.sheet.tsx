@@ -11,7 +11,7 @@ import { ExpenseWithParticipants } from "./page";
 import { createSearchRoute } from "@/lib/search-route";
 import { useWithConfirmation } from "@/components/with-confirmation-dialog";
 import { FieldsErrors, useAppForm } from "@/components/form";
-import { prevented, timestampToDate } from "@/lib/utils";
+import { fraction, prevented, timestampToDate } from "@/lib/utils";
 import {
   DeleteOptions as DeleteExpenseOptions,
   UpdateOptions as UpdateExpenseOptions,
@@ -76,8 +76,7 @@ function useConfirmSettleExpense(
   const getSettleUpSentence = (
     p1: ParticipantWithMember,
     p2: ParticipantWithMember,
-    cost: number,
-    split: number
+    amount: number
   ) => {
     const payerIsCurrentUser = p1.userId === userId;
     const payeeIsCurrentUser = p2.userId === userId;
@@ -86,7 +85,7 @@ function useConfirmSettleExpense(
       payerIsCurrentUser ? "You" : p1.member?.nickname,
       payerIsCurrentUser ? "owe" : "owes",
       payeeIsCurrentUser ? "You" : p2.member?.nickname,
-      `$${(cost * split).toFixed(2)}`,
+      `$${amount.toFixed(2)}`,
     ].join(" ");
   };
 
@@ -110,9 +109,13 @@ function useConfirmSettleExpense(
                   className="flex items-center justify-between gap-2 mx-2 text-foreground lowercase"
                 >
                   <ChevronRight className="size-3.5" />
-                  {getSettleUpSentence(p, payer, expense.amount, p.split)}
+                  {getSettleUpSentence(
+                    p,
+                    payer,
+                    fraction(p.split).apply(expense.amount)
+                  )}
                   <span className="text-blank-theme ml-auto font-bold">
-                    [{Math.round(p.split * 100).toString()}%]
+                    [{Math.round(fraction(p.split).percent()).toString()}%]
                   </span>
                 </li>
               ))}
@@ -385,7 +388,10 @@ export function ExpenseSheet(props: ExpenseSheetProps) {
                   just for debugging for now
                 </p>
                 {active.participants
-                  .map((p) => [p.member?.nickname, p.split * 100] as const)
+                  .map(
+                    (p) =>
+                      [p.member?.nickname, fraction(p.split).percent()] as const
+                  )
                   .filter((tuple): tuple is [string, number] => !!tuple[0])
                   .map(([name, split]) => (
                     <li key={name}>

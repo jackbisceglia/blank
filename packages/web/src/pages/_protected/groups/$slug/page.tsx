@@ -107,11 +107,11 @@ function GroupRoute() {
           <BalancesCard
             count={expenses.length}
             members={group.members as Member[]}
-            balance={map}
+            balances={map}
           />
           <ActionsCard
             members={group.members as Member[]}
-            balance={map}
+            balances={map}
             lastSettled={lastSettled ? new Date(lastSettled) : undefined}
             settle={settle.open}
           />

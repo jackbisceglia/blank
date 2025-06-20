@@ -11,6 +11,7 @@ import { ComponentProps, PropsWithChildren } from "react";
 import { Button } from "@/components/ui/button";
 import { compareParticipantsCustomOrder } from "@/lib/participants";
 import { Status } from "./table-status";
+import { Balances, withBalance } from "@/lib/balances";
 
 function formatUSD(amount: number) {
   return new Intl.NumberFormat("en-US", {
@@ -96,26 +97,27 @@ export function ActiveExpensesCard(props: ActiveExpensesCardProps) {
 type BalancesCardProps = {
   members: Member[];
   count: number;
-  balance: (id: string) => number;
+  balances: Balances;
 };
 
 export function BalancesCard(props: BalancesCardProps) {
   const transformed = props.members
-    .map((member) => [member, props.balance(member.userId)] as const)
-    .sort(compareParticipantsCustomOrder);
+    .map((member) => withBalance(member, props.balances.get(member.userId)))
+    .sort((a, b) => compareParticipantsCustomOrder(a.balance, b.balance));
 
   return (
     <GroupCard
       header={() => "Balances"}
       content={() => (
         <ul className="flex flex-col gap-1 max-h-24 overflow-y-auto pb-3">
-          {transformed.map(([member, balance]) => (
+          {transformed.map((member) => (
             <li key={member.nickname}>
               <div className="flex justify-between items-center">
                 <span
                   className={cn(
                     "text-sm text-foreground lowercase",
-                    !balance && "text-muted-foreground"
+                    !props.balances.get(member.userId) &&
+                      "text-muted-foreground"
                   )}
                 >
                   {member.nickname}
@@ -124,14 +126,14 @@ export function BalancesCard(props: BalancesCardProps) {
                   className={cn(
                     "text-sm font-medium",
                     compare(
-                      balance,
+                      props.balances.get(member.userId),
                       "text-rose-400",
                       "text-muted-foreground",
                       "text-blank-theme"
                     )
                   )}
                 >
-                  {`${compare(balance, "-", "", "+")} ${formatUSD(Math.abs(balance))}`}
+                  {`${compare(member.balance, "-", "", "+")} ${formatUSD(Math.abs(member.balance))}`}
                 </span>
               </div>
             </li>
@@ -144,14 +146,14 @@ export function BalancesCard(props: BalancesCardProps) {
 
 type SuggestionsCardProps = {
   members: Member[];
-  balance: (id: string) => number;
+  balances: Balances;
   lastSettled: Date | undefined;
   settle: () => void;
 };
 
 export function ActionsCard(props: SuggestionsCardProps) {
   const hasBalances = props.members.some(
-    (member) => props.balance(member.userId) !== 0
+    (member) => props.balances.get(member.userId) !== 0
   );
 
   const SettleOption = (

@@ -34,6 +34,7 @@
 [[OPEN BUGS]]
 
 --UI--
+    [ ] delete modal remounts and animates when expense sync gets update
     [ ] fix table sorts persist on group -> group navs
     [ ] expense member relation nullish, causes issues passing down as props
     [ ] unify focus/hover/border styles in sheet (need to unify input/button/select styles as such)

@@ -1,17 +1,9 @@
-import {
-  check,
-  numeric,
-  pgTable,
-  primaryKey,
-  text,
-  uuid,
-} from "drizzle-orm/pg-core";
+import { json, pgTable, primaryKey, text, uuid } from "drizzle-orm/pg-core";
 import { relations } from "drizzle-orm/relations";
 import { expenseTable } from "../expense/schema";
 import { memberTable } from "../member/schema";
 import { DrizzleModelTypes } from "../../lib/drizzle/utils";
 import { createInsertSchema, createSelectSchema } from "drizzle-valibot";
-import { sql } from "drizzle-orm/sql";
 
 export const participantTable = pgTable(
   "participant",
@@ -20,12 +12,9 @@ export const participantTable = pgTable(
     groupId: uuid().notNull(), // TODO: update to make into ulid
     userId: uuid().notNull(), // TODO: update to make into ulid
     role: text({ enum: ["payer", "participant"] }).default("payer"),
-    split: numeric({ precision: 3, scale: 2 }).notNull(),
+    split: json().$type<[number, number]>().notNull(),
   },
-  (table) => [
-    primaryKey({ columns: [table.expenseId, table.userId] }),
-    check("split_check", sql`${table.split} >= 0 AND ${table.split} <= 1`),
-  ]
+  (table) => [primaryKey({ columns: [table.expenseId, table.userId] })]
 );
 
 export const participantRelation = relations(participantTable, ({ one }) => ({

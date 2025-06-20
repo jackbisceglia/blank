@@ -5,8 +5,8 @@ const name = "jenna"; // can replace with whatever name of a user is in the grou
 const placeholder = `John Doe`;
 
 async function seed() {
-  const userId = "e39c4049-d908-45ec-bd03-879d4f33ac27"; // make configurable
-  const groupId = "e4949a1b-109f-45df-b279-e92687818628"; // automate
+  const userId = "e9a8dfe7-6040-4bf5-8b0a-a45a158b85eb"; // make configurable
+  const groupId = "e33412b4-13af-442a-b3db-aced14326ebe"; // automate
 
   // a bunch of ai generated expense split descriptions
   const descriptions = [
@@ -88,7 +88,7 @@ async function seed() {
             description,
             userId,
             date: new Date(2025, 4, 1 + Math.floor(index / 2)),
-          })
+          }),
         ),
         Effect.tapBoth({
           onFailure: (error) =>
@@ -96,10 +96,10 @@ async function seed() {
           onSuccess: (result) =>
             Effect.log(`Created expense: ${JSON.stringify(result, null, 2)}`),
         }),
-        Effect.ignore
+        Effect.ignore,
       );
     },
-    { concurrency: 3 }
+    { concurrency: 3 },
   );
 
   return Effect.runPromise(result);

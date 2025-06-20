@@ -4,6 +4,7 @@ secrets.sst
 .cursorrules
 *.context.md
 AGENT.md
+AGENTS.md
 CLAUDE.md
 
 # Based on https://raw.githubusercontent.com/github/gitignore/main/Node.gitignore

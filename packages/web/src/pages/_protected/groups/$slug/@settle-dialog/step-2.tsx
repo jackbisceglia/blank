@@ -13,10 +13,8 @@ import {
 import { PropsWithChildren } from "react";
 import { SearchRouteStep2 } from ".";
 import { ExpenseWithParticipants, Route } from "../page";
-import { createBalanceMap } from "@/lib/balances";
+import { calculateSettlements, createBalanceMap } from "@/lib/balances";
 import { useGroupBySlug } from "@/pages/_protected/@data/groups";
-import { compareParticipantsCustomOrder } from "@/lib/participants";
-import { Member } from "@blank/zero";
 import { CollapsibleNotification } from "@/components/collapsible-notification";
 import { DialogButton } from "@/components/dialog-button";
 
@@ -56,53 +54,6 @@ function useQueries(slug: string) {
   return { group, expenses };
 }
 
-function useSettlements(balances: Array<[Member, number]>) {
-  const creditors = balances
-    .filter(([, balance]) => balance > 0)
-    .map(([member, balance]) => ({ member, balance }));
-
-  const debtors = balances
-    .filter(([, balance]) => balance < 0)
-    .map(([member, balance]) => ({ member, balance: Math.abs(balance) }));
-
-  const settlements: {
-    from: string;
-    to: string;
-    amount: number;
-    fromName: string;
-    toName: string;
-  }[] = [];
-
-  for (const creditor of creditors) {
-    for (const debtor of debtors) {
-      if (creditor.member.userId === debtor.member.userId) continue;
-      if (creditor.balance <= 0 || debtor.balance <= 0) continue;
-
-      const paymentAmount = Math.min(creditor.balance, debtor.balance);
-
-      console.log(
-        creditor.member.nickname,
-        debtor.member.nickname,
-        paymentAmount
-      );
-      if (paymentAmount <= 0.01) continue;
-
-      settlements.push({
-        from: debtor.member.userId,
-        to: creditor.member.userId,
-        amount: Math.round(paymentAmount * 100) / 100,
-        fromName: debtor.member.nickname,
-        toName: creditor.member.nickname,
-      });
-
-      creditor.balance -= paymentAmount;
-      debtor.balance -= paymentAmount;
-    }
-  }
-
-  return settlements;
-}
-
 type Step2Props = PropsWithChildren<{
   setSelectedExpenseIds: (ids: string[]) => void;
   selectedExpenseIds: string[];
@@ -114,28 +65,26 @@ export function Step2(props: Step2Props) {
   const params = Route.useParams();
   const route = SearchRouteStep2.useSearchRoute();
 
-  const queries = useQueries(params.slug);
+  const q = useQueries(params.slug);
   const bulkSettleMutation = useBulkSettleExpenses();
 
-  if (!queries.group.data?.members) return null;
+  if (!q.group.data?.members) return null;
 
-  const selectedExpenses = queries.expenses.data.filter((e) =>
+  const selectedExpenses = q.expenses.data.filter((e) =>
     props.selectedExpenseIds.includes(e.id)
   );
 
-  const map = createBalanceMap(selectedExpenses as ExpenseWithParticipants[]);
+  const balances = createBalanceMap(
+    selectedExpenses as ExpenseWithParticipants[]
+  );
 
-  const balances = queries.group.data.members
-    .map((member) => [member, map(member.userId)] as const)
-    .sort(compareParticipantsCustomOrder);
-
-  const settlements = useSettlements(balances as Array<[Member, number]>);
+  const settlements = calculateSettlements(q.group.data.members, balances);
 
   const handleSettlement = () => {
     void withToast({
       promise: () =>
         bulkSettleMutation({
-          groupId: queries.group.data?.id ?? "",
+          groupId: q.group.data?.id ?? "",
           expenseIds: props.selectedExpenseIds,
         }),
       notify: {
