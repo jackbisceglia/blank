@@ -5,8 +5,7 @@ import {
   ClientMutatorGroup,
   ZTransaction,
 } from ".";
-import { Prettify } from "@blank/core/lib/utils/index";
-import { slugify } from "../utils";
+import { Prettify, slugify } from "@blank/core/lib/utils/index";
 
 const CONSTRAINTS = {
   GROUPS: {

@@ -18,3 +18,14 @@ export function optional<T extends Record<string, unknown>>(
 
   return Object.fromEntries(entries) as { [K in keyof T]: NonNullable<T[K]> };
 }
+
+export function slugify(str: string) {
+  const encode = (s: string) => s.toLowerCase().replaceAll(" ", "-");
+  const decode = (s: string) => s.replaceAll("-", " ");
+
+  return {
+    encode: () => encode(str),
+    decode: () => decode(str),
+    isLossless: () => decode(encode(str)) === str.toLowerCase(), // check if the value survives a round trip
+  };
+}

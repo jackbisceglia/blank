@@ -1,4 +1,4 @@
-export const MIN_MATCH_THRESHOLD = 0.5;
+export const MIN_MATCH_THRESHOLD = 0.45;
 
 /**
  * Calculates the Levenshtein distance between two strings
@@ -66,7 +66,11 @@ export function findClosestMatch(
     }
   }
 
-  return [bestMatch, similarityScore(target, bestMatch)];
+  const score = similarityScore(target, bestMatch);
+
+  console.log(target, bestMatch, score, "\n\n");
+
+  return [bestMatch, score];
 }
 
 /**

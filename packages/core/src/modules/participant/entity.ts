@@ -1,3 +1,4 @@
+import { and, eq } from "drizzle-orm";
 import { db } from "../../lib/drizzle";
 import { DatabaseWriteError, Transaction } from "../../lib/drizzle/utils";
 import { TaggedError, requireSingleElement } from "../../lib/effect";
@@ -6,6 +7,12 @@ import { Effect, pipe } from "effect";
 
 class ParticipantNotCreatedError extends TaggedError(
   "ParticipantNotCreatedError",
+) {}
+class ParticipantNotDeletedError extends TaggedError(
+  "ParticipantNotDeletedError",
+) {}
+class ParticipantsNotDeletedError extends TaggedError(
+  "ParticipantsNotDeletedError",
 ) {}
 class DuplicateParticipantError extends TaggedError(
   "DuplicateParticipantError",
@@ -53,6 +60,52 @@ export namespace participants {
       Effect.catchTag(
         "UnknownException",
         (e) => new DatabaseWriteError("Failed creating participants", e),
+      ),
+    );
+  }
+
+  export function remove(groupId: string, expenseId: string, tx?: Transaction) {
+    return pipe(
+      Effect.tryPromise(() =>
+        (tx ?? db)
+          .delete(participantTable)
+          .where(
+            and(
+              eq(participantTable.groupId, groupId),
+              eq(participantTable.expenseId, expenseId),
+            ),
+          )
+          .returning({
+            groupId: participantTable.groupId,
+            expenseId: participantTable.expenseId,
+          }),
+      ),
+      Effect.flatMap(
+        requireSingleElement({
+          empty: () =>
+            new ParticipantNotDeletedError("Participant not deleted"),
+          success: (row) => row,
+          dup: () => new Error("Unexpected duplicate group deletion"),
+        }),
+      ),
+      Effect.catchTag(
+        "UnknownException",
+        (e) => new DatabaseWriteError("Failed to delete group", e),
+      ),
+    );
+  }
+
+  export function removeAll(tx?: Transaction) {
+    return pipe(
+      Effect.tryPromise(() =>
+        (tx ?? db).delete(participantTable).returning({
+          groupId: participantTable.groupId,
+          expenseId: participantTable.expenseId,
+        }),
+      ),
+      Effect.catchTag(
+        "UnknownException",
+        (e) => new DatabaseWriteError("Failed to delete groups", e),
       ),
     );
   }

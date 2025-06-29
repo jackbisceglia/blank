@@ -10,7 +10,7 @@ import * as v from "valibot";
 import { ok, Result } from "neverthrow";
 import { ValidationError } from "@blank/core/lib/effect/index";
 import { useState } from "react";
-import { slugify } from "@/lib/utils";
+import { slugify } from "@blank/core/lib/utils/index";
 import { Label } from "@/components/ui/label";
 import { useCreateGroup } from "../@data/groups";
 import { createStackableSearchRoute } from "@/lib/search-route";
