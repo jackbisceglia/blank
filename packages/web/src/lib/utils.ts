@@ -22,17 +22,6 @@ export function build(delimiter: string) {
     args.filter((arg) => !!arg).join(delimiter);
 }
 
-export function slugify(str: string) {
-  const encode = (s: string) => s.toLowerCase().replaceAll(" ", "-");
-  const decode = (s: string) => s.replaceAll("-", " ");
-
-  return {
-    encode: () => encode(str),
-    decode: () => decode(str),
-    isLossless: () => decode(encode(str)) === str.toLowerCase(), // check if the value survives a round trip
-  };
-}
-
 export type PropsWithClassname<T> = T & {
   className?: string;
 };
@@ -113,7 +102,7 @@ export const timestampToDate = (timestamp: number): Date => new Date(timestamp);
 
 export const flags = {
   dev: {
-    deleteAllExpenses: true,
+    deleteAllExpenses: false,
     inlineRandomizeExpense: false,
   },
 };

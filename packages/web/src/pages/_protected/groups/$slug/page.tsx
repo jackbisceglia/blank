@@ -15,7 +15,6 @@ import {
 import { Expense, Member, Expense as ZeroExpense } from "@blank/zero";
 import { ParticipantWithMember } from "@/lib/participants";
 import * as v from "valibot";
-import { slugify } from "@/lib/utils";
 import {
   ActiveExpensesCard,
   BalancesCard,
@@ -33,6 +32,7 @@ import { FiltersSchema } from "./@components/table-filters";
 import { QuerySchema, useQueryFromSearch } from "./@components/table-query";
 import { StatusSchema, useStatusFromSearch } from "./@components/table-status";
 import { createBalanceMap } from "@/lib/balances";
+import { slugify } from "@blank/core/lib/utils/index";
 
 export type ExpenseWithParticipants = ZeroExpense & {
   participants: ParticipantWithMember[];

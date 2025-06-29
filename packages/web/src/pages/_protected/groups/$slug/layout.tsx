@@ -2,9 +2,10 @@ import { createFileRoute, Link, Outlet } from "@tanstack/react-router";
 import { PrimaryHeading } from "@/components/prose";
 import { PageHeaderRow } from "@/components/layouts";
 import { underline_defaults } from "@/components/ui/utils";
-import { build, cn, slugify } from "@/lib/utils";
+import { build, cn } from "@/lib/utils";
 import { PropsWithChildren } from "react";
 import { useGroupBySlug } from "../../@data/groups";
+import { slugify } from "@blank/core/lib/utils/index";
 
 export const States = {
   Loading: () => null,

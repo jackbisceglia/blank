@@ -18,10 +18,13 @@ import { nl } from "../../lib/ai/nl";
 import { unwrapOrThrow } from "../../lib/_legacy/neverthrow";
 import { participants } from "../participant/entity";
 import { Member } from "../member/schema";
+import { eq } from "drizzle-orm";
 
 const USER = "USER";
 
 class ExpenseNotCreatedError extends TaggedError("ExpenseNotCreatedError") {}
+class ExpensesNotCreatedError extends TaggedError("ExpensesNotCreatedError") {}
+class ExpenseNotRemovedError extends TaggedError("ExpensesNotDeletedError") {}
 class DuplicateExpenseError extends TaggedError("DuplicateExpenseError") {}
 class ExpenseParsingError extends TaggedError("ExpenseParsingError") {}
 class UserMissingInParse extends TaggedError("UserMissingInParse") {}
@@ -47,7 +50,7 @@ function createMapping(member: ParticipantParse, userId: string) {
 function findClosestName(name: string, names: string[]) {
   const [bestMatch, score] = findClosestMatch(name, names);
 
-  return Effect.if(score > MIN_MATCH_THRESHOLD, {
+  return Effect.if(score >= MIN_MATCH_THRESHOLD, {
     onTrue: () => Effect.succeed(bestMatch),
     onFalse: () =>
       Effect.fail(
@@ -94,12 +97,68 @@ export namespace expenses {
     );
   }
 
+  export function createMany(expenses: ExpenseInsert[], tx?: Transaction) {
+    return pipe(
+      Effect.tryPromise(() =>
+        (tx ?? db)
+          .insert(expenseTable)
+          .values(expenses)
+          .returning({ id: expenseTable.id }),
+      ),
+      Effect.flatMap((rows) => {
+        return rows.length === expenses.length
+          ? Effect.succeed(rows)
+          : Effect.fail(
+              new ExpensesNotCreatedError("Expenses were not inserted"),
+            );
+      }),
+      Effect.catchTag(
+        "UnknownException",
+        (e) => new DatabaseWriteError("Failed creating expenses", e),
+      ),
+    );
+  }
+
   type CreateFromDescriptionOptions = {
     groupId: string;
     userId: string;
     description: string;
     date?: Date;
   };
+
+  export function remove(id: string, tx?: Transaction) {
+    return pipe(
+      Effect.tryPromise(() =>
+        (tx ?? db)
+          .delete(expenseTable)
+          .where(eq(expenseTable.id, id))
+          .returning({ id: expenseTable.id }),
+      ),
+      Effect.flatMap(
+        requireSingleElement({
+          empty: () => new ExpenseNotRemovedError("ExpenseNotRemovedError"),
+          success: (row) => row,
+          dup: () => new Error("Unexpected duplicate group deletion"),
+        }),
+      ),
+      Effect.catchTag(
+        "UnknownException",
+        (e) => new DatabaseWriteError("Failed to delete group", e),
+      ),
+    );
+  }
+
+  export function removeAll(tx?: Transaction) {
+    return pipe(
+      Effect.tryPromise(() =>
+        (tx ?? db).delete(expenseTable).returning({ id: expenseTable.id }),
+      ),
+      Effect.catchTag(
+        "UnknownException",
+        (e) => new DatabaseWriteError("Failed to delete groups", e),
+      ),
+    );
+  }
 
   export function createFromDescription(options: CreateFromDescriptionOptions) {
     const create = Effect.gen(function* () {
