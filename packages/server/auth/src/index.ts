@@ -59,7 +59,9 @@ function getOrCreateUser(payload: v.InferOutput<typeof JwtPayload>) {
   const result = pipe(
     // users.getByEmail(payload.email),
     users.getByEmail(payload.email),
-    Effect.catchTag("UserNotFoundError", () => users.create(payload)),
+    Effect.catchTag("UserNotFoundError", () =>
+      users.create(payload).pipe(Effect.map((user) => user.id)),
+    ),
   );
 
   return result;

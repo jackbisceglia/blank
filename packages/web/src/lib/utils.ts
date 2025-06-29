@@ -113,7 +113,7 @@ export const timestampToDate = (timestamp: number): Date => new Date(timestamp);
 
 export const flags = {
   dev: {
-    deleteAllExpenses: true,
+    deleteAllExpenses: false,
     inlineRandomizeExpense: false,
   },
 };
