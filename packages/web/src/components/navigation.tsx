@@ -153,8 +153,8 @@ function Groups(props: GroupsProps) {
             title: item.title,
             type: "link",
             opts: {
-              to: `/groups/$slug`,
-              params: { slug: item.slug },
+              to: `/groups/$slug_id`,
+              params: { slug_id: { id: item.id, slug: item.slug } },
             },
           }}
           index={props.position + index}

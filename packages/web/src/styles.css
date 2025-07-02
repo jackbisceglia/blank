@@ -131,6 +131,7 @@
   body {
     @apply bg-background text-foreground;
   }
+
   /* Custom scrollbar styling */
   ::-webkit-scrollbar {
     width: 10px;

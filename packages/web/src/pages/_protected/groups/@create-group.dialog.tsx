@@ -8,7 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import * as v from "valibot";
 import { ok, Result } from "neverthrow";
-import { ValidationError } from "@blank/core/lib/effect/index";
+import { ValidationErrorLegacy } from "@blank/core/lib/effect/index";
 import { useState } from "react";
 import { slugify } from "@blank/core/lib/utils/index";
 import { Label } from "@/components/ui/label";
@@ -77,7 +77,7 @@ export function CreateGroupDialog() {
           route.close();
         },
         (error) => {
-          if (error instanceof ValidationError) {
+          if (error instanceof ValidationErrorLegacy) {
             setError(error.message);
           } else {
             setError("Failed to create group. Please try again.");

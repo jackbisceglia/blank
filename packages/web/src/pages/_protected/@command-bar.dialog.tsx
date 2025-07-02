@@ -114,7 +114,10 @@ export function GlobalCommandBar() {
       ({
         type: "link",
         title: group.title,
-        opts: { to: `/groups/$slug`, params: { slug: group.slug } },
+        opts: {
+          to: `/groups/$slug_id`,
+          params: { slug_id: { slug: group.slug, id: group.id } },
+        },
       }) as const,
   );
 

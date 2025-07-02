@@ -8,18 +8,18 @@ import {
 import { useZero } from "@/lib/zero";
 import { useAuthentication } from "@/lib/authentication";
 import { useParams } from "@tanstack/react-router";
-import { useGroupBySlug } from "./groups";
+import { useGroupById, useGroupBySlug } from "./groups";
 import { useUserPreferences } from "./users";
 import { createFromDescriptionServerFn } from "@/server/expense.route";
 import { Expense } from "@blank/zero";
 
-export function useExpenseListByGroupSlug(
-  slug: string,
+export function useExpenseListByGroupId(
+  id: string,
   options?: { status?: Expense["status"] | "all" },
 ) {
   const z = useZero();
   let query = z.query.expense
-    .whereExists("group", (g) => g.where("slug", slug))
+    .whereExists("group", (g) => g.where("id", id))
     .orderBy("date", "desc")
     .related("participants", (p) => p.related("member").related("member"));
 
@@ -32,8 +32,8 @@ export function useExpenseListByGroupSlug(
 
 export function useCreateExpense() {
   const auth = useAuthentication();
-  const { slug } = useParams({ strict: false });
-  const group = useGroupBySlug(slug ?? "");
+  const params = useParams({ strict: false })["slug_id"];
+  const group = useGroupById(params?.id ?? "");
   const userPreferences = useUserPreferences(auth.user.id);
   const groupId = group.data?.id ?? userPreferences.data?.defaultGroupId;
 

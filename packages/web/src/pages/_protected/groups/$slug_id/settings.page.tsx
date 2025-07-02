@@ -4,12 +4,18 @@ import { SubHeading } from "@/components/prose";
 import { useWithConfirmation } from "@/components/with-confirmation-dialog";
 import { Button } from "@/components/ui/button";
 import { States } from "./layout";
-import { useDeleteGroup, useGroupBySlug } from "../../@data/groups";
+import { useDeleteGroup, useGroupById } from "../../@data/groups";
+import { Effect, Match, pipe, String, Array } from "effect";
+import {
+  fromParsedEffect,
+  fromParsedEffectPipe,
+  TaggedError,
+} from "@blank/core/lib/effect/index";
 
 function SettingsRoute() {
   const navigate = useNavigate();
-  const params = Route.useParams();
-  const { data, status } = useGroupBySlug(params.slug);
+  const params = Route.useParams()["slug_id"];
+  const { data, status } = useGroupById(params.id);
   const deleteGroup = useDeleteGroup();
 
   if (status === "not-found") return <States.NotFound title={params.slug} />;
@@ -51,7 +57,7 @@ function SettingsRoute() {
   );
 }
 
-export const Route = createFileRoute("/_protected/groups/$slug/settings/")({
+export const Route = createFileRoute("/_protected/groups/$slug_id/settings/")({
   component: SettingsRoute,
   ssr: false,
   loader: () => ({ crumb: "Settings" }),
