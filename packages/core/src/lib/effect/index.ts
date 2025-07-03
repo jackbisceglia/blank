@@ -1,4 +1,4 @@
-import { Cause, Data, Effect } from "effect";
+import { Cause, Data, Effect, pipe } from "effect";
 import * as v from "valibot";
 
 /**
@@ -115,7 +115,27 @@ export function requireValueExists<TValue, TError, TSuccess = TValue>(context: {
       : Effect.succeed(value as TSuccess);
   };
 }
-export class ValidationError<TErrorType> extends Error {
+
+function formatIssues<TErrorType>(
+  issues: [v.BaseIssue<TErrorType>, ...v.BaseIssue<TErrorType>[]],
+  message?: string,
+) {
+  return (
+    message ??
+    issues
+      .map((issue) => {
+        const path =
+          !!issue.path?.length && (issue.path as unknown as string[]).join(".");
+
+        if (!path) return issue.message;
+
+        return `${path}: ${issue.message}`;
+      })
+      .join(", ")
+  );
+}
+
+export class ValidationErrorLegacy<TErrorType> extends Error {
   constructor(
     public readonly issues: [
       v.BaseIssue<TErrorType>,
@@ -142,23 +162,45 @@ export class ValidationError<TErrorType> extends Error {
   }
 }
 
-export function fromParsedEffect<T, R>(
+export class ValidationError extends TaggedError("ValidationError") {}
+
+export const fromParsedEffect = Effect.fn("fromParsedEffect")(function* <T, R>(
   schema: v.GenericSchema<T, R>,
   value: unknown,
 ) {
-  return Effect.try({
-    try: () => {
-      const result = v.safeParse(schema, value);
+  const result = v.safeParse(schema, value);
 
-      if (!result.success) throw new ValidationError(result.issues);
+  if (!result.success) {
+    return yield* new ValidationError(formatIssues(result.issues));
+  }
 
-      return result.output;
-    },
-    catch: (error) => {
-      if (error instanceof ValidationError)
-        return new ValidationError(error.issues);
+  return result.output;
+});
 
-      throw error;
-    },
+export const fromParsedEffectPipe = Effect.fn("fromParsedEffect")(function* <
+  T,
+  R,
+>(schema: v.GenericSchema<T, R>) {
+  return Effect.fn("fromParsedEffectInner")(function* (value: T) {
+    const result = v.safeParse(schema, value);
+
+    if (!result.success) {
+      return yield* new ValidationError(formatIssues(result.issues));
+    }
+
+    return result.output;
   });
-}
+});
+
+export const throwOnError =
+  <TError extends Error>(onError: (e: TError) => unknown) =>
+  <TSuccess>(
+    effect: Effect.Effect<TSuccess, TError>,
+  ): Effect.Effect<TSuccess, TError> =>
+    Effect.catchAll(effect, (e) =>
+      Effect.sync(() => {
+        onError(e);
+
+        throw new Error("Fallback");
+      }),
+    );

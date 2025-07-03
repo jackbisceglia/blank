@@ -1,4 +1,4 @@
-import { ExpenseWithParticipants } from "@/pages/_protected/groups/$slug/page";
+import { ExpenseWithParticipants } from "@/pages/_protected/groups/$slug_id/page";
 import { Member } from "@blank/zero";
 import { Match, Number, pipe } from "effect";
 import { fraction } from "./utils";

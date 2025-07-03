@@ -54,7 +54,7 @@ export function SharedInputFromField<T extends string | number>(
         );
       }}
       onBlur={field.handleBlur}
-      className={cn(className, "hover:bg-secondary/80")}
+      className={cn("hover:bg-secondary/80", className)}
       {...rest}
     />
   );

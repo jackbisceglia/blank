@@ -32,13 +32,18 @@ export const CancelButton = (props: CancelButtonProps) => {
       type="button"
       variant="destructive"
       size="xs"
-      className={cn("col-span-1 mb-auto py-2.5 w-full", className)}
+      className={cn("col-span-1 mb-auto py-2 w-full h-auto", className)}
       {...rest}
     />
   );
 };
 
-type SubmitButtonProps = React.ComponentProps<typeof Button>;
+type SubmitButtonProps = React.ComponentProps<typeof Button> & {
+  dirty?: {
+    disableForAria?: true;
+    disable?: true;
+  };
+};
 
 export const SubmitButton = (props: SubmitButtonProps) => {
   const { className, ...rest } = props;
@@ -53,9 +58,14 @@ export const SubmitButton = (props: SubmitButtonProps) => {
       type="submit"
       variant="theme"
       size="xs"
-      className={cn("col-start-1 -col-end-2 mb-auto py-2.5 w-full", className)}
+      className={cn(
+        "col-start-1 -col-end-2 mb-auto py-2 w-full h-auto",
+        className,
+      )}
       disabled={isSubmitting}
-      aria-disabled={!canSubmit || isSubmitting || !isDirty}
+      aria-disabled={
+        !canSubmit || isSubmitting || (props.dirty?.disableForAria && !isDirty)
+      }
       {...rest}
     />
   );

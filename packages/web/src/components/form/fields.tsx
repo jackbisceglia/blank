@@ -44,8 +44,8 @@ export const TextField = (props: TextFieldProps) => {
         type="text"
         field={field}
         className={cn(
+          "sm:px-3 sm:py-2 w-full bg-popover col-span-full border-0 p-0 focus-visible:ring-0 placeholder:text-muted-foreground/60 flex-1",
           inputClassName,
-          "sm:px-3 sm:py-2 w-full bg-popover space-y-0.5 col-span-full border-0 p-0 focus-visible:ring-0 placeholder:text-muted-foreground/60 flex-1",
         )}
         {...restInputProps}
       />

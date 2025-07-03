@@ -113,7 +113,9 @@ export function CreateExpenseDialog(props: PropsWithChildren) {
             )}
           />
           <form.api.AppForm>
-            <form.api.SubmitButton>Submit</form.api.SubmitButton>
+            <form.api.SubmitButton dirty={{ disableForAria: true }}>
+              Submit
+            </form.api.SubmitButton>
             <form.api.CancelButton onClick={route.close}>
               Cancel
             </form.api.CancelButton>

@@ -106,3 +106,16 @@ export const flags = {
     inlineRandomizeExpense: false,
   },
 };
+
+export function wrapInBox(...strings: string[]) {
+  const y = "-------------------------------------";
+  const x = "|";
+  const content = strings.join("");
+
+  const padded = content
+    .split("\n")
+    .map((line) => `${x}${line}${x}`)
+    .join("\n");
+
+  return [y, content, y].join("\n");
+}

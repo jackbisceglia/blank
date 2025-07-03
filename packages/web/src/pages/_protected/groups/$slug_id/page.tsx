@@ -24,10 +24,10 @@ import {
 import { TableActions } from "./@components/table-actions";
 import {
   useDeleteAllExpenses,
-  useExpenseListByGroupSlug,
+  useExpenseListByGroupId,
   useUpdateExpense,
 } from "../../@data/expenses";
-import { useGroupBySlug } from "../../@data/groups";
+import { useGroupById } from "../../@data/groups";
 import { FiltersSchema } from "./@components/table-filters";
 import { QuerySchema, useQueryFromSearch } from "./@components/table-query";
 import { StatusSchema, useStatusFromSearch } from "./@components/table-status";
@@ -38,9 +38,9 @@ export type ExpenseWithParticipants = ZeroExpense & {
   participants: ParticipantWithMember[];
 };
 
-function useQueries(slug: string, status: Expense["status"] | "all") {
-  const group = useGroupBySlug(slug);
-  const expenses = useExpenseListByGroupSlug(slug, { status });
+function useQueries(id: string, status: Expense["status"] | "all") {
+  const group = useGroupById(id);
+  const expenses = useExpenseListByGroupId(id, { status });
 
   return { group, expenses };
 }
@@ -71,12 +71,14 @@ function useMutations() {
 function GroupRoute() {
   const sheet = ExpenseSheetSearchRoute.useSearchRoute();
   const settle = SettleExpensesSearchRoute.useSearchRoute();
-  const params = Route.useParams();
+  const params = Route.useParams()["slug_id"];
   const tableQuery = useQueryFromSearch();
   const status = useStatusFromSearch();
 
-  const query = useQueries(params.slug, status.value);
+  const query = useQueries(params.id, status.value);
   const mutate = useMutations();
+
+  console.log(query.group.data, query.group.status);
 
   if (!query.group.data || query.group.status === "not-found") {
     return <States.NotFound title={slugify(params.slug).decode()} />;
@@ -88,7 +90,6 @@ function GroupRoute() {
   const active = expenses.find((e) => e.id === sheet.state());
   const sum = expenses.reduce((sum, { amount }) => sum + amount, 0);
   const map = createBalanceMap(group.expenses as ExpenseWithParticipants[]);
-
   // add as property on db entity -> group.lastSettled
   const lastSettled =
     group.expenses.filter((e) => e.status === "settled" && e.createdAt).at(0)
@@ -138,7 +139,7 @@ function GroupRoute() {
   );
 }
 
-export const Route = createFileRoute("/_protected/groups/$slug/")({
+export const Route = createFileRoute("/_protected/groups/$slug_id/")({
   component: GroupRoute,
   ssr: false,
   search: {

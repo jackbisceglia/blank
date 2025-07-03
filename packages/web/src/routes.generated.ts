@@ -19,10 +19,11 @@ import { Route as StaticLandingPageImport } from './pages/_static/landing.page'
 import { Route as StaticAboutPageImport } from './pages/_static/about.page'
 import { Route as ProtectedGroupsPageImport } from './pages/_protected/groups/page'
 import { Route as ProtectedAccountPageImport } from './pages/_protected/account.page'
-import { Route as ProtectedGroupsSlugLayoutImport } from './pages/_protected/groups/$slug/layout'
-import { Route as ProtectedGroupsSlugPageImport } from './pages/_protected/groups/$slug/page'
-import { Route as ProtectedGroupsSlugSettingsPageImport } from './pages/_protected/groups/$slug/settings.page'
-import { Route as ProtectedGroupsSlugMembersPageImport } from './pages/_protected/groups/$slug/members.page'
+import { Route as ProtectedGroupsSlugidLayoutImport } from './pages/_protected/groups/$slug_id/layout'
+import { Route as ProtectedGroupsSlugidPageImport } from './pages/_protected/groups/$slug_id/page'
+import { Route as ProtectedGroupsSlugidSettingsPageImport } from './pages/_protected/groups/$slug_id/settings.page'
+import { Route as ProtectedGroupsSlugidMembersPageImport } from './pages/_protected/groups/$slug_id/members.page'
+import { Route as ProtectedGroupsSlugidJoinTokenPageImport } from './pages/_protected/groups/$slug_id/join.$token.page'
 
 // Create/Update Routes
 
@@ -72,30 +73,38 @@ const ProtectedAccountPageRoute = ProtectedAccountPageImport.update({
   getParentRoute: () => ProtectedLayoutRoute,
 } as any)
 
-const ProtectedGroupsSlugLayoutRoute = ProtectedGroupsSlugLayoutImport.update({
-  id: '/$slug',
-  path: '/$slug',
-  getParentRoute: () => ProtectedGroupsLayoutRoute,
-} as any)
-
-const ProtectedGroupsSlugPageRoute = ProtectedGroupsSlugPageImport.update({
-  id: '/',
-  path: '/',
-  getParentRoute: () => ProtectedGroupsSlugLayoutRoute,
-} as any)
-
-const ProtectedGroupsSlugSettingsPageRoute =
-  ProtectedGroupsSlugSettingsPageImport.update({
-    id: '/settings/',
-    path: '/settings/',
-    getParentRoute: () => ProtectedGroupsSlugLayoutRoute,
+const ProtectedGroupsSlugidLayoutRoute =
+  ProtectedGroupsSlugidLayoutImport.update({
+    id: '/$slug_id',
+    path: '/$slug_id',
+    getParentRoute: () => ProtectedGroupsLayoutRoute,
   } as any)
 
-const ProtectedGroupsSlugMembersPageRoute =
-  ProtectedGroupsSlugMembersPageImport.update({
+const ProtectedGroupsSlugidPageRoute = ProtectedGroupsSlugidPageImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => ProtectedGroupsSlugidLayoutRoute,
+} as any)
+
+const ProtectedGroupsSlugidSettingsPageRoute =
+  ProtectedGroupsSlugidSettingsPageImport.update({
+    id: '/settings/',
+    path: '/settings/',
+    getParentRoute: () => ProtectedGroupsSlugidLayoutRoute,
+  } as any)
+
+const ProtectedGroupsSlugidMembersPageRoute =
+  ProtectedGroupsSlugidMembersPageImport.update({
     id: '/members/',
     path: '/members/',
-    getParentRoute: () => ProtectedGroupsSlugLayoutRoute,
+    getParentRoute: () => ProtectedGroupsSlugidLayoutRoute,
+  } as any)
+
+const ProtectedGroupsSlugidJoinTokenPageRoute =
+  ProtectedGroupsSlugidJoinTokenPageImport.update({
+    id: '/join/$token/',
+    path: '/join/$token/',
+    getParentRoute: () => ProtectedGroupsSlugidLayoutRoute,
   } as any)
 
 // Populate the FileRoutesByPath interface
@@ -130,11 +139,11 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ProtectedPageImport
       parentRoute: typeof ProtectedLayoutImport
     }
-    '/_protected/groups/$slug': {
-      id: '/_protected/groups/$slug'
-      path: '/$slug'
-      fullPath: '/groups/$slug'
-      preLoaderRoute: typeof ProtectedGroupsSlugLayoutImport
+    '/_protected/groups/$slug_id': {
+      id: '/_protected/groups/$slug_id'
+      path: '/$slug_id'
+      fullPath: '/groups/$slug_id'
+      preLoaderRoute: typeof ProtectedGroupsSlugidLayoutImport
       parentRoute: typeof ProtectedGroupsLayoutImport
     }
     '/_protected/account/': {
@@ -165,57 +174,70 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof StaticLandingPageImport
       parentRoute: typeof StaticLayoutImport
     }
-    '/_protected/groups/$slug/': {
-      id: '/_protected/groups/$slug/'
+    '/_protected/groups/$slug_id/': {
+      id: '/_protected/groups/$slug_id/'
       path: '/'
-      fullPath: '/groups/$slug/'
-      preLoaderRoute: typeof ProtectedGroupsSlugPageImport
-      parentRoute: typeof ProtectedGroupsSlugLayoutImport
+      fullPath: '/groups/$slug_id/'
+      preLoaderRoute: typeof ProtectedGroupsSlugidPageImport
+      parentRoute: typeof ProtectedGroupsSlugidLayoutImport
     }
-    '/_protected/groups/$slug/members/': {
-      id: '/_protected/groups/$slug/members/'
+    '/_protected/groups/$slug_id/members/': {
+      id: '/_protected/groups/$slug_id/members/'
       path: '/members'
-      fullPath: '/groups/$slug/members'
-      preLoaderRoute: typeof ProtectedGroupsSlugMembersPageImport
-      parentRoute: typeof ProtectedGroupsSlugLayoutImport
+      fullPath: '/groups/$slug_id/members'
+      preLoaderRoute: typeof ProtectedGroupsSlugidMembersPageImport
+      parentRoute: typeof ProtectedGroupsSlugidLayoutImport
     }
-    '/_protected/groups/$slug/settings/': {
-      id: '/_protected/groups/$slug/settings/'
+    '/_protected/groups/$slug_id/settings/': {
+      id: '/_protected/groups/$slug_id/settings/'
       path: '/settings'
-      fullPath: '/groups/$slug/settings'
-      preLoaderRoute: typeof ProtectedGroupsSlugSettingsPageImport
-      parentRoute: typeof ProtectedGroupsSlugLayoutImport
+      fullPath: '/groups/$slug_id/settings'
+      preLoaderRoute: typeof ProtectedGroupsSlugidSettingsPageImport
+      parentRoute: typeof ProtectedGroupsSlugidLayoutImport
+    }
+    '/_protected/groups/$slug_id/join/$token/': {
+      id: '/_protected/groups/$slug_id/join/$token/'
+      path: '/join/$token'
+      fullPath: '/groups/$slug_id/join/$token'
+      preLoaderRoute: typeof ProtectedGroupsSlugidJoinTokenPageImport
+      parentRoute: typeof ProtectedGroupsSlugidLayoutImport
     }
   }
 }
 
 // Create and export the route tree
 
-interface ProtectedGroupsSlugLayoutRouteChildren {
-  ProtectedGroupsSlugPageRoute: typeof ProtectedGroupsSlugPageRoute
-  ProtectedGroupsSlugMembersPageRoute: typeof ProtectedGroupsSlugMembersPageRoute
-  ProtectedGroupsSlugSettingsPageRoute: typeof ProtectedGroupsSlugSettingsPageRoute
+interface ProtectedGroupsSlugidLayoutRouteChildren {
+  ProtectedGroupsSlugidPageRoute: typeof ProtectedGroupsSlugidPageRoute
+  ProtectedGroupsSlugidMembersPageRoute: typeof ProtectedGroupsSlugidMembersPageRoute
+  ProtectedGroupsSlugidSettingsPageRoute: typeof ProtectedGroupsSlugidSettingsPageRoute
+  ProtectedGroupsSlugidJoinTokenPageRoute: typeof ProtectedGroupsSlugidJoinTokenPageRoute
 }
 
-const ProtectedGroupsSlugLayoutRouteChildren: ProtectedGroupsSlugLayoutRouteChildren =
+const ProtectedGroupsSlugidLayoutRouteChildren: ProtectedGroupsSlugidLayoutRouteChildren =
   {
-    ProtectedGroupsSlugPageRoute: ProtectedGroupsSlugPageRoute,
-    ProtectedGroupsSlugMembersPageRoute: ProtectedGroupsSlugMembersPageRoute,
-    ProtectedGroupsSlugSettingsPageRoute: ProtectedGroupsSlugSettingsPageRoute,
+    ProtectedGroupsSlugidPageRoute: ProtectedGroupsSlugidPageRoute,
+    ProtectedGroupsSlugidMembersPageRoute:
+      ProtectedGroupsSlugidMembersPageRoute,
+    ProtectedGroupsSlugidSettingsPageRoute:
+      ProtectedGroupsSlugidSettingsPageRoute,
+    ProtectedGroupsSlugidJoinTokenPageRoute:
+      ProtectedGroupsSlugidJoinTokenPageRoute,
   }
 
-const ProtectedGroupsSlugLayoutRouteWithChildren =
-  ProtectedGroupsSlugLayoutRoute._addFileChildren(
-    ProtectedGroupsSlugLayoutRouteChildren,
+const ProtectedGroupsSlugidLayoutRouteWithChildren =
+  ProtectedGroupsSlugidLayoutRoute._addFileChildren(
+    ProtectedGroupsSlugidLayoutRouteChildren,
   )
 
 interface ProtectedGroupsLayoutRouteChildren {
-  ProtectedGroupsSlugLayoutRoute: typeof ProtectedGroupsSlugLayoutRouteWithChildren
+  ProtectedGroupsSlugidLayoutRoute: typeof ProtectedGroupsSlugidLayoutRouteWithChildren
   ProtectedGroupsPageRoute: typeof ProtectedGroupsPageRoute
 }
 
 const ProtectedGroupsLayoutRouteChildren: ProtectedGroupsLayoutRouteChildren = {
-  ProtectedGroupsSlugLayoutRoute: ProtectedGroupsSlugLayoutRouteWithChildren,
+  ProtectedGroupsSlugidLayoutRoute:
+    ProtectedGroupsSlugidLayoutRouteWithChildren,
   ProtectedGroupsPageRoute: ProtectedGroupsPageRoute,
 }
 
@@ -258,14 +280,15 @@ export interface FileRoutesByFullPath {
   '': typeof StaticLayoutRouteWithChildren
   '/groups': typeof ProtectedGroupsLayoutRouteWithChildren
   '/': typeof ProtectedPageRoute
-  '/groups/$slug': typeof ProtectedGroupsSlugLayoutRouteWithChildren
+  '/groups/$slug_id': typeof ProtectedGroupsSlugidLayoutRouteWithChildren
   '/account': typeof ProtectedAccountPageRoute
   '/groups/': typeof ProtectedGroupsPageRoute
   '/about': typeof StaticAboutPageRoute
   '/landing': typeof StaticLandingPageRoute
-  '/groups/$slug/': typeof ProtectedGroupsSlugPageRoute
-  '/groups/$slug/members': typeof ProtectedGroupsSlugMembersPageRoute
-  '/groups/$slug/settings': typeof ProtectedGroupsSlugSettingsPageRoute
+  '/groups/$slug_id/': typeof ProtectedGroupsSlugidPageRoute
+  '/groups/$slug_id/members': typeof ProtectedGroupsSlugidMembersPageRoute
+  '/groups/$slug_id/settings': typeof ProtectedGroupsSlugidSettingsPageRoute
+  '/groups/$slug_id/join/$token': typeof ProtectedGroupsSlugidJoinTokenPageRoute
 }
 
 export interface FileRoutesByTo {
@@ -275,9 +298,10 @@ export interface FileRoutesByTo {
   '/groups': typeof ProtectedGroupsPageRoute
   '/about': typeof StaticAboutPageRoute
   '/landing': typeof StaticLandingPageRoute
-  '/groups/$slug': typeof ProtectedGroupsSlugPageRoute
-  '/groups/$slug/members': typeof ProtectedGroupsSlugMembersPageRoute
-  '/groups/$slug/settings': typeof ProtectedGroupsSlugSettingsPageRoute
+  '/groups/$slug_id': typeof ProtectedGroupsSlugidPageRoute
+  '/groups/$slug_id/members': typeof ProtectedGroupsSlugidMembersPageRoute
+  '/groups/$slug_id/settings': typeof ProtectedGroupsSlugidSettingsPageRoute
+  '/groups/$slug_id/join/$token': typeof ProtectedGroupsSlugidJoinTokenPageRoute
 }
 
 export interface FileRoutesById {
@@ -286,14 +310,15 @@ export interface FileRoutesById {
   '/_static': typeof StaticLayoutRouteWithChildren
   '/_protected/groups': typeof ProtectedGroupsLayoutRouteWithChildren
   '/_protected/': typeof ProtectedPageRoute
-  '/_protected/groups/$slug': typeof ProtectedGroupsSlugLayoutRouteWithChildren
+  '/_protected/groups/$slug_id': typeof ProtectedGroupsSlugidLayoutRouteWithChildren
   '/_protected/account/': typeof ProtectedAccountPageRoute
   '/_protected/groups/': typeof ProtectedGroupsPageRoute
   '/_static/about/': typeof StaticAboutPageRoute
   '/_static/landing/': typeof StaticLandingPageRoute
-  '/_protected/groups/$slug/': typeof ProtectedGroupsSlugPageRoute
-  '/_protected/groups/$slug/members/': typeof ProtectedGroupsSlugMembersPageRoute
-  '/_protected/groups/$slug/settings/': typeof ProtectedGroupsSlugSettingsPageRoute
+  '/_protected/groups/$slug_id/': typeof ProtectedGroupsSlugidPageRoute
+  '/_protected/groups/$slug_id/members/': typeof ProtectedGroupsSlugidMembersPageRoute
+  '/_protected/groups/$slug_id/settings/': typeof ProtectedGroupsSlugidSettingsPageRoute
+  '/_protected/groups/$slug_id/join/$token/': typeof ProtectedGroupsSlugidJoinTokenPageRoute
 }
 
 export interface FileRouteTypes {
@@ -302,14 +327,15 @@ export interface FileRouteTypes {
     | ''
     | '/groups'
     | '/'
-    | '/groups/$slug'
+    | '/groups/$slug_id'
     | '/account'
     | '/groups/'
     | '/about'
     | '/landing'
-    | '/groups/$slug/'
-    | '/groups/$slug/members'
-    | '/groups/$slug/settings'
+    | '/groups/$slug_id/'
+    | '/groups/$slug_id/members'
+    | '/groups/$slug_id/settings'
+    | '/groups/$slug_id/join/$token'
   fileRoutesByTo: FileRoutesByTo
   to:
     | ''
@@ -318,23 +344,25 @@ export interface FileRouteTypes {
     | '/groups'
     | '/about'
     | '/landing'
-    | '/groups/$slug'
-    | '/groups/$slug/members'
-    | '/groups/$slug/settings'
+    | '/groups/$slug_id'
+    | '/groups/$slug_id/members'
+    | '/groups/$slug_id/settings'
+    | '/groups/$slug_id/join/$token'
   id:
     | '__root__'
     | '/_protected'
     | '/_static'
     | '/_protected/groups'
     | '/_protected/'
-    | '/_protected/groups/$slug'
+    | '/_protected/groups/$slug_id'
     | '/_protected/account/'
     | '/_protected/groups/'
     | '/_static/about/'
     | '/_static/landing/'
-    | '/_protected/groups/$slug/'
-    | '/_protected/groups/$slug/members/'
-    | '/_protected/groups/$slug/settings/'
+    | '/_protected/groups/$slug_id/'
+    | '/_protected/groups/$slug_id/members/'
+    | '/_protected/groups/$slug_id/settings/'
+    | '/_protected/groups/$slug_id/join/$token/'
   fileRoutesById: FileRoutesById
 }
 
@@ -381,7 +409,7 @@ export const routeTree = rootRoute
       "filePath": "_protected/groups/layout.tsx",
       "parent": "/_protected",
       "children": [
-        "/_protected/groups/$slug",
+        "/_protected/groups/$slug_id",
         "/_protected/groups/"
       ]
     },
@@ -389,13 +417,14 @@ export const routeTree = rootRoute
       "filePath": "_protected/page.tsx",
       "parent": "/_protected"
     },
-    "/_protected/groups/$slug": {
-      "filePath": "_protected/groups/$slug/layout.tsx",
+    "/_protected/groups/$slug_id": {
+      "filePath": "_protected/groups/$slug_id/layout.tsx",
       "parent": "/_protected/groups",
       "children": [
-        "/_protected/groups/$slug/",
-        "/_protected/groups/$slug/members/",
-        "/_protected/groups/$slug/settings/"
+        "/_protected/groups/$slug_id/",
+        "/_protected/groups/$slug_id/members/",
+        "/_protected/groups/$slug_id/settings/",
+        "/_protected/groups/$slug_id/join/$token/"
       ]
     },
     "/_protected/account/": {
@@ -414,17 +443,21 @@ export const routeTree = rootRoute
       "filePath": "_static/landing.page.tsx",
       "parent": "/_static"
     },
-    "/_protected/groups/$slug/": {
-      "filePath": "_protected/groups/$slug/page.tsx",
-      "parent": "/_protected/groups/$slug"
+    "/_protected/groups/$slug_id/": {
+      "filePath": "_protected/groups/$slug_id/page.tsx",
+      "parent": "/_protected/groups/$slug_id"
     },
-    "/_protected/groups/$slug/members/": {
-      "filePath": "_protected/groups/$slug/members.page.tsx",
-      "parent": "/_protected/groups/$slug"
+    "/_protected/groups/$slug_id/members/": {
+      "filePath": "_protected/groups/$slug_id/members.page.tsx",
+      "parent": "/_protected/groups/$slug_id"
     },
-    "/_protected/groups/$slug/settings/": {
-      "filePath": "_protected/groups/$slug/settings.page.tsx",
-      "parent": "/_protected/groups/$slug"
+    "/_protected/groups/$slug_id/settings/": {
+      "filePath": "_protected/groups/$slug_id/settings.page.tsx",
+      "parent": "/_protected/groups/$slug_id"
+    },
+    "/_protected/groups/$slug_id/join/$token/": {
+      "filePath": "_protected/groups/$slug_id/join.$token.page.tsx",
+      "parent": "/_protected/groups/$slug_id"
     }
   }
 }

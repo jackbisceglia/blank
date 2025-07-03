@@ -4,8 +4,15 @@ import { PageHeaderRow } from "@/components/layouts";
 import { underline_defaults } from "@/components/ui/utils";
 import { build, cn } from "@/lib/utils";
 import { PropsWithChildren } from "react";
-import { useGroupBySlug } from "../../@data/groups";
+import { useGroupById, useGroupBySlug } from "../../@data/groups";
 import { slugify } from "@blank/core/lib/utils/index";
+import { Effect, Array, String, pipe, Match } from "effect";
+import {
+  fromParsedEffect,
+  fromParsedEffectPipe,
+  TaggedError,
+} from "@blank/core/lib/effect/index";
+import * as v from "valibot";
 
 export const States = {
   Loading: () => null,
@@ -74,8 +81,8 @@ export function GroupBody(props: PropsWithChildren<{ className?: string }>) {
 }
 
 function GroupLayout() {
-  const params = Route.useParams();
-  const group = useGroupBySlug(params.slug);
+  const params = Route.useParams()["slug_id"];
+  const group = useGroupById(params.id);
 
   const title = group.data?.title ?? slugify(params.slug).decode();
 
@@ -93,13 +100,57 @@ function GroupLayout() {
   );
 }
 
-export const Route = createFileRoute("/_protected/groups/$slug")({
+class InvalidPathParamError extends TaggedError("InvalidSlugIdFormatError") {}
+
+const SEPARATOR = "_";
+
+const Params = v.object({
+  slug_id: v.object({
+    id: v.pipe(v.string(), v.uuid()),
+    slug: v.string(),
+  }),
+});
+
+export const Route = createFileRoute("/_protected/groups/$slug_id")({
   component: GroupLayout,
   ssr: false,
-  loader: (context) => ({ crumb: slugify(context.params.slug).decode() }),
   params: {
+    parse: (params) =>
+      pipe(
+        Effect.succeed(
+          Array.reverse(String.split(params["slug_id"], SEPARATOR)),
+        ),
+        Effect.tap((parts) => console.log("parts: ", parts)),
+        Effect.flatMap((parts) =>
+          pipe(
+            parts,
+            Match.value,
+            Match.when(
+              (parts) => parts.length >= 2,
+              (parts) => Effect.succeed(parts),
+            ),
+            Match.orElse(() =>
+              Effect.fail(
+                new InvalidPathParamError("Path must contain slug and id"),
+              ),
+            ),
+            Effect.map(([id, ...slugParts]) => ({
+              id: id,
+              slug: slugParts.join(""),
+            })),
+            Effect.andThen((data) =>
+              fromParsedEffect(Params.entries.slug_id, data),
+            ),
+            Effect.map((data) => ({ slug_id: data })),
+          ),
+        ),
+        Effect.runSync,
+      ),
     stringify: (params) => ({
-      slug: slugify(params.slug).encode(),
+      slug_id: `${params["slug_id"].slug}_${params["slug_id"].id}`,
     }),
   },
+  loader: (context) => ({
+    crumb: slugify(context.params["slug_id"].slug).decode(),
+  }),
 });

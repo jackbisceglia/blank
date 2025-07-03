@@ -1,6 +1,6 @@
 import { err, ok, ResultAsync } from "neverthrow";
 import * as v from "valibot";
-import { ValidationError } from "../effect";
+import { ValidationErrorLegacy } from "../effect";
 
 // in progress of getting rid of this file
 
@@ -23,5 +23,5 @@ export function fromParsed<T, R>(
 
   return result.success
     ? ok(result.output)
-    : err(new ValidationError(result.issues));
+    : err(new ValidationErrorLegacy(result.issues));
 }
