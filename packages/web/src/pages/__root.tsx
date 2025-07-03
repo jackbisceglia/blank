@@ -4,9 +4,10 @@ import {
   Scripts,
   createRootRouteWithContext,
 } from "@tanstack/react-router";
-import appCss from "@/styles.css?url";
 import { seo } from "@/lib/seo";
 import { QueryClient } from "@tanstack/react-query";
+// @ts-ignore
+import stylesUrl from "@/styles.css?url";
 
 function Document() {
   return (
@@ -16,7 +17,6 @@ function Document() {
       </head>
       <body className="">
         <Children />
-        {/* <TanStackRouterDevtools position="bottom-right" /> */}
         <Scripts />
       </body>
     </html>
@@ -38,7 +38,7 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
           description: `Expense Splitting Made Easy`,
         }),
       ],
-      links: [{ rel: "stylesheet", href: appCss }],
+      links: [{ rel: "stylesheet", href: stylesUrl }],
     }),
     ssr: true,
     component: () => <Document />,

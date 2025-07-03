@@ -1,12 +1,11 @@
 import { json } from "@tanstack/react-start";
-import { createAPIFileRoute } from "@tanstack/react-start/api";
 import { AuthTokens } from "@/server/utils";
 import { authenticate } from "@/server/auth/core";
 import {
   createServerMutators,
   processor,
 } from "@/server/lib/server-mutators.ts";
-import { getHeader } from "@tanstack/react-start/server";
+import { createServerFileRoute, getHeader } from "@tanstack/react-start/server";
 import * as v from "valibot";
 
 function getBearer() {
@@ -24,7 +23,7 @@ function getBearer() {
   return authorization.output;
 }
 
-export const APIRoute = createAPIFileRoute("/api/sync/push")({
+export const ServerRoute = createServerFileRoute("/api/sync/push").methods({
   POST: async ({ request }) => {
     try {
       const auth = await authenticate({
