@@ -244,5 +244,6 @@ function LandingRoute() {
 }
 
 export const Route = createFileRoute("/_static/landing/")({
+  ssr: true,
   component: LandingRoute,
 });

@@ -58,7 +58,6 @@ function HomeRoute() {
 }
 
 export const Route = createFileRoute("/_protected/")({
-  ssr: false,
   component: HomeRoute,
   loader: () => ({ crumb: "Home" }),
 });

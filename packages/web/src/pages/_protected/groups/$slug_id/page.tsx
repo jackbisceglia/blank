@@ -141,7 +141,6 @@ function GroupRoute() {
 
 export const Route = createFileRoute("/_protected/groups/$slug_id/")({
   component: GroupRoute,
-  ssr: false,
   search: {
     middlewares: [
       function stripEmptyArrayValues(opts) {

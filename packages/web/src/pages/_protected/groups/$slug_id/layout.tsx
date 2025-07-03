@@ -113,7 +113,6 @@ const Params = v.object({
 
 export const Route = createFileRoute("/_protected/groups/$slug_id")({
   component: GroupLayout,
-  ssr: false,
   params: {
     parse: (params) =>
       pipe(
