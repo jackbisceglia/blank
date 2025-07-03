@@ -1,9 +1,9 @@
 import { openauth } from "@/server/auth/core";
 import { AuthTokens } from "@/server/utils";
 import { json } from "@tanstack/react-start";
-import { createAPIFileRoute } from "@tanstack/react-start/api";
+import { createServerFileRoute } from "@tanstack/react-start/server";
 
-export const APIRoute = createAPIFileRoute("/api/auth/callback")({
+export const ServerRoute = createServerFileRoute("/api/auth/callback").methods({
   GET: async ({ request }) => {
     const url = new URL(request.url);
     const code = url.searchParams.get("code");
