@@ -1,4 +1,4 @@
-import { Cause, Data, Effect } from "effect";
+import { Cause, Data, Effect, pipe } from "effect";
 import * as v from "valibot";
 
 /**
@@ -191,3 +191,16 @@ export const fromParsedEffectPipe = Effect.fn("fromParsedEffect")(function* <
     return result.output;
   });
 });
+
+export const throwOnError =
+  <TError extends Error>(onError: (e: TError) => unknown) =>
+  <TSuccess>(
+    effect: Effect.Effect<TSuccess, TError>,
+  ): Effect.Effect<TSuccess, TError> =>
+    Effect.catchAll(effect, (e) =>
+      Effect.sync(() => {
+        onError(e);
+
+        throw new Error("Fallback");
+      }),
+    );
