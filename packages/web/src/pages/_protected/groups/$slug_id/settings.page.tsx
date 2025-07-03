@@ -59,6 +59,5 @@ function SettingsRoute() {
 
 export const Route = createFileRoute("/_protected/groups/$slug_id/settings/")({
   component: SettingsRoute,
-  ssr: false,
   loader: () => ({ crumb: "Settings" }),
 });

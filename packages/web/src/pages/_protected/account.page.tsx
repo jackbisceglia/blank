@@ -6,7 +6,6 @@ function AccountRoute() {
 }
 
 export const Route = createFileRoute("/_protected/account/")({
-  ssr: false,
   component: AccountRoute,
   loader: () => ({ crumb: "Account" }),
 });

@@ -156,7 +156,6 @@ function Providers(props: PropsWithChildren) {
 }
 
 export const Route = createFileRoute("/_protected")({
-  ssr: false,
   loader: (opts) => {
     void opts.context.queryClient.ensureQueryData(authenticationQueryOptions());
   },
