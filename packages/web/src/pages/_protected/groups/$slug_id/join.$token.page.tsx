@@ -7,12 +7,11 @@ import {
 import * as v from "valibot";
 import { useZero } from "@/lib/zero";
 import { useAuthentication } from "@/lib/authentication";
-import { Users } from "lucide-react";
 import { withToast } from "@/lib/toast";
 import { fromParsedEffect } from "@blank/core/lib/effect/index";
 import { FieldsErrors, useAppForm } from "@/components/form";
 import { prevented } from "@/lib/utils";
-import { Console, Effect, Exit, String, pipe } from "effect";
+import { Console, Effect, Exit, pipe } from "effect";
 import { Button } from "@/components/ui/button";
 
 const InviteToken = v.pipe(v.string(), v.uuid());
@@ -117,17 +116,12 @@ export const Route = createFileRoute(
     const token = pipe(
       fromParsedEffect(InviteToken, params.token),
       Effect.tapError((e) => Console.log(`Validation Error [${e._tag}]: ${e}`)),
-      // Effect.catchTag("ValidationError", (e) => Effect.fail(notFound)),
       Effect.runSyncExit,
       Exit.match({
         onSuccess: (token) => token,
-        onFailure: () => notFound,
+        onFailure: () => notFound({ throw: true }) as never,
       }),
     );
-
-    if (typeof token !== "string") {
-      throw token();
-    }
 
     return { crumb: "Join Group", token };
   },
