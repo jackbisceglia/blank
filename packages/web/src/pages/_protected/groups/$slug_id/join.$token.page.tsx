@@ -109,7 +109,6 @@ function JoinGroupPage() {
 export const Route = createFileRoute(
   "/_protected/groups/$slug_id/join/$token/",
 )({
-  ssr: false,
   component: JoinGroupPage,
   validateSearch: v.object({}),
   loader: async ({ params }) => {

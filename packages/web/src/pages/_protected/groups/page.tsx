@@ -77,6 +77,5 @@ function GroupsRoute() {
 
 export const Route = createFileRoute("/_protected/groups/")({
   component: GroupsRoute,
-  ssr: false,
   loader: () => ({ crumb: "" }), // no crumb- this is handled in the layout for nesting
 });

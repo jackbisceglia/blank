@@ -7,5 +7,4 @@ function GroupsLayout() {
 export const Route = createFileRoute("/_protected/groups")({
   component: GroupsLayout,
   loader: () => ({ crumb: "Groups" }),
-  ssr: false,
 });
