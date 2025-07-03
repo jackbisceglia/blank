@@ -8,6 +8,8 @@ export const APIRoute = createAPIFileRoute("/api/auth/callback")({
     const url = new URL(request.url);
     const code = url.searchParams.get("code");
 
+    console.log("--------------------\n", url, code);
+
     if (!code) {
       return json({ error: "No code provided" }, { status: 400 });
     }

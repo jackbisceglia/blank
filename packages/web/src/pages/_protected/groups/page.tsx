@@ -19,7 +19,11 @@ type GroupListProps = {
 
 function GroupList(props: GroupListProps) {
   return props.groups.map((group) => (
-    <Link key={group.id} to={`/groups/$slug`} params={{ slug: group.slug }}>
+    <Link
+      key={group.id}
+      to={`/groups/$slug_id`}
+      params={{ slug_id: { id: group.id, slug: group.slug } }}
+    >
       <Card className="hover:bg-card/50 duration-0 h-full">
         <CardHeader>
           <CardTitle className="uppercase">{group.title}</CardTitle>

@@ -1,7 +1,7 @@
 import { DialogHeader, DialogFooter } from "@/components/ui/dialog";
 import { withToast } from "@/lib/toast";
 import {
-  useExpenseListByGroupSlug,
+  useExpenseListByGroupId,
   useBulkSettleExpenses,
 } from "@/pages/_protected/@data/expenses";
 import {
@@ -14,7 +14,7 @@ import { PropsWithChildren } from "react";
 import { SearchRouteStep2 } from ".";
 import { ExpenseWithParticipants, Route } from "../page";
 import { calculateSettlements, createBalanceMap } from "@/lib/balances";
-import { useGroupBySlug } from "@/pages/_protected/@data/groups";
+import { useGroupById, useGroupBySlug } from "@/pages/_protected/@data/groups";
 import { CollapsibleNotification } from "@/components/collapsible-notification";
 import { DialogButton } from "@/components/dialog-button";
 
@@ -47,9 +47,9 @@ function SettlementEntry(props: SettlementEntryProps) {
   );
 }
 
-function useQueries(slug: string) {
-  const group = useGroupBySlug(slug);
-  const expenses = useExpenseListByGroupSlug(slug, { status: "active" });
+function useQueries(id: string) {
+  const group = useGroupById(id);
+  const expenses = useExpenseListByGroupId(id, { status: "active" });
 
   return { group, expenses };
 }
@@ -62,10 +62,10 @@ type Step2Props = PropsWithChildren<{
 }>;
 
 export function Step2(props: Step2Props) {
-  const params = Route.useParams();
+  const params = Route.useParams()["slug_id"];
   const route = SearchRouteStep2.useSearchRoute();
 
-  const q = useQueries(params.slug);
+  const q = useQueries(params.id);
   const bulkSettleMutation = useBulkSettleExpenses();
 
   if (!q.group.data?.members) return null;

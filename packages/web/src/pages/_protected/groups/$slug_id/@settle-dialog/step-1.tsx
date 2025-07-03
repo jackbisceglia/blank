@@ -1,6 +1,6 @@
 import { PropsWithChildren } from "react";
 import { DialogHeader, DialogFooter } from "@/components/ui/dialog";
-import { useExpenseListByGroupSlug } from "@/pages/_protected/@data/expenses";
+import { useExpenseListByGroupId } from "@/pages/_protected/@data/expenses";
 import { Checkbox } from "@/components/ui/checkbox";
 import {
   Dialog,
@@ -25,12 +25,12 @@ type Step1Props = PropsWithChildren<{
 }>;
 
 export function Step1(props: Step1Props) {
-  const params = Route.useParams();
+  const params = Route.useParams()["slug_id"];
   const route = SearchRouteStep1.useSearchRoute({
     hooks: { onOpen: selectAll },
   });
 
-  const expenses = useExpenseListByGroupSlug(params.slug, { status: "active" });
+  const expenses = useExpenseListByGroupId(params.id, { status: "active" });
 
   function toggle(expenseId: string, checked: boolean) {
     props.setSelectedExpenseIds((previous) =>
