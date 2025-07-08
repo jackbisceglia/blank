@@ -12,6 +12,7 @@ import * as v from "valibot";
 import { Effect, pipe } from "effect";
 import { users } from "@blank/core/modules";
 import { fromParsedEffect } from "@blank/core/lib/effect/index";
+import { GithubProvider } from "@openauthjs/openauth/provider/github";
 
 const Errors = {
   ProviderNotSupported: (provider: string) =>
