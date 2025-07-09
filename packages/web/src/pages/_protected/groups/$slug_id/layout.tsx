@@ -4,14 +4,10 @@ import { PageHeaderRow } from "@/components/layouts";
 import { underline_defaults } from "@/components/ui/utils";
 import { build, cn } from "@/lib/utils";
 import { PropsWithChildren } from "react";
-import { useGroupById, useGroupBySlug } from "../../@data/groups";
+import { useGroupById } from "../../@data/groups";
 import { slugify } from "@blank/core/lib/utils/index";
 import { Effect, Array, String, pipe, Match } from "effect";
-import {
-  fromParsedEffect,
-  fromParsedEffectPipe,
-  TaggedError,
-} from "@blank/core/lib/effect/index";
+import { fromParsedEffect, TaggedError } from "@blank/core/lib/effect/index";
 import * as v from "valibot";
 
 export const States = {
@@ -24,7 +20,8 @@ export const States = {
 };
 
 type GroupNavigationProps = {
-  title: string;
+  id: string;
+  slug: string;
   disable?: boolean;
 };
 
@@ -32,7 +29,7 @@ function GroupNavigation(props: GroupNavigationProps) {
   const links = ["dashboard", "members", "settings"] as const;
 
   const buildTo = (l: (typeof links)[number]) =>
-    build("/")("groups", "$slug", l !== "dashboard" && l);
+    build("/")("groups", "$slug_id", l !== "dashboard" && l);
 
   return (
     <div className="sm:ml-auto uppercase text-xs sm:text-sm flex items-center justify-center sm:justify-start gap-4">
@@ -47,7 +44,7 @@ function GroupNavigation(props: GroupNavigationProps) {
               "text-blank-theme font-semibold hover:text-blank-theme",
             ),
           }}
-          params={{ title: props.title }}
+          params={{ ...props }}
           from="/"
           to={buildTo(link)}
           className="active:[&[aria-disabled=true]]:pointer-events-none [&[aria-disabled=true]]:text-muted-foreground/70"
@@ -92,7 +89,7 @@ function GroupLayout() {
     <>
       <PageHeaderRow className="min-h-8 flex-col gap-2.5 sm:flex-row items-start sm:items-center sm:justify-between pb-1 sm:pb-0">
         <PrimaryHeading>{title}</PrimaryHeading>
-        <GroupNavigation title={title} />
+        <GroupNavigation {...params} />
       </PageHeaderRow>
       {group.status === "loading" && <States.Loading />}
       {group.status === "success" && <Outlet />}
@@ -119,7 +116,6 @@ export const Route = createFileRoute("/_protected/groups/$slug_id")({
         Effect.succeed(
           Array.reverse(String.split(params["slug_id"], SEPARATOR)),
         ),
-        Effect.tap((parts) => console.log("parts: ", parts)),
         Effect.flatMap((parts) =>
           pipe(
             parts,
@@ -146,7 +142,7 @@ export const Route = createFileRoute("/_protected/groups/$slug_id")({
         Effect.runSync,
       ),
     stringify: (params) => ({
-      slug_id: `${params["slug_id"].slug}_${params["slug_id"].id}`,
+      slug_id: `${params["slug_id"]?.slug}_${params["slug_id"]?.id}`,
     }),
   },
   loader: (context) => ({
