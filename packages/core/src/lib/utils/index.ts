@@ -1,3 +1,5 @@
+import { pipe, Array, String } from "effect";
+
 export type Prettify<T> = {
   [K in keyof T]: T[K];
 } & {};
@@ -28,4 +30,12 @@ export function slugify(str: string) {
     decode: () => decode(str),
     isLossless: () => decode(encode(str)) === str.toLowerCase(), // check if the value survives a round trip
   };
+}
+
+export function capitalizedToSnake(str: string) {
+  return pipe(str, String.replaceAll(" ", "_"), String.toLowerCase);
+}
+
+export function snakeToCapitalized(str: string) {
+  pipe(str, String.split("_"), Array.map(String.capitalize), Array.join(" "));
 }
