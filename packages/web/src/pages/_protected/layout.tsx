@@ -41,23 +41,19 @@ function getCookie(name: string, fallback: string) {
   return values?.at(1) ?? fallback;
 }
 
-const data = {
-  groups: [
-    { id: "1", title: "Group 1", members: [], url: "/groups/1" },
-    { id: "2", title: "Group 2", members: [], url: "/groups/2" },
-  ],
-  user: { id: "1", name: "John Doe" },
-};
-
 function Breadcrumbs() {
   const isMobile = useIsMobile();
   const breadcrumbs = useMatches()
-    .filter((match) => isMatch(match, "loaderData.crumb"))
+    .filter((match) => {
+      return isMatch(match, "loaderData.crumb");
+    })
     .filter((match) => !!match.loaderData?.crumb);
 
   if (isMobile) {
     const match = breadcrumbs.at(-1);
+
     if (!match) return null;
+
     return (
       <Breadcrumb>
         <BreadcrumbList>
@@ -77,7 +73,7 @@ function Breadcrumbs() {
                 ...prev,
                 action: prev.action,
               })}
-              from={match.fullPath}
+              to={match.pathname}
             >
               {match.loaderData?.crumb}
             </Link>
@@ -108,7 +104,9 @@ function Breadcrumbs() {
                   ...prev,
                   action: prev.action,
                 })}
-                from={match.fullPath}
+                params={match.params}
+                // @ts-expect-error TODO: solve why this is happening, but it works for now
+                to={match.fullPath}
               >
                 {match.loaderData?.crumb}
               </Link>
@@ -124,7 +122,7 @@ function Breadcrumbs() {
 function ProtectedLayout() {
   return (
     <>
-      <GlobalSidebar groups={data.groups} collapsible="icon" />
+      <GlobalSidebar collapsible="icon" />
       <main className="flex-1 min-w-0 flex flex-col items-start gap-4 sm:gap-1 py-3 px-2.5 sm:px-6 lg:px-8 min-h-full relative">
         <header className="flex justify-start items-center gap-0.5 sm:gap-2 text-sm w-full pb-1.5">
           <SidebarTrigger />

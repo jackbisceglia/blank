@@ -37,7 +37,6 @@ function GroupList(props: GroupListProps) {
 }
 
 const States = {
-  // Loading: () => <Loading whatIsLoading="groups" />,
   Loading: () => <Loading whatIsLoading="groups" />,
   Empty: () => (
     <SecondaryHeading className="mx-auto py-12">
