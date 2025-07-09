@@ -4,14 +4,10 @@ import { PageHeaderRow } from "@/components/layouts";
 import { underline_defaults } from "@/components/ui/utils";
 import { build, cn } from "@/lib/utils";
 import { PropsWithChildren } from "react";
-import { useGroupById, useGroupBySlug } from "../../@data/groups";
+import { useGroupById } from "../../@data/groups";
 import { slugify } from "@blank/core/lib/utils/index";
 import { Effect, Array, String, pipe, Match } from "effect";
-import {
-  fromParsedEffect,
-  fromParsedEffectPipe,
-  TaggedError,
-} from "@blank/core/lib/effect/index";
+import { fromParsedEffect, TaggedError } from "@blank/core/lib/effect/index";
 import * as v from "valibot";
 
 export const States = {

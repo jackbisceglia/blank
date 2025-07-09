@@ -111,7 +111,7 @@ export function CreateGroupDialog() {
         >
           <div className="px-3 py-2 w-full bg-popover space-y-0.5 col-span-full">
             <Label
-              className="lowercase font-base text-xs"
+              className="uppercase font-base text-xs"
               htmlFor={formKeys.title}
             >
               Group Name
@@ -127,7 +127,7 @@ export function CreateGroupDialog() {
           </div>
           <div className="px-3 py-2 w-full bg-popover space-y-0.5 col-span-full">
             <Label
-              className="lowercase font-base text-xs"
+              className="uppercase font-base text-xs"
               htmlFor={formKeys.description}
             >
               Group Description

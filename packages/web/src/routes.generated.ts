@@ -23,7 +23,7 @@ import { Route as ProtectedGroupsSlug_idLayoutRouteImport } from './pages/_prote
 import { Route as ProtectedGroupsSlug_idPageRouteImport } from './pages/_protected/groups/$slug_id/page'
 import { Route as ProtectedGroupsSlug_idSettingsPageRouteImport } from './pages/_protected/groups/$slug_id/settings.page'
 import { Route as ProtectedGroupsSlug_idMembersPageRouteImport } from './pages/_protected/groups/$slug_id/members.page'
-import { Route as ProtectedGroupsSlug_idJoinTokenPageRouteImport } from './pages/_protected/groups/$slug_id/join.$token.page'
+import { Route as ProtectedGroupsSlug_idJoinTokenPageRouteImport } from './pages/_protected/groups/$slug_id_.join.$token.page'
 import { ServerRoute as ApiSyncPushServerRouteImport } from './pages/api/sync.push'
 import { ServerRoute as ApiAuthCallbackServerRouteImport } from './pages/api/auth.callback'
 
@@ -93,9 +93,9 @@ const ProtectedGroupsSlug_idMembersPageRoute =
   } as any)
 const ProtectedGroupsSlug_idJoinTokenPageRoute =
   ProtectedGroupsSlug_idJoinTokenPageRouteImport.update({
-    id: '/join/$token/',
-    path: '/join/$token/',
-    getParentRoute: () => ProtectedGroupsSlug_idLayoutRoute,
+    id: '/$slug_id_/join/$token/',
+    path: '/$slug_id/join/$token/',
+    getParentRoute: () => ProtectedGroupsLayoutRoute,
   } as any)
 const ApiSyncPushServerRoute = ApiSyncPushServerRouteImport.update({
   id: '/api/sync/push',
@@ -146,7 +146,7 @@ export interface FileRoutesById {
   '/_protected/groups/$slug_id/': typeof ProtectedGroupsSlug_idPageRoute
   '/_protected/groups/$slug_id/members/': typeof ProtectedGroupsSlug_idMembersPageRoute
   '/_protected/groups/$slug_id/settings/': typeof ProtectedGroupsSlug_idSettingsPageRoute
-  '/_protected/groups/$slug_id/join/$token/': typeof ProtectedGroupsSlug_idJoinTokenPageRoute
+  '/_protected/groups/$slug_id_/join/$token/': typeof ProtectedGroupsSlug_idJoinTokenPageRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -187,7 +187,7 @@ export interface FileRouteTypes {
     | '/_protected/groups/$slug_id/'
     | '/_protected/groups/$slug_id/members/'
     | '/_protected/groups/$slug_id/settings/'
-    | '/_protected/groups/$slug_id/join/$token/'
+    | '/_protected/groups/$slug_id_/join/$token/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -306,12 +306,12 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ProtectedGroupsSlug_idMembersPageRouteImport
       parentRoute: typeof ProtectedGroupsSlug_idLayoutRoute
     }
-    '/_protected/groups/$slug_id/join/$token/': {
-      id: '/_protected/groups/$slug_id/join/$token/'
-      path: '/join/$token'
+    '/_protected/groups/$slug_id_/join/$token/': {
+      id: '/_protected/groups/$slug_id_/join/$token/'
+      path: '/$slug_id/join/$token'
       fullPath: '/groups/$slug_id/join/$token'
       preLoaderRoute: typeof ProtectedGroupsSlug_idJoinTokenPageRouteImport
-      parentRoute: typeof ProtectedGroupsSlug_idLayoutRoute
+      parentRoute: typeof ProtectedGroupsLayoutRoute
     }
   }
 }
@@ -338,7 +338,6 @@ interface ProtectedGroupsSlug_idLayoutRouteChildren {
   ProtectedGroupsSlug_idPageRoute: typeof ProtectedGroupsSlug_idPageRoute
   ProtectedGroupsSlug_idMembersPageRoute: typeof ProtectedGroupsSlug_idMembersPageRoute
   ProtectedGroupsSlug_idSettingsPageRoute: typeof ProtectedGroupsSlug_idSettingsPageRoute
-  ProtectedGroupsSlug_idJoinTokenPageRoute: typeof ProtectedGroupsSlug_idJoinTokenPageRoute
 }
 
 const ProtectedGroupsSlug_idLayoutRouteChildren: ProtectedGroupsSlug_idLayoutRouteChildren =
@@ -348,8 +347,6 @@ const ProtectedGroupsSlug_idLayoutRouteChildren: ProtectedGroupsSlug_idLayoutRou
       ProtectedGroupsSlug_idMembersPageRoute,
     ProtectedGroupsSlug_idSettingsPageRoute:
       ProtectedGroupsSlug_idSettingsPageRoute,
-    ProtectedGroupsSlug_idJoinTokenPageRoute:
-      ProtectedGroupsSlug_idJoinTokenPageRoute,
   }
 
 const ProtectedGroupsSlug_idLayoutRouteWithChildren =
@@ -360,12 +357,15 @@ const ProtectedGroupsSlug_idLayoutRouteWithChildren =
 interface ProtectedGroupsLayoutRouteChildren {
   ProtectedGroupsSlug_idLayoutRoute: typeof ProtectedGroupsSlug_idLayoutRouteWithChildren
   ProtectedGroupsPageRoute: typeof ProtectedGroupsPageRoute
+  ProtectedGroupsSlug_idJoinTokenPageRoute: typeof ProtectedGroupsSlug_idJoinTokenPageRoute
 }
 
 const ProtectedGroupsLayoutRouteChildren: ProtectedGroupsLayoutRouteChildren = {
   ProtectedGroupsSlug_idLayoutRoute:
     ProtectedGroupsSlug_idLayoutRouteWithChildren,
   ProtectedGroupsPageRoute: ProtectedGroupsPageRoute,
+  ProtectedGroupsSlug_idJoinTokenPageRoute:
+    ProtectedGroupsSlug_idJoinTokenPageRoute,
 }
 
 const ProtectedGroupsLayoutRouteWithChildren =

@@ -55,13 +55,17 @@ function useForm(token: string, leave: () => void) {
 
 function JoinGroupPage() {
   const loader = Route.useLoaderData();
+  const params = Route.useParams();
   const navigate = useNavigate();
 
   const form = useForm(loader.token, () => void navigate({ to: "/groups" }));
 
   return (
     <div className="flex flex-col items-center justify-center p-4 mx-auto mb-auto mt-32 w-full max-w-2xl">
-      <h1 className="text-xl font-semibold uppercase">MOCK GROUP NAME</h1>
+      <h1 className="text-xl font-semibold uppercase">
+        {/* TODO: implement properly, probably need to redo the parsing logic bc of non-nested route */}
+        {params.slug_id.split("_").at(0)}
+      </h1>
       <p className="text-muted-foreground lowercase text-sm">
         you've been invited to join this group
       </p>
@@ -107,7 +111,7 @@ function JoinGroupPage() {
 }
 
 export const Route = createFileRoute(
-  "/_protected/groups/$slug_id/join/$token/",
+  "/_protected/groups/$slug_id_/join/$token/",
 )({
   component: JoinGroupPage,
   validateSearch: v.object({}),
