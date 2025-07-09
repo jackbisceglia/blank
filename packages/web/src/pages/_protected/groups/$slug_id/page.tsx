@@ -78,8 +78,6 @@ function GroupRoute() {
   const query = useQueries(params.id, status.value);
   const mutate = useMutations();
 
-  console.log(query.group.data, query.group.status);
-
   if (!query.group.data || query.group.status === "not-found") {
     return <States.NotFound title={slugify(params.slug).decode()} />;
   }

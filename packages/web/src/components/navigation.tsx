@@ -165,18 +165,7 @@ function Groups(props: GroupsProps) {
   );
 }
 
-type SideNavigationProps = React.ComponentProps<typeof Sidebar> & {
-  groups: {
-    id: string;
-    title: string;
-    members: {
-      name: string;
-      email: string;
-      avatar: string;
-    }[];
-    url: string;
-  }[];
-};
+type SideNavigationProps = React.ComponentProps<typeof Sidebar>;
 
 export function GlobalSidebar(props: SideNavigationProps) {
   const { user } = useAuthentication();
@@ -223,7 +212,7 @@ export function GlobalSidebar(props: SideNavigationProps) {
           >
             <Link
               to="/groups"
-              search={(previous) => ({ ...previous, action: previous.action })}
+              search={(previous) => ({ action: previous.action })}
             >
               <span>Groups</span>
             </Link>
