@@ -1,8 +1,12 @@
 import { Button } from "@/components/ui/button";
+import { Toaster } from "@/components/ui/sonner";
 import { loginRPC } from "@/server/auth/route";
+import { snakeToCapitalized } from "@blank/core/lib/utils/index";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { useEffect, useState, useRef } from "react";
+import { toast } from "sonner";
+import * as v from "valibot";
 
 function useClientEffect(fn: () => void, deps?: unknown[]) {
   useEffect(() => {
@@ -18,6 +22,16 @@ function LandingRoute() {
   const [laggedPosition, setLaggedPosition] = useState({ x: 0, y: 0 });
   const animationRef = useRef<number>(0);
   const windowSizeRef = useRef({ width: 0, height: 0 });
+  const data = Route.useLoaderData();
+
+  useClientEffect(() => {
+    if (toast.getToasts().length > 0) return;
+    if (!data?.toast) return;
+
+    toast.error("Couldn't log you in", {
+      description: `we had an issue: ${data.toast.message}`,
+    });
+  });
 
   // Update window size on mount and resize
   useClientEffect(() => {
@@ -239,11 +253,24 @@ function LandingRoute() {
           </div>
         </div>
       </footer>
+      <Toaster />
     </div>
   );
 }
 
+const AuthError = v.object({
+  auth_error: v.optional(v.pipe(v.string(), v.minLength(1))),
+});
+
 export const Route = createFileRoute("/_static/landing/")({
   ssr: true,
   component: LandingRoute,
+  validateSearch: AuthError,
+  loaderDeps: ({ search: { auth_error } }) => ({ auth_error }),
+  loader: (ctx) => {
+    const { auth_error } = ctx.deps;
+    if (!auth_error) return undefined;
+
+    return { toast: { message: snakeToCapitalized(auth_error) } };
+  },
 });

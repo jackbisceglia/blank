@@ -9,7 +9,8 @@
     "test": "pnpm -r run test",
     "lint": "pnpm -r run lint",
     "lint:fix": "pnpm -r run lint:fix",
-    "format": "pnpm -r run format"
+    "format": "pnpm -r run format",
+    "clean:deps": "rm -rf node_modules packages/*/node_modules; pnpm install"
   },
   "packageManager": "pnpm@10.6.2",
   "devDependencies": {
@@ -47,7 +48,7 @@
     "vite-tsconfig-paths": "^5.1.4"
   },
   "dependencies": {
-    "@openauthjs/openauth": "0.3.7",
+    "@openauthjs/openauth": "0.4.3",
     "@rocicorp/zero": "0.18.2025042300",
     "effect": "^3.13.10",
     "jose": "^6.0.10",
