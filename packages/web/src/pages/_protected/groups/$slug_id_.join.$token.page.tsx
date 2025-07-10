@@ -5,7 +5,6 @@ import {
   useNavigate,
 } from "@tanstack/react-router";
 import * as v from "valibot";
-import { useZero } from "@/lib/zero";
 import { useAuthentication } from "@/lib/authentication";
 import { withToast } from "@/lib/toast";
 import { fromParsedEffect } from "@blank/core/lib/effect/index";
@@ -13,6 +12,8 @@ import { FieldsErrors, useAppForm } from "@/components/form";
 import { prevented } from "@/lib/utils";
 import { Console, Effect, Exit, pipe } from "effect";
 import { Button } from "@/components/ui/button";
+import { useMutation } from "@tanstack/react-query";
+import { joinGroupServerFn } from "@/server/invite.route";
 
 const InviteToken = v.pipe(v.string(), v.uuid());
 
@@ -24,33 +25,51 @@ const schema = v.object({
   ),
 });
 
-function useForm(token: string, leave: () => void) {
+function useJoinGroup(token: string, groupId: string, onSuccess: () => void) {
+  const joinMutation = useMutation({
+    mutationFn: (nickname: string) =>
+      joinGroupServerFn({
+        data: {
+          token,
+          groupId,
+          nickname: nickname.trim(),
+        },
+      }),
+    onSuccess: () => {
+      onSuccess();
+    },
+  });
+
+  const handleJoinGroup = (nickname: string) => {
+    withToast({
+      promise: joinMutation.mutateAsync(nickname),
+      notify: {
+        loading: "Joining group...",
+        success: "Successfully joined group!",
+        error: "Failed to join group",
+      },
+    });
+  };
+
+  return {
+    handler: handleJoinGroup,
+    mutation: joinMutation,
+  };
+}
+
+function useForm(token: string, groupId: string, leave: () => void) {
   const auth = useAuthentication();
-  const zero = useZero();
+  const joinGroup = useJoinGroup(token, groupId, leave);
 
   const api = useAppForm({
     defaultValues: { nickname: auth.user.name },
     validators: { onChange: schema },
     onSubmit: async (fields) => {
-      const promise = await withToast({
-        promise: () =>
-          zero.mutate.group.joinWithInvite({
-            token,
-            userId: auth.user.id,
-            nickname: fields.value.nickname.trim(),
-          }),
-        notify: {
-          loading: "Joining group...",
-          success: "Successfully joined group!",
-          error: "Failed to join group",
-        },
-      }).then(() => leave());
-
-      return promise;
+      joinGroup.handler(fields.value.nickname);
     },
   });
 
-  return { api };
+  return { api, joinGroup };
 }
 
 function JoinGroupPage() {
@@ -58,7 +77,7 @@ function JoinGroupPage() {
   const params = Route.useParams();
   const navigate = useNavigate();
 
-  const form = useForm(loader.token, () => void navigate({ to: "/groups" }));
+  const form = useForm(loader.token, loader.groupId, () => void navigate({ to: "/groups" }));
 
   return (
     <div className="flex flex-col items-center justify-center p-4 mx-auto mb-auto mt-32 w-full max-w-2xl">
@@ -126,6 +145,12 @@ export const Route = createFileRoute(
       }),
     );
 
-    return { crumb: "Join Group", token };
+    // Extract groupId from slug_id (format: "slug_groupId")
+    const groupId = params.slug_id.split("_").pop();
+    if (!groupId) {
+      throw notFound();
+    }
+
+    return { crumb: "Join Group", token, groupId };
   },
 });

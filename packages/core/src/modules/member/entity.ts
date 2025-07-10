@@ -23,17 +23,16 @@ export namespace members {
   export function get(userId: string, groupId: string, tx?: Transaction) {
     return pipe(
       Effect.tryPromise(() =>
-        (tx ?? db).query.groupTable.findFirst({
+        (tx ?? db).query.memberTable.findFirst({
           where: and(
             eq(memberTable.groupId, groupId),
             eq(memberTable.userId, userId),
           ),
-          with: { members: true },
         }),
       ),
       Effect.flatMap(
         requireValueExists({
-          success: (group) => group.members,
+          success: (member) => member,
           error: () => new MemberNotFoundError("Could not find member"),
         }),
       ),

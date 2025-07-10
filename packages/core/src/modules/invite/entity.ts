@@ -17,7 +17,6 @@ class InviteNotFoundError extends TaggedError("InviteNotFoundError") {}
 class InviteNotCreatedError extends TaggedError("InviteNotCreatedError") {}
 class DuplicateInviteError extends TaggedError("DuplicateInviteError") {}
 class InviteNotUpdatedError extends TaggedError("InviteNotUpdatedError") {}
-class InviteNotDeletedError extends TaggedError("InviteNotDeletedError") {}
 
 export namespace invites {
   export function getByGroupIdAndToken(

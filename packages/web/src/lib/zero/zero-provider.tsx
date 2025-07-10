@@ -3,21 +3,20 @@ import { schema } from "@blank/zero";
 import { constants } from "@/lib/utils";
 import { ZeroProvider as ZeroProviderInternal } from "@rocicorp/zero/react";
 import { useAuthentication } from "../authentication";
-import { PropsWithChildren, useEffect, useState } from "react";
+import { PropsWithChildren, useMemo } from "react";
 import { createClientMutators } from "../client-mutators";
 import { Result } from "neverthrow";
 import { UnsecuredJWT } from "jose";
 import { useQueryClient } from "@tanstack/react-query";
 import { JWTExpired } from "jose/errors";
-import { Zero } from ".";
 
 export const ZeroProvider = (props: PropsWithChildren) => {
   const queryClient = useQueryClient();
   const auth = useAuthentication();
-  const [zero, setZero] = useState<Zero | null>(null);
 
-  useEffect(() => {
-    const zero = new ZeroInternal({
+  const opts = useMemo(() => {
+    return {
+      schema,
       userID: auth.user.id,
       auth: async () => {
         const payload = Result.fromThrowable(
@@ -32,21 +31,16 @@ export const ZeroProvider = (props: PropsWithChildren) => {
         return auth.token;
       },
       server: constants.syncServer,
-      schema,
-      kvStore: "idb",
       mutators: (() => {
         return createClientMutators({ userID: auth.user.id });
       })(),
-    });
-
-    setZero(zero);
+      kvStore: "idb" as const,
+    };
   }, [auth.user.id, auth.token, queryClient]);
 
-  if (!zero) {
-    return <div>Issue syncing data, please try again later</div>;
-  }
-
   return (
-    <ZeroProviderInternal zero={zero}>{props.children}</ZeroProviderInternal>
+    <ZeroProviderInternal zero={new ZeroInternal(opts)}>
+      {props.children}
+    </ZeroProviderInternal>
   );
 };

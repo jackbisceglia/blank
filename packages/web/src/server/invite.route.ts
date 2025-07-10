@@ -1,5 +1,5 @@
 import { createServerFn } from "@tanstack/react-start";
-import { Effect, pipe } from "effect";
+import { Console, Effect, pipe } from "effect";
 import * as v from "valibot";
 import {
   authenticate,
@@ -31,53 +31,57 @@ const assertUserIsNotAMember = Effect.fn("assertUserIsNotAMember")(function* (
     Effect.catchTag("DatabaseReadError", () => Effect.succeed(undefined)),
   );
 
-  return yield* Effect.fail(
-    new DuplicateMemberError("User is already a member of the group"),
-  ).pipe(Effect.when(() => !!member));
+  if (member) {
+    return yield* Effect.fail(
+      new DuplicateMemberError("User is already a member of the group"),
+    );
+  }
 });
 
-const assertTokenValid = Effect.fn("assertUserIsNotAMember")(function* (
+const assertTokenValid = Effect.fn("assertTokenValid")(function* (
   status: Invite["status"],
   expiresAt: Date,
 ) {
   if (status === "expired" || new Date(expiresAt) < new Date()) {
-    return yield* new InvalidTokenError(`Invalid Token, already expired`);
+    return yield* Effect.fail(
+      new InvalidTokenError(`Invalid Token, already expired`),
+    );
   }
 
   if (status === "accepted") {
-    return yield* new InvalidTokenError(`Invalid Token, already accepted`);
+    return yield* Effect.fail(
+      new InvalidTokenError(`Invalid Token, already accepted`),
+    );
   }
 });
 
-const assertUserIsOwner = Effect.fn("assertUserIsOwner ")(function* (
+const assertUserIsOwner = Effect.fn("assertUserIsOwner")(function* (
   groupId: string,
   userId: string,
   tx?: Transaction,
 ) {
   const group = yield* groups.getById(groupId, tx);
 
-  const userIsOwner = () => group.ownerId === userId;
-
-  return yield* Effect.fail(
-    new UserAuthorizationError("User must be owner to create invite"),
-  ).pipe(Effect.unless(userIsOwner));
+  if (group.ownerId !== userId) {
+    return yield* Effect.fail(
+      new UserAuthorizationError("User must be owner to create invite"),
+    );
+  }
 });
 
-const assertGroupHasInviteCapacity = Effect.fn("assertUserIsOwner ")(function* (
-  groupId: string,
-  userId: string,
-  tx?: Transaction,
-) {
-  const invites = yield* groups.getPendingInvites(groupId, tx);
+const assertGroupHasInviteCapacity = Effect.fn("assertGroupHasInviteCapacity")(
+  function* (groupId: string, tx?: Transaction) {
+    const invites = yield* groups.getPendingInvites(groupId, tx);
 
-  const hasCapacity = () => invites.length < MAX_INVITE_CAPACITY;
-
-  return yield* Effect.fail(
-    new InviteCapacityError(
-      `Group has maximum ${MAX_INVITE_CAPACITY} invites in use`,
-    ),
-  ).pipe(Effect.unless(hasCapacity));
-});
+    if (invites.length >= MAX_INVITE_CAPACITY) {
+      return yield* Effect.fail(
+        new InviteCapacityError(
+          `Group has maximum ${MAX_INVITE_CAPACITY} invites in use`,
+        ),
+      );
+    }
+  },
+);
 
 const checkUserAuthenticated = Effect.fn("checkUserAuthenticated ")(
   function* () {
@@ -141,11 +145,7 @@ export const createGroupInviteServerFn = createServerFn()
         Effect.fn("createGroupInviteTx")(function* (tx) {
           yield* assertUserIsOwner(data.groupId, auth.properties.userID, tx);
 
-          yield* assertGroupHasInviteCapacity(
-            data.groupId,
-            auth.properties.userID,
-            tx,
-          );
+          yield* assertGroupHasInviteCapacity(data.groupId, tx);
 
           return yield* invites.create({
             groupId: data.groupId,
@@ -202,18 +202,21 @@ export const joinGroupServerFn = createServerFn()
 
           yield* assertTokenValid(token.status, token.expiresAt);
 
-          const member = yield* members.create({
-            groupId: data.groupId,
-            nickname: data.nickname,
-            userId: auth.properties.userID,
-          });
+          const member = yield* members.create(
+            {
+              groupId: data.groupId,
+              nickname: data.nickname,
+              userId: auth.properties.userID,
+            },
+            tx,
+          );
 
-          yield* invites.updateStatus(token.token, "accepted");
+          yield* invites.updateStatus(token.token, "accepted", tx);
 
           return member;
         }),
       );
     });
 
-    return pipe(handler(), Effect.runPromise);
+    return pipe(handler(), Effect.tap(Effect.logError), Effect.runPromise);
   });
