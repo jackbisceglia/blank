@@ -1,17 +1,53 @@
 import { Effect, pipe } from "effect";
-import { DatabaseWriteError, Transaction } from "../../lib/drizzle/utils";
-import { requireSingleElement, TaggedError } from "../../lib/effect";
+import {
+  DatabaseReadError,
+  DatabaseWriteError,
+  Transaction,
+} from "../../lib/drizzle/utils";
+import {
+  requireSingleElement,
+  requireValueExists,
+  TaggedError,
+} from "../../lib/effect";
 import { MemberInsert, memberTable } from "./schema";
 import { db } from "../../lib/drizzle";
 import { eq, and } from "drizzle-orm/sql";
 
+class MemberNotFoundError extends TaggedError("MemberNotFoundError") {}
 class MemberNotCreatedError extends TaggedError("MemberNotCreatedError") {}
 class DuplicateMemberError extends TaggedError("DuplicateMemberError") {}
 class MembersNotCreatedError extends TaggedError("MembersNotCreatedError") {}
 class MemberNotDeletedError extends TaggedError("MemberNotDeletedError") {}
-class MembersNotDeletedError extends TaggedError("MembersNotDeletedError") {}
 
 export namespace members {
+  export function get(userId: string, groupId: string, tx?: Transaction) {
+    return pipe(
+      Effect.tryPromise(() =>
+        (tx ?? db).query.groupTable.findFirst({
+          where: and(
+            eq(memberTable.groupId, groupId),
+            eq(memberTable.userId, userId),
+          ),
+          with: { members: true },
+        }),
+      ),
+      Effect.flatMap(
+        requireValueExists({
+          success: (group) => group.members,
+          error: () => new MemberNotFoundError("Could not find member"),
+        }),
+      ),
+      Effect.catchTag(
+        "UnknownException",
+        (e) =>
+          new DatabaseReadError(
+            "Failed fetching member by group id and user id",
+            e,
+          ),
+      ),
+    );
+  }
+
   export function create(member: MemberInsert, tx?: Transaction) {
     return pipe(
       Effect.tryPromise(() =>

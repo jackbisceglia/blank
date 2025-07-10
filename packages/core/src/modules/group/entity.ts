@@ -13,7 +13,7 @@ import {
 import { db } from "../../lib/drizzle";
 import { GroupInsert, groupTable } from "./schema";
 import { eq } from "drizzle-orm/sql";
-import { User } from "../user/schema";
+import { inviteTable } from "../invite/schema";
 
 class GroupNotFoundError extends TaggedError("GroupNotFoundError") {}
 class MembersNotFoundError extends TaggedError("MembersNotFoundError") {}
@@ -21,9 +21,26 @@ class GroupNotCreatedError extends TaggedError("GroupNotCreatedError") {}
 class DuplicateGroupError extends TaggedError("DuplicateGroupError") {}
 class GroupsNotCreatedError extends TaggedError("GroupsNotCreatedError") {}
 class GroupNotDeletedError extends TaggedError("GroupNotDeletedError") {}
-class GroupsNotDeletedError extends TaggedError("GroupsNotDeletedError") {}
 
 export namespace groups {
+  export function getById(id: string, tx?: Transaction) {
+    return pipe(
+      Effect.tryPromise(() =>
+        (tx ?? db).query.groupTable.findFirst({ where: eq(groupTable.id, id) }),
+      ),
+      Effect.flatMap(
+        requireValueExists({
+          success: (group) => group,
+          error: () => new GroupNotFoundError("Group not found"),
+        }),
+      ),
+      Effect.catchTag(
+        "UnknownException",
+        (e) => new DatabaseReadError("Failed fetching group by id", e),
+      ),
+    );
+  }
+
   export function getMembers(groupId: string, tx?: Transaction) {
     return pipe(
       Effect.tryPromise(() =>
@@ -47,6 +64,27 @@ export namespace groups {
       Effect.catchTag(
         "UnknownException",
         (e) => new DatabaseReadError("Failed fetching members by group id", e),
+      ),
+    );
+  }
+
+  export function getInvites(groupId: string, tx?: Transaction) {
+    return pipe(
+      Effect.tryPromise(() =>
+        (tx ?? db).query.groupTable.findFirst({
+          where: eq(groupTable.id, groupId),
+          with: { invites: { where: eq(inviteTable.status, "pending") } },
+        }),
+      ),
+      Effect.flatMap(
+        requireValueExists({
+          success: (group) => group.invites,
+          error: () => new GroupNotFoundError("Group not found"),
+        }),
+      ),
+      Effect.catchTag(
+        "UnknownException",
+        (e) => new DatabaseReadError("Failed fetching invites by group id", e),
       ),
     );
   }

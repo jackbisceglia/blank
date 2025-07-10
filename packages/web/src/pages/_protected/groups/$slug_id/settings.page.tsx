@@ -1,30 +1,110 @@
-import { createFileRoute, useNavigate } from "@tanstack/react-router";
+import {
+  createFileRoute,
+  getRouteApi,
+  useLinkProps,
+  useLocation,
+  useNavigate,
+  useRouter,
+} from "@tanstack/react-router";
 import { GroupBody, SecondaryRow } from "./layout";
 import { SubHeading } from "@/components/prose";
 import { useWithConfirmation } from "@/components/with-confirmation-dialog";
 import { Button } from "@/components/ui/button";
 import { States } from "./layout";
 import { useDeleteGroup, useGroupById } from "../../@data/groups";
-import { Effect, Match, pipe, String, Array } from "effect";
 import {
-  fromParsedEffect,
-  fromParsedEffectPipe,
-  TaggedError,
-} from "@blank/core/lib/effect/index";
+  queryOptions,
+  useQuery,
+  useMutation,
+  useQueryClient,
+} from "@tanstack/react-query";
+import {
+  getInvitesByGroupServerFn,
+  createGroupInviteServerFn,
+  revokeInviteServerFn,
+} from "@/server/invite.route";
+import { Label } from "@/components/ui/label";
+import { withToast } from "@/lib/toast";
+
+function useInviteData(id: string, slug: string) {
+  const queryClient = useQueryClient();
+
+  const query = useQuery(groupInvitesQueryOptions(id));
+
+  const createInvite = useMutation({
+    mutationFn: () => createGroupInviteServerFn({ data: { groupId: id } }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["groupInvites", id] });
+    },
+  });
+
+  const revokeInvite = useMutation({
+    mutationFn: (token: string) =>
+      revokeInviteServerFn({ data: { groupId: id, token } }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["groupInvites", id] });
+    },
+  });
+
+  const handleCreateInvite = () => {
+    withToast({
+      promise: createInvite.mutateAsync(),
+      notify: {
+        loading: "Creating invite...",
+        success: "Invite created successfully!",
+        error: "Failed to create invite",
+      },
+    });
+  };
+
+  const handleRevokeInvite = (token: string) => {
+    withToast({
+      promise: revokeInvite.mutateAsync(token),
+      notify: {
+        loading: "Revoking invite...",
+        success: "Invite revoked successfully!",
+        error: "Failed to revoke invite",
+      },
+    });
+  };
+
+  return {
+    query: query,
+    create: {
+      handler: handleCreateInvite,
+      mutation: createInvite,
+    },
+    revoke: {
+      handler: handleRevokeInvite,
+      mutation: revokeInvite,
+    },
+  };
+}
+
+function useZeroMutations() {
+  const deleteGroup = useDeleteGroup();
+
+  return { deleteGroup };
+}
 
 function SettingsRoute() {
+  const router = useRouter();
   const navigate = useNavigate();
   const params = Route.useParams()["slug_id"];
+
   const { data, status } = useGroupById(params.id);
-  const deleteGroup = useDeleteGroup();
+
+  const mutations = useZeroMutations();
+  const invites = useInviteData(params.id, params.slug);
 
   if (status === "not-found") return <States.NotFound title={params.slug} />;
   if (!data) return <States.Loading />;
 
-  const del = useWithConfirmation({
+  const confirmDelete = useWithConfirmation({
     description: { type: "default", entity: "group" },
     onConfirm: () => {
-      const promise = deleteGroup({ groupId: data.id })
+      const promise = mutations
+        .deleteGroup({ groupId: data.id })
         .then(() => {
           void navigate({ to: "/groups" });
         })
@@ -36,28 +116,132 @@ function SettingsRoute() {
     },
   });
 
+  const createInviteUrl = (token: string) => {};
+
+  const copyInviteLink = (token: string) => {
+    const to = router.buildLocation({
+      to: "/groups/$slug_id/join/$token",
+      params: { slug_id: `${params.slug}_${params.id}`, token: token },
+    });
+
+    navigator.clipboard.writeText(`${window.location.origin}${to.href}`);
+
+    withToast({
+      promise: Promise.resolve(),
+      classNames: { success: "bg-muted! border-border!" },
+      notify: {
+        loading: "",
+        success: "Invite link copied to clipboard!",
+        error: "",
+      },
+    });
+  };
+
   return (
     <>
       <SecondaryRow>
         <SubHeading>Manage group settings</SubHeading>
       </SecondaryRow>
-      <GroupBody className="grid grid-cols-1 xl:grid-cols-2 gap-6">
-        <div className="border rounded-md p-4">
-          <h3 className="text-lg font-medium mb-2 uppercase">Danger Zone</h3>
-          <p className="text-sm text-muted-foreground mb-4">
-            Destructive actions that cannot be undone.
-          </p>
-          <Button variant="destructive" size="sm" onClick={del.confirm}>
+      <GroupBody className="grid grid-cols-1 xl:grid-cols-2 gap-6 items-start">
+        <div className="border rounded-md p-4 flex flex-col gap-4 h-min">
+          <div>
+            <h3 className="text-lg font-medium mb-1 uppercase">
+              Invite People
+            </h3>
+            <p className="text-sm text-muted-foreground mb-4 lowercase">
+              Create invite links to add new members to your group.
+            </p>
+          </div>
+
+          <Button
+            onClick={invites.create.handler}
+            disabled={invites.create.mutation.isPending}
+            variant="theme"
+            size="sm"
+            className="w-full"
+          >
+            {invites.create.mutation.isPending
+              ? "Creating..."
+              : "Create Invite Link"}
+          </Button>
+
+          {invites.query.data && invites.query.data.length > 0 && (
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-y-2 gap-x-2">
+              <Label className="text-sm uppercase lg:col-span-2">
+                Active Invites
+              </Label>
+              {invites.query.data.map((invite) => (
+                <div
+                  key={invite.token}
+                  className="flex items-center justify-between gap-1 p-2  bg-transparent border"
+                >
+                  <span className="text-sm text-muted-foreground lowercase mr-auto">
+                    {invite.token.slice(-5)}
+                  </span>
+                  <Button
+                    variant="link"
+                    size="xs"
+                    onClick={() => copyInviteLink(invite.token)}
+                  >
+                    Copy
+                  </Button>
+                  {invite.status === "pending" && (
+                    <Button
+                      variant="secondary"
+                      size="xs"
+                      onClick={() => invites.revoke.handler(invite.token)}
+                      disabled={
+                        invites.revoke.mutation.isPending &&
+                        invites.revoke.mutation.variables === invite.token
+                      }
+                    >
+                      Revoke
+                    </Button>
+                  )}
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+
+        <div className="border rounded-md p-4 flex flex-col gap-4 h-min">
+          <div>
+            <h3 className="text-lg font-medium mb-1 uppercase">Danger Zone</h3>
+            <p className="text-sm text-muted-foreground mb-4 lowercase">
+              Destructive actions that cannot be undone.
+            </p>
+          </div>
+
+          <Button
+            variant="destructive"
+            size="sm"
+            onClick={confirmDelete.confirm}
+          >
             Delete Group
           </Button>
         </div>
       </GroupBody>
-      <del.dialog />
+      <confirmDelete.dialog />
     </>
   );
 }
 
+function groupInvitesQueryOptions(id: string) {
+  return queryOptions({
+    queryKey: ["groupInvites", id],
+    queryFn: async () => {
+      return getInvitesByGroupServerFn({ data: { groupId: id } });
+    },
+  });
+}
+
 export const Route = createFileRoute("/_protected/groups/$slug_id/settings/")({
   component: SettingsRoute,
-  loader: () => ({ crumb: "Settings" }),
+  loader: (opts) => {
+    void opts.context.queryClient.ensureQueryData(
+      groupInvitesQueryOptions(opts.params.slug_id.id),
+    );
+
+    return { crumb: "Settings" };
+  },
 });
