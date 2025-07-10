@@ -25,6 +25,50 @@ import {
 } from "@/server/invite.route";
 import { Label } from "@/components/ui/label";
 import { withToast } from "@/lib/toast";
+import { Invite } from "@blank/core/modules/invite/schema";
+
+type InviteListProps = {
+  invites: Invite[] | undefined;
+  copy: (token: string) => void;
+  revoke: (token: string) => void;
+  isPending: (token: string) => boolean;
+};
+
+function InviteList(props: InviteListProps) {
+  if (!props.invites || props.invites.length === 0) return null;
+
+  return (
+    <div className="grid grid-cols-1 lg:grid-cols-2 gap-y-2 gap-x-2">
+      {props.invites.map((invite) => (
+        <div
+          key={invite.token}
+          className="flex items-center justify-between gap-1 p-2  bg-transparent border"
+        >
+          <span className="text-sm text-muted-foreground lowercase mr-auto">
+            {invite.token.slice(-5)}
+          </span>
+          <Button
+            variant="link"
+            size="xs"
+            onClick={() => props.copy(invite.token)}
+          >
+            Copy
+          </Button>
+          {invite.status === "pending" && (
+            <Button
+              variant="secondary"
+              size="xs"
+              onClick={() => props.revoke(invite.token)}
+              disabled={props.isPending(invite.token)}
+            >
+              Revoke
+            </Button>
+          )}
+        </div>
+      ))}
+    </div>
+  );
+}
 
 function useInviteData(id: string, slug: string) {
   const queryClient = useQueryClient();
@@ -116,8 +160,6 @@ function SettingsRoute() {
     },
   });
 
-  const createInviteUrl = (token: string) => {};
-
   const copyInviteLink = (token: string) => {
     const to = router.buildLocation({
       to: "/groups/$slug_id/join/$token",
@@ -137,18 +179,21 @@ function SettingsRoute() {
     });
   };
 
+  const activeInvitesTitle = () =>
+    !!invites.query.data?.length ? "Active Invites" : "No Active Invites";
+
   return (
     <>
       <SecondaryRow>
         <SubHeading>Manage group settings</SubHeading>
       </SecondaryRow>
       <GroupBody className="grid grid-cols-1 xl:grid-cols-2 gap-6 items-start">
-        <div className="border rounded-md p-4 flex flex-col gap-4 h-min">
+        <div className="border rounded-md p-4 flex flex-col gap-3 h-min">
           <div>
             <h3 className="text-lg font-medium mb-1 uppercase">
               Invite People
             </h3>
-            <p className="text-sm text-muted-foreground mb-4 lowercase">
+            <p className="text-sm text-muted-foreground mb-3 lowercase">
               Create invite links to add new members to your group.
             </p>
           </div>
@@ -165,49 +210,24 @@ function SettingsRoute() {
               : "Create Invite Link"}
           </Button>
 
-          {invites.query.data && invites.query.data.length > 0 && (
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-y-2 gap-x-2">
-              <Label className="text-sm uppercase lg:col-span-2">
-                Active Invites
-              </Label>
-              {invites.query.data.map((invite) => (
-                <div
-                  key={invite.token}
-                  className="flex items-center justify-between gap-1 p-2  bg-transparent border"
-                >
-                  <span className="text-sm text-muted-foreground lowercase mr-auto">
-                    {invite.token.slice(-5)}
-                  </span>
-                  <Button
-                    variant="link"
-                    size="xs"
-                    onClick={() => copyInviteLink(invite.token)}
-                  >
-                    Copy
-                  </Button>
-                  {invite.status === "pending" && (
-                    <Button
-                      variant="secondary"
-                      size="xs"
-                      onClick={() => invites.revoke.handler(invite.token)}
-                      disabled={
-                        invites.revoke.mutation.isPending &&
-                        invites.revoke.mutation.variables === invite.token
-                      }
-                    >
-                      Revoke
-                    </Button>
-                  )}
-                </div>
-              ))}
-            </div>
-          )}
+          <Label className="text-sm uppercase lg:col-span-2 py-1">
+            {activeInvitesTitle()}
+          </Label>
+          <InviteList
+            copy={copyInviteLink}
+            invites={invites.query.data}
+            revoke={invites.revoke.handler}
+            isPending={(token: string) =>
+              invites.revoke.mutation.isPending &&
+              invites.revoke.mutation.variables == token
+            }
+          />
         </div>
 
-        <div className="border rounded-md p-4 flex flex-col gap-4 h-min">
+        <div className="border rounded-md p-4 flex flex-col gap-3 h-min">
           <div>
             <h3 className="text-lg font-medium mb-1 uppercase">Danger Zone</h3>
-            <p className="text-sm text-muted-foreground mb-4 lowercase">
+            <p className="text-sm text-muted-foreground mb-3 lowercase">
               Destructive actions that cannot be undone.
             </p>
           </div>

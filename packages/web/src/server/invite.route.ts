@@ -14,7 +14,10 @@ import { TaggedError } from "@blank/core/lib/effect/index";
 import { groups } from "@blank/core/modules/group/entity";
 import { Invite } from "@blank/core/modules/invite/schema";
 
+const MAX_INVITE_CAPACITY = 6;
+
 class DuplicateMemberError extends TaggedError("DuplicateMemberError") {}
+class InviteCapacityError extends TaggedError("InviteCapacityError") {}
 class InvalidTokenError extends TaggedError("InvalidTokenError") {}
 
 const assertUserIsNotAMember = Effect.fn("assertUserIsNotAMember")(function* (
@@ -60,6 +63,22 @@ const assertUserIsOwner = Effect.fn("assertUserIsOwner ")(function* (
   ).pipe(Effect.unless(userIsOwner));
 });
 
+const assertGroupHasInviteCapacity = Effect.fn("assertUserIsOwner ")(function* (
+  groupId: string,
+  userId: string,
+  tx?: Transaction,
+) {
+  const invites = yield* groups.getPendingInvites(groupId, tx);
+
+  const hasCapacity = () => invites.length < MAX_INVITE_CAPACITY;
+
+  return yield* Effect.fail(
+    new InviteCapacityError(
+      `Group has maximum ${MAX_INVITE_CAPACITY} invites in use`,
+    ),
+  ).pipe(Effect.unless(hasCapacity));
+});
+
 const checkUserAuthenticated = Effect.fn("checkUserAuthenticated ")(
   function* () {
     const auth = yield* Effect.tryPromise(() =>
@@ -102,7 +121,7 @@ export const getInvitesByGroupServerFn = createServerFn()
         Effect.fn("getInvitesByGroupTx")(function* (tx) {
           yield* assertUserIsOwner(data.groupId, auth.properties.userID, tx);
 
-          return yield* groups.getInvites(data.groupId);
+          return yield* groups.getPendingInvites(data.groupId);
         }),
       );
 
@@ -121,6 +140,12 @@ export const createGroupInviteServerFn = createServerFn()
       const token = yield* withTransaction(
         Effect.fn("createGroupInviteTx")(function* (tx) {
           yield* assertUserIsOwner(data.groupId, auth.properties.userID, tx);
+
+          yield* assertGroupHasInviteCapacity(
+            data.groupId,
+            auth.properties.userID,
+            tx,
+          );
 
           return yield* invites.create({
             groupId: data.groupId,

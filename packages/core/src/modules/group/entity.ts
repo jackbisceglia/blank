@@ -68,7 +68,7 @@ export namespace groups {
     );
   }
 
-  export function getInvites(groupId: string, tx?: Transaction) {
+  export function getPendingInvites(groupId: string, tx?: Transaction) {
     return pipe(
       Effect.tryPromise(() =>
         (tx ?? db).query.groupTable.findFirst({
