@@ -1,8 +1,5 @@
 import {
   createFileRoute,
-  getRouteApi,
-  useLinkProps,
-  useLocation,
   useNavigate,
   useRouter,
 } from "@tanstack/react-router";
@@ -26,6 +23,7 @@ import {
 import { Label } from "@/components/ui/label";
 import { withToast } from "@/lib/toast";
 import { Invite } from "@blank/core/modules/invite/schema";
+import { DEFAULT_INVITE_EXPIRY_UNIT } from "@blank/core/lib/utils/index";
 
 type InviteListProps = {
   invites: Invite[] | undefined;
@@ -38,39 +36,44 @@ function InviteList(props: InviteListProps) {
   if (!props.invites || props.invites.length === 0) return null;
 
   return (
-    <div className="grid grid-cols-1 lg:grid-cols-2 gap-y-2 gap-x-2">
-      {props.invites.map((invite) => (
-        <div
-          key={invite.token}
-          className="flex items-center justify-between gap-1 p-2  bg-transparent border"
-        >
-          <span className="text-sm text-muted-foreground lowercase mr-auto">
-            {invite.token.slice(-5)}
-          </span>
-          <Button
-            variant="link"
-            size="xs"
-            onClick={() => props.copy(invite.token)}
+    <>
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-y-2 gap-x-2">
+        {props.invites.map((invite) => (
+          <div
+            key={invite.token}
+            className="flex items-center justify-between gap-1 p-2  bg-transparent border"
           >
-            Copy
-          </Button>
-          {invite.status === "pending" && (
+            <span className="text-sm text-muted-foreground lowercase mr-auto">
+              {invite.token.slice(-6)}
+            </span>
             <Button
-              variant="secondary"
+              variant="link"
               size="xs"
-              onClick={() => props.revoke(invite.token)}
-              disabled={props.isPending(invite.token)}
+              onClick={() => props.copy(invite.token)}
             >
-              Revoke
+              Copy
             </Button>
-          )}
-        </div>
-      ))}
-    </div>
+            {invite.status === "pending" && (
+              <Button
+                variant="secondary"
+                size="xs"
+                onClick={() => props.revoke(invite.token)}
+                disabled={props.isPending(invite.token)}
+              >
+                Revoke
+              </Button>
+            )}
+          </div>
+        ))}
+      </div>
+      <p className="lowercase text-muted-foreground text-sm pt-1">
+        Invites stay active for 1 {DEFAULT_INVITE_EXPIRY_UNIT}
+      </p>
+    </>
   );
 }
 
-function useInviteData(id: string, slug: string) {
+function useInviteData(id: string) {
   const queryClient = useQueryClient();
 
   const query = useQuery(groupInvitesQueryOptions(id));
@@ -104,6 +107,7 @@ function useInviteData(id: string, slug: string) {
   const handleRevokeInvite = (token: string) => {
     withToast({
       promise: revokeInvite.mutateAsync(token),
+      classNames: { success: "bg-muted! border-border!" },
       notify: {
         loading: "Revoking invite...",
         success: "Invite revoked successfully!",
@@ -139,7 +143,7 @@ function SettingsRoute() {
   const { data, status } = useGroupById(params.id);
 
   const mutations = useZeroMutations();
-  const invites = useInviteData(params.id, params.slug);
+  const invites = useInviteData(params.id);
 
   if (status === "not-found") return <States.NotFound title={params.slug} />;
   if (!data) return <States.Loading />;
@@ -163,7 +167,7 @@ function SettingsRoute() {
   const copyInviteLink = (token: string) => {
     const to = router.buildLocation({
       to: "/groups/$slug_id/join/$token",
-      params: { slug_id: `${params.slug}_${params.id}`, token: token },
+      params: { slug_id: { slug: params.slug, id: params.id }, token: token },
     });
 
     navigator.clipboard.writeText(`${window.location.origin}${to.href}`);
@@ -210,16 +214,16 @@ function SettingsRoute() {
               : "Create Invite Link"}
           </Button>
 
-          <Label className="text-sm uppercase lg:col-span-2 py-1">
+          <p className="uppercase text-sm font-medium">
             {activeInvitesTitle()}
-          </Label>
+          </p>
           <InviteList
             copy={copyInviteLink}
             invites={invites.query.data}
             revoke={invites.revoke.handler}
             isPending={(token: string) =>
-              invites.revoke.mutation.isPending &&
-              invites.revoke.mutation.variables == token
+              invites.revoke.mutation.variables == token &&
+              (invites.revoke.mutation.isPending || invites.query.isRefetching)
             }
           />
         </div>
@@ -257,8 +261,12 @@ function groupInvitesQueryOptions(id: string) {
 
 export const Route = createFileRoute("/_protected/groups/$slug_id/settings/")({
   component: SettingsRoute,
-  loader: (opts) => {
-    void opts.context.queryClient.ensureQueryData(
+  loader: async (opts) => {
+    console.log(
+      "this should be running on hover for: ",
+      opts.params.slug_id.id,
+    );
+    await opts.context.queryClient.ensureQueryData(
       groupInvitesQueryOptions(opts.params.slug_id.id),
     );
 

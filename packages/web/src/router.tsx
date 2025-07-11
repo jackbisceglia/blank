@@ -12,13 +12,10 @@ const shouldScan = false;
 
 // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
 if (shouldScan && import.meta.env.VITE_SCAN === "true") {
-  scan({
-    enabled: true,
-    showFPS: true,
-    _debug: "verbose",
-  });
+  scan({ enabled: true, showFPS: true, _debug: "verbose" });
 }
 
+// TODO: put zero instance on context to allow preloading in loaders (enables preload on links)
 export function createRouter() {
   const queryClient = new QueryClient();
 
@@ -27,7 +24,7 @@ export function createRouter() {
       defaultSsr: false,
       routeTree,
       context: { queryClient },
-      defaultPreload: "intent",
+      defaultPreload: "viewport",
       defaultErrorComponent: DefaultCatchBoundary,
       defaultNotFoundComponent: () => <NotFound />,
       defaultStructuralSharing: true,

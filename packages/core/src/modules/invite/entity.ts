@@ -12,6 +12,7 @@ import {
 import { InviteInsert, inviteTable } from "./schema";
 import { eq, and } from "drizzle-orm/sql";
 import { db } from "../../lib/drizzle";
+import { DEFAULT_INVITE_EXPIRY_UNIT } from "../../lib/utils";
 
 class InviteNotFoundError extends TaggedError("InviteNotFoundError") {}
 class InviteNotCreatedError extends TaggedError("InviteNotCreatedError") {}
@@ -98,16 +99,12 @@ export namespace invites {
   }
 
   export const utils = {
-    computeExpiry: (duration: "hour" | "day" | "week" = "day"): Date => {
-      const durations = {
-        hour: Duration.hours(1),
-        day: Duration.days(1),
-        week: Duration.weeks(1),
-      };
+    computeExpiry: (duration?: "minute" | "hour" | "day" | "week"): Date => {
+      const unit = duration ?? DEFAULT_INVITE_EXPIRY_UNIT;
 
       const now = new Date();
 
-      const selected = durations[duration];
+      const selected = Duration.decode(`1 ${unit}s`);
       const expiryMillis = now.getTime() + Duration.toMillis(selected);
 
       return new Date(expiryMillis);

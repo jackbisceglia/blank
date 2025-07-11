@@ -55,13 +55,17 @@ export function useCreateGroup() {
   const auth = useAuthentication();
   const z = useZero();
 
-  return (title: string, description: string) =>
-    z.mutate.group.create({
+  return (title: string, description: string) => {
+    const id = crypto.randomUUID();
+
+    return z.mutate.group.create({
+      id,
       description,
       title,
       userId: auth.user.id,
       nickname: auth.user.name,
     });
+  };
 }
 
 export function useDeleteGroup() {

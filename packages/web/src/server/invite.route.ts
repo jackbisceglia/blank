@@ -1,5 +1,5 @@
 import { createServerFn } from "@tanstack/react-start";
-import { Console, Effect, pipe } from "effect";
+import { Effect, pipe } from "effect";
 import * as v from "valibot";
 import {
   authenticate,
@@ -15,11 +15,14 @@ import { groups } from "@blank/core/modules/group/entity";
 import { Invite } from "@blank/core/modules/invite/schema";
 
 const MAX_INVITE_CAPACITY = 6;
+const MAX_MEMBER_CAPACITY = 5;
 
 class DuplicateMemberError extends TaggedError("DuplicateMemberError") {}
+class MemberCapacityError extends TaggedError("MemberCapacityError") {}
 class InviteCapacityError extends TaggedError("InviteCapacityError") {}
 class InvalidTokenError extends TaggedError("InvalidTokenError") {}
 
+// TODO: these asserts belong in either modules or in use-cases / features
 const assertUserIsNotAMember = Effect.fn("assertUserIsNotAMember")(function* (
   userId: string,
   groupId: string,
@@ -58,13 +61,14 @@ const assertTokenValid = Effect.fn("assertTokenValid")(function* (
 const assertUserIsOwner = Effect.fn("assertUserIsOwner")(function* (
   groupId: string,
   userId: string,
+  action: string,
   tx?: Transaction,
 ) {
   const group = yield* groups.getById(groupId, tx);
 
   if (group.ownerId !== userId) {
     return yield* Effect.fail(
-      new UserAuthorizationError("User must be owner to create invite"),
+      new UserAuthorizationError(`User must be owner to ${action}`),
     );
   }
 });
@@ -77,6 +81,20 @@ const assertGroupHasInviteCapacity = Effect.fn("assertGroupHasInviteCapacity")(
       return yield* Effect.fail(
         new InviteCapacityError(
           `Group has maximum ${MAX_INVITE_CAPACITY} invites in use`,
+        ),
+      );
+    }
+  },
+);
+
+const assertGroupHasMemberCapacity = Effect.fn("assertGroupHasMemberCapacity")(
+  function* (groupId: string, tx?: Transaction) {
+    const members = yield* groups.getMembers(groupId, tx);
+
+    if (members.length >= MAX_MEMBER_CAPACITY) {
+      return yield* Effect.fail(
+        new MemberCapacityError(
+          `Group can't have more than ${MAX_MEMBER_CAPACITY} members`,
         ),
       );
     }
@@ -123,7 +141,12 @@ export const getInvitesByGroupServerFn = createServerFn()
 
       const tokens = yield* withTransaction(
         Effect.fn("getInvitesByGroupTx")(function* (tx) {
-          yield* assertUserIsOwner(data.groupId, auth.properties.userID, tx);
+          yield* assertUserIsOwner(
+            data.groupId,
+            auth.properties.userID,
+            "view invites",
+            tx,
+          );
 
           return yield* groups.getPendingInvites(data.groupId);
         }),
@@ -143,9 +166,15 @@ export const createGroupInviteServerFn = createServerFn()
 
       const token = yield* withTransaction(
         Effect.fn("createGroupInviteTx")(function* (tx) {
-          yield* assertUserIsOwner(data.groupId, auth.properties.userID, tx);
+          yield* assertUserIsOwner(
+            data.groupId,
+            auth.properties.userID,
+            "create invite",
+            tx,
+          );
 
           yield* assertGroupHasInviteCapacity(data.groupId, tx);
+          yield* assertGroupHasMemberCapacity(data.groupId, tx);
 
           return yield* invites.create({
             groupId: data.groupId,
@@ -168,7 +197,12 @@ export const revokeInviteServerFn = createServerFn()
 
       const result = yield* withTransaction(
         Effect.fn("revokeInviteTx")(function* (tx) {
-          yield* assertUserIsOwner(data.groupId, auth.properties.userID, tx);
+          yield* assertUserIsOwner(
+            data.groupId,
+            auth.properties.userID,
+            "revoke invite",
+            tx,
+          );
 
           return yield* invites.updateStatus(data.token, "expired", tx);
         }),
@@ -193,6 +227,8 @@ export const joinGroupServerFn = createServerFn()
             data.groupId,
             tx,
           );
+
+          yield* assertGroupHasMemberCapacity(data.groupId, tx);
 
           const token = yield* invites.getByGroupIdAndToken(
             data.token,

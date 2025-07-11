@@ -12,7 +12,7 @@ import {
 } from "../../lib/effect";
 import { db } from "../../lib/drizzle";
 import { GroupInsert, groupTable } from "./schema";
-import { eq } from "drizzle-orm/sql";
+import { and, eq, gt, lt } from "drizzle-orm/sql";
 import { inviteTable } from "../invite/schema";
 
 class GroupNotFoundError extends TaggedError("GroupNotFoundError") {}
@@ -73,7 +73,14 @@ export namespace groups {
       Effect.tryPromise(() =>
         (tx ?? db).query.groupTable.findFirst({
           where: eq(groupTable.id, groupId),
-          with: { invites: { where: eq(inviteTable.status, "pending") } },
+          with: {
+            invites: {
+              where: and(
+                eq(inviteTable.status, "pending"),
+                gt(inviteTable.expiresAt, new Date()),
+              ),
+            },
+          },
         }),
       ),
       Effect.flatMap(

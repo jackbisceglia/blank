@@ -105,7 +105,7 @@ export function CreateExpenseDialog(props: PropsWithChildren) {
             name="description"
             children={(field) => (
               <field.TextField
-                label="Description"
+                label="Expense Description"
                 inputProps={{
                   placeholder: "enter description",
                 }}

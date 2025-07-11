@@ -7,7 +7,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import * as v from "valibot";
-import { ok, Result } from "neverthrow";
+import { ok, Result, ResultAsync } from "neverthrow";
 import { ValidationErrorLegacy } from "@blank/core/lib/effect/index";
 import { useState } from "react";
 import { slugify } from "@blank/core/lib/utils/index";
@@ -59,7 +59,7 @@ export function CreateGroupDialog() {
   const [error, setError] = useState<string | null>(null);
 
   function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
-    const safeSubmitForm = Result.fromThrowable(createGroup);
+    const safeSubmitForm = ResultAsync.fromThrowable(createGroup);
 
     event.preventDefault();
     setError(null);
@@ -71,7 +71,7 @@ export function CreateGroupDialog() {
           fromParsed(schemas.description, form.get(formKeys.description)),
         ]),
       )
-      .andThrough((values) => safeSubmitForm(...values))
+      .asyncAndThrough((values) => safeSubmitForm(...values))
       .match(
         () => {
           route.close();
@@ -111,7 +111,7 @@ export function CreateGroupDialog() {
         >
           <div className="px-3 py-2 w-full bg-popover space-y-0.5 col-span-full">
             <Label
-              className="uppercase font-base text-xs"
+              className="lowercase font-base text-xs"
               htmlFor={formKeys.title}
             >
               Group Name
