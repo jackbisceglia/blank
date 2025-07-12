@@ -31,15 +31,6 @@ export function useGroupById(id: string) {
   return result;
 }
 
-export function useGroupBySlug(slug: string) {
-  const z = useZero();
-  const query = groupByProperty("slug", slug, z);
-
-  const result = useRecordQuery(query, ZERO_CACHE_DEFAULT);
-
-  return result;
-}
-
 export function useGroupListByUserId(userId: string) {
   const z = useZero();
   const query = z.query.group

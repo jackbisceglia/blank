@@ -7,6 +7,7 @@ import { PropsWithChildren } from "react";
 import { useGroupById } from "../../@data/groups";
 import { slugify } from "@blank/core/lib/utils/index";
 import { transformSlugAndId } from "@/lib/slug_id";
+import { useAuthentication } from "@/lib/authentication";
 
 export const States = {
   Loading: () => null,
@@ -24,10 +25,24 @@ type GroupNavigationProps = {
 };
 
 function GroupNavigation(props: GroupNavigationProps) {
-  const links = ["dashboard", "members", "settings"] as const;
+  const authentication = useAuthentication();
+  const params = Route.useParams({ select: (s) => s.slug_id });
+  const group = useGroupById(params.id);
+  const tabs = ["dashboard", "members", "settings"] as const;
+  type Tabs = (typeof tabs)[number];
 
-  const buildTo = (l: (typeof links)[number]) =>
-    build("/")("groups", "$slug_id", l !== "dashboard" && l);
+  const permissions: Record<Tabs, () => boolean> = {
+    dashboard: () => true,
+    members: () => true,
+    settings: () => authentication.user.id === group.data?.ownerId,
+  };
+
+  const isRootTab = (tab: string) => tab === "dashboard";
+
+  const links = (tab: Tabs) =>
+    ["groups", "$slug_id", !isRootTab(tab) && tab] as const;
+
+  const buildTo = (l: Tabs) => build("/")(...links(l));
 
   // test for preload issue
   // <Link
@@ -39,25 +54,27 @@ function GroupNavigation(props: GroupNavigationProps) {
 
   return (
     <div className="sm:ml-auto uppercase text-xs sm:text-sm flex items-center justify-center sm:justify-start gap-4">
-      {links.map((link) => (
-        <Link
-          disabled={props.disable ?? false}
-          key={link}
-          activeOptions={{ exact: true, includeSearch: false }}
-          activeProps={{
-            className: cn(
-              underline_defaults,
-              "text-blank-theme font-semibold hover:text-blank-theme",
-            ),
-          }}
-          params={{ ...props }}
-          from="/"
-          to={buildTo(link)}
-          className="active:[&[aria-disabled=true]]:pointer-events-none [&[aria-disabled=true]]:text-muted-foreground/70"
-        >
-          {link}
-        </Link>
-      ))}
+      {tabs
+        .filter((tab) => permissions[tab]())
+        .map((tab) => (
+          <Link
+            disabled={props.disable ?? false}
+            key={tab}
+            activeOptions={{ exact: true, includeSearch: false }}
+            activeProps={{
+              className: cn(
+                underline_defaults,
+                "text-blank-theme font-semibold hover:text-blank-theme",
+              ),
+            }}
+            params={{ ...props }}
+            from="/"
+            to={buildTo(tab)}
+            className="active:[&[aria-disabled=true]]:pointer-events-none [&[aria-disabled=true]]:text-muted-foreground/70"
+          >
+            {tab}
+          </Link>
+        ))}
     </div>
   );
 }

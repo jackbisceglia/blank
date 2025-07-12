@@ -20,10 +20,26 @@ import {
   createGroupInviteServerFn,
   revokeInviteServerFn,
 } from "@/server/invite.route";
-import { Label } from "@/components/ui/label";
 import { withToast } from "@/lib/toast";
 import { Invite } from "@blank/core/modules/invite/schema";
-import { DEFAULT_INVITE_EXPIRY_UNIT } from "@blank/core/lib/utils/index";
+import {
+  DEFAULT_INVITE_EXPIRY_UNIT,
+  slugify,
+} from "@blank/core/lib/utils/index";
+import { useAuthentication } from "@/lib/authentication";
+import { isTaggedError, TaggedError } from "@blank/core/lib/effect/index";
+import { Match } from "effect";
+import {
+  DefaultCatchBoundary,
+  DefaultFallbackError,
+} from "@/components/default-catch-boundary";
+
+const PageErrors = {
+  DataNotFound: class _ extends TaggedError("DataNotFoundError") {},
+  NotAuthorized: class _ extends TaggedError("UserNotAuthorizedError") {},
+} as const;
+
+type PageErrors = InstanceType<(typeof PageErrors)[keyof typeof PageErrors]>;
 
 type InviteListProps = {
   invites: Invite[] | undefined;
@@ -136,117 +152,138 @@ function useZeroMutations() {
 }
 
 function SettingsRoute() {
-  const router = useRouter();
-  const navigate = useNavigate();
-  const params = Route.useParams()["slug_id"];
+  const authentication = useAuthentication();
+  const params = Route.useParams({ select: (p) => p.slug_id });
+  const group = useGroupById(params.id);
 
-  const { data, status } = useGroupById(params.id);
+  return Match.value(group).pipe(
+    Match.when({ status: "loading" }, () => {
+      return <States.Loading />;
+    }),
+    Match.whenOr({ status: "not-found" }, { data: Match.undefined }, () => {
+      const group = slugify(params.slug).decode();
 
-  const mutations = useZeroMutations();
-  const invites = useInviteData(params.id);
+      throw new PageErrors.DataNotFound(`Could not load data for ${group}`);
+    }),
+    Match.not({ data: { ownerId: authentication.user.id } }, () => {
+      throw new PageErrors.NotAuthorized(
+        "Must be group owner to view settings.",
+      );
+    }),
+    Match.orElse(({ data }) => {
+      const router = useRouter();
+      const navigate = useNavigate();
 
-  if (status === "not-found") return <States.NotFound title={params.slug} />;
-  if (!data) return <States.Loading />;
+      const mutations = useZeroMutations();
+      const invites = useInviteData(params.id);
 
-  const confirmDelete = useWithConfirmation({
-    description: { type: "default", entity: "group" },
-    onConfirm: () => {
-      const promise = mutations
-        .deleteGroup({ groupId: data.id })
-        .then(() => {
-          void navigate({ to: "/groups" });
-        })
-        .catch((error: unknown) =>
-          console.error("DELETE_ERROR", JSON.stringify(error, null, 2)),
-        );
+      const confirmDelete = useWithConfirmation({
+        description: { type: "default", entity: "group" },
+        onConfirm: () => {
+          const promise = mutations
+            .deleteGroup({ groupId: data.id })
+            .then(() => {
+              void navigate({ to: "/groups" });
+            })
+            .catch((error: unknown) =>
+              console.error("DELETE_ERROR", JSON.stringify(error, null, 2)),
+            );
 
-      return promise;
-    },
-  });
+          return promise;
+        },
+      });
 
-  const copyInviteLink = (token: string) => {
-    const to = router.buildLocation({
-      to: "/groups/$slug_id/join/$token",
-      params: { slug_id: { slug: params.slug, id: params.id }, token: token },
-    });
+      const copyInviteLink = (token: string) => {
+        const to = router.buildLocation({
+          to: "/groups/$slug_id/join/$token",
+          params: {
+            slug_id: { slug: params.slug, id: params.id },
+            token: token,
+          },
+        });
 
-    navigator.clipboard.writeText(`${window.location.origin}${to.href}`);
+        navigator.clipboard.writeText(`${window.location.origin}${to.href}`);
 
-    withToast({
-      promise: Promise.resolve(),
-      classNames: { success: "bg-muted! border-border!" },
-      notify: {
-        loading: "",
-        success: "Invite link copied to clipboard!",
-        error: "",
-      },
-    });
-  };
+        withToast({
+          promise: Promise.resolve(),
+          classNames: { success: "bg-muted! border-border!" },
+          notify: {
+            loading: "",
+            success: "Invite link copied to clipboard!",
+            error: "",
+          },
+        });
+      };
 
-  const activeInvitesTitle = () =>
-    !!invites.query.data?.length ? "Active Invites" : "No Active Invites";
+      const activeInvitesTitle = () =>
+        !!invites.query.data?.length ? "Active Invites" : "No Active Invites";
 
-  return (
-    <>
-      <SecondaryRow>
-        <SubHeading>Manage group settings</SubHeading>
-      </SecondaryRow>
-      <GroupBody className="grid grid-cols-1 xl:grid-cols-2 gap-6 items-start">
-        <div className="border rounded-md p-4 flex flex-col gap-3 h-min">
-          <div>
-            <h3 className="text-lg font-medium mb-1 uppercase">
-              Invite People
-            </h3>
-            <p className="text-sm text-muted-foreground mb-3 lowercase">
-              Create invite links to add new members to your group.
-            </p>
-          </div>
+      return (
+        <>
+          <SecondaryRow>
+            <SubHeading>Manage group settings</SubHeading>
+          </SecondaryRow>
+          <GroupBody className="grid grid-cols-1 xl:grid-cols-2 gap-6 items-start">
+            <div className="border rounded-md p-4 flex flex-col gap-3 h-min">
+              <div>
+                <h3 className="text-lg font-medium mb-1 uppercase">
+                  Invite People
+                </h3>
+                <p className="text-sm text-muted-foreground mb-3 lowercase">
+                  Create invite links to add new members to your group.
+                </p>
+              </div>
 
-          <Button
-            onClick={invites.create.handler}
-            disabled={invites.create.mutation.isPending}
-            variant="theme"
-            size="sm"
-            className="w-full"
-          >
-            {invites.create.mutation.isPending
-              ? "Creating..."
-              : "Create Invite Link"}
-          </Button>
+              <Button
+                onClick={invites.create.handler}
+                disabled={invites.create.mutation.isPending}
+                variant="theme"
+                size="sm"
+                className="w-full"
+              >
+                {invites.create.mutation.isPending
+                  ? "Creating..."
+                  : "Create Invite Link"}
+              </Button>
 
-          <p className="uppercase text-sm font-medium">
-            {activeInvitesTitle()}
-          </p>
-          <InviteList
-            copy={copyInviteLink}
-            invites={invites.query.data}
-            revoke={invites.revoke.handler}
-            isPending={(token: string) =>
-              invites.revoke.mutation.variables == token &&
-              (invites.revoke.mutation.isPending || invites.query.isRefetching)
-            }
-          />
-        </div>
+              <p className="uppercase text-sm font-medium">
+                {activeInvitesTitle()}
+              </p>
+              <InviteList
+                copy={copyInviteLink}
+                invites={invites.query.data}
+                revoke={invites.revoke.handler}
+                isPending={(token: string) =>
+                  invites.revoke.mutation.variables == token &&
+                  (invites.revoke.mutation.isPending ||
+                    invites.query.isRefetching)
+                }
+              />
+            </div>
 
-        <div className="border rounded-md p-4 flex flex-col gap-3 h-min">
-          <div>
-            <h3 className="text-lg font-medium mb-1 uppercase">Danger Zone</h3>
-            <p className="text-sm text-muted-foreground mb-3 lowercase">
-              Destructive actions that cannot be undone.
-            </p>
-          </div>
+            <div className="border rounded-md p-4 flex flex-col gap-3 h-min">
+              <div>
+                <h3 className="text-lg font-medium mb-1 uppercase">
+                  Danger Zone
+                </h3>
+                <p className="text-sm text-muted-foreground mb-3 lowercase">
+                  Destructive actions that cannot be undone.
+                </p>
+              </div>
 
-          <Button
-            variant="destructive"
-            size="sm"
-            onClick={confirmDelete.confirm}
-          >
-            Delete Group
-          </Button>
-        </div>
-      </GroupBody>
-      <confirmDelete.dialog />
-    </>
+              <Button
+                variant="destructive"
+                size="sm"
+                onClick={confirmDelete.confirm}
+              >
+                Delete Group
+              </Button>
+            </div>
+          </GroupBody>
+          <confirmDelete.dialog />
+        </>
+      );
+    }),
   );
 }
 
@@ -260,15 +297,41 @@ function groupInvitesQueryOptions(id: string) {
 }
 
 export const Route = createFileRoute("/_protected/groups/$slug_id/settings/")({
+  errorComponent: (props) => {
+    if (!isTaggedError<PageErrors>(props.error)) {
+      console.log("1");
+      return <DefaultFallbackError />;
+    }
+
+    return Match.value(props.error).pipe(
+      Match.whenOr(
+        { _tag: "DataNotFoundError" },
+        { _tag: "UserNotAuthorizedError" },
+        (error) => {
+          console.log("2");
+          return (
+            <DefaultCatchBoundary
+              reset={() => {}}
+              error={new Error(error.message)}
+            />
+          );
+        },
+      ),
+      Match.orElse(() => {
+        console.log("3");
+        return <DefaultFallbackError />;
+      }),
+    );
+  },
   component: SettingsRoute,
   loader: async (opts) => {
-    console.log(
-      "this should be running on hover for: ",
-      opts.params.slug_id.id,
-    );
-    await opts.context.queryClient.ensureQueryData(
-      groupInvitesQueryOptions(opts.params.slug_id.id),
-    );
+    try {
+      await opts.context.queryClient.ensureQueryData(
+        groupInvitesQueryOptions(opts.params.slug_id.id),
+      );
+    } catch (e) {
+      console.error(e);
+    }
 
     return { crumb: "Settings" };
   },

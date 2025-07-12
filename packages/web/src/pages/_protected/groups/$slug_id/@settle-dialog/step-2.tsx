@@ -14,7 +14,7 @@ import { PropsWithChildren } from "react";
 import { SearchRouteStep2 } from ".";
 import { ExpenseWithParticipants, Route } from "../page";
 import { calculateSettlements, createBalanceMap } from "@/lib/balances";
-import { useGroupById, useGroupBySlug } from "@/pages/_protected/@data/groups";
+import { useGroupById } from "@/pages/_protected/@data/groups";
 import { CollapsibleNotification } from "@/components/collapsible-notification";
 import { DialogButton } from "@/components/dialog-button";
 

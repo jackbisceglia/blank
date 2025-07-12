@@ -33,3 +33,12 @@ export function DefaultCatchBoundary(props: DefaultCatchBoundaryProps) {
     </div>
   );
 }
+
+export function DefaultFallbackError() {
+  return (
+    <DefaultCatchBoundary
+      reset={() => {}}
+      error={new Error("Uh Oh. Something unexpected happened.")}
+    />
+  );
+}

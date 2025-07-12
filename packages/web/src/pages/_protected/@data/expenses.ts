@@ -8,7 +8,7 @@ import {
 import { useZero } from "@/lib/zero";
 import { useAuthentication } from "@/lib/authentication";
 import { useParams } from "@tanstack/react-router";
-import { useGroupById, useGroupBySlug } from "./groups";
+import { useGroupById } from "./groups";
 import { useUserPreferences } from "./users";
 import { createFromDescriptionServerFn } from "@/server/expense.route";
 import { Expense } from "@blank/zero";
