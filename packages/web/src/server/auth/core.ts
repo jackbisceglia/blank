@@ -3,6 +3,14 @@ import { subjects } from "@blank/auth/subjects";
 import { createClient } from "@openauthjs/openauth/client";
 import { constants } from "@/server/utils";
 import { optional } from "@blank/core/lib/utils/index";
+import { TaggedError } from "@blank/core/lib/effect/index";
+
+export class UserAuthorizationError extends TaggedError(
+  "UserAuthorizationError",
+) {}
+export class UserNotAuthenticatedError extends TaggedError(
+  "UserNotAuthenticatedError",
+) {}
 
 export const openauth = createClient({
   clientID: constants.authClientId,

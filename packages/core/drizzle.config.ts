@@ -10,6 +10,7 @@ export default defineConfig({
     user: Resource.Database.user,
     password: Resource.Database.password,
     database: Resource.Database.database,
+    ssl: true,
   },
   strict: true,
   verbose: true,

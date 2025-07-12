@@ -71,7 +71,7 @@ function useMutations() {
 function GroupRoute() {
   const sheet = ExpenseSheetSearchRoute.useSearchRoute();
   const settle = SettleExpensesSearchRoute.useSearchRoute();
-  const params = Route.useParams()["slug_id"];
+  const params = Route.useParams({ select: (p) => p.slug_id });
   const tableQuery = useQueryFromSearch();
   const status = useStatusFromSearch();
 

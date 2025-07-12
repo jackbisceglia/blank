@@ -109,7 +109,7 @@ export function BalancesCard(props: BalancesCardProps) {
     <GroupCard
       header={() => "Balances"}
       content={() => (
-        <ul className="flex flex-col gap-1 max-h-24 overflow-y-auto pb-3">
+        <ul className="flex flex-col gap-1 max-h-20 overflow-y-auto pb-3 pr-1">
           {transformed.map((member) => (
             <li key={member.nickname}>
               <div className="flex justify-between items-center">
