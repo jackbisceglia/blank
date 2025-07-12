@@ -3,6 +3,7 @@ import { pgTable, text, timestamp, uuid } from "drizzle-orm/pg-core";
 import { createInsertSchema, createSelectSchema } from "drizzle-valibot";
 import { DrizzleModelTypes } from "../../lib/drizzle/utils";
 import { memberTable } from "../member/schema";
+import { inviteTable } from "../invite/schema";
 
 export const groupTable = pgTable("group", {
   id: uuid()
@@ -18,6 +19,7 @@ export const groupTable = pgTable("group", {
 
 export const groupRelation = relations(groupTable, ({ many, one }) => ({
   members: many(memberTable),
+  invites: many(inviteTable),
   owner: one(memberTable, {
     fields: [groupTable.ownerId],
     references: [memberTable.userId],

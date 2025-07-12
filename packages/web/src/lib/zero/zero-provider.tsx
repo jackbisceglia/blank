@@ -1,23 +1,26 @@
-import { Zero as ZeroInternal } from "@rocicorp/zero";
-import { schema } from "@blank/zero";
+import { Zero as ZeroInternal, ZeroOptions } from "@rocicorp/zero";
+import { Schema, schema } from "@blank/zero";
 import { constants } from "@/lib/utils";
 import { ZeroProvider as ZeroProviderInternal } from "@rocicorp/zero/react";
 import { useAuthentication } from "../authentication";
-import { PropsWithChildren, useEffect, useState } from "react";
-import { createClientMutators } from "../client-mutators";
+import { PropsWithChildren, useMemo } from "react";
+import { ClientMutators, createClientMutators } from "../client-mutators";
 import { Result } from "neverthrow";
 import { UnsecuredJWT } from "jose";
 import { useQueryClient } from "@tanstack/react-query";
 import { JWTExpired } from "jose/errors";
-import { Zero } from ".";
+
+type Options = ZeroOptions<Schema, ClientMutators>;
 
 export const ZeroProvider = (props: PropsWithChildren) => {
   const queryClient = useQueryClient();
   const auth = useAuthentication();
-  const [zero, setZero] = useState<Zero | null>(null);
 
-  useEffect(() => {
-    const zero = new ZeroInternal({
+  // TODO: preload most relevant data here
+
+  const options = useMemo(() => {
+    return {
+      schema,
       userID: auth.user.id,
       auth: async () => {
         const payload = Result.fromThrowable(
@@ -32,21 +35,16 @@ export const ZeroProvider = (props: PropsWithChildren) => {
         return auth.token;
       },
       server: constants.syncServer,
-      schema,
-      kvStore: "idb",
       mutators: (() => {
         return createClientMutators({ userID: auth.user.id });
       })(),
-    });
-
-    setZero(zero);
+      kvStore: "idb" as const,
+    } satisfies Options;
   }, [auth.user.id, auth.token, queryClient]);
 
-  if (!zero) {
-    return <div>Issue syncing data, please try again later</div>;
-  }
-
   return (
-    <ZeroProviderInternal zero={zero}>{props.children}</ZeroProviderInternal>
+    <ZeroProviderInternal zero={new ZeroInternal(options)}>
+      {props.children}
+    </ZeroProviderInternal>
   );
 };

@@ -1,14 +1,10 @@
 import { createServerFn } from "@tanstack/react-start";
 import { requireValueExists, TaggedError } from "@blank/core/lib/effect/index";
 import { expenses } from "@blank/core/modules";
-import { authenticate } from "@/server/auth/core";
+import { authenticate, UserNotAuthenticatedError } from "@/server/auth/core";
 import * as v from "valibot";
 import { AuthTokens } from "@/server/utils";
 import { Effect, pipe } from "effect";
-
-class UserNotAuthenticatedError extends TaggedError(
-  "UserNotAuthenticatedError",
-) {}
 
 const inputs = {
   createFromDescription: v.object({

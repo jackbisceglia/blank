@@ -39,3 +39,5 @@ export function capitalizedToSnake(str: string) {
 export function snakeToCapitalized(str: string) {
   pipe(str, String.split("_"), Array.map(String.capitalize), Array.join(" "));
 }
+
+export const DEFAULT_INVITE_EXPIRY_UNIT = "hour";

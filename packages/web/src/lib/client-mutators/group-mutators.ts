@@ -46,21 +46,16 @@ const assertGroupExists = async (tx: ZTransaction, groupId: string) => {
 
 type CreateOptions = Prettify<
   Pick<GroupInsert, "description" | "title"> & {
+    id: string;
     userId: string;
     nickname: string;
   }
 >;
 export type DeleteGroupOptions = { groupId: string };
-export type JoinGroupWithInviteOptions = {
-  token: string;
-  userId: string;
-  nickname: string;
-};
 
 type Mutators = ClientMutatorGroup<{
   create: ClientMutator<CreateOptions, void>;
   delete: ClientMutator<DeleteGroupOptions, void>;
-  joinWithInvite: ClientMutator<JoinGroupWithInviteOptions, void>;
 }>;
 
 export const mutators: Mutators = (auth) => ({
@@ -72,10 +67,7 @@ export const mutators: Mutators = (auth) => ({
 
     const { userId, nickname, ...rest } = opts;
 
-    const groupId = crypto.randomUUID();
-
     await tx.mutate.group.insert({
-      id: groupId,
       ownerId: userId,
       createdAt: Date.now(),
       slug: slugify(opts.title).encode(),
@@ -83,7 +75,7 @@ export const mutators: Mutators = (auth) => ({
     });
 
     await tx.mutate.member.insert({
-      groupId,
+      groupId: opts.id,
       userId,
       nickname,
     });
@@ -109,34 +101,5 @@ export const mutators: Mutators = (auth) => ({
     for (const expense of await expenses) {
       await tx.mutate.expense.delete({ id: expense.id });
     }
-  },
-  joinWithInvite: async (tx, opts) => {
-    assertIsAuthenticated(auth);
-
-    await assertUserCanJoinGroup(tx, opts.userId);
-
-    const groups = await tx.query.group.run();
-    const mockGroup = groups[0]; // Mock: use first group for demo
-
-    if (!mockGroup || opts.token.length < 10) {
-      throw new Error("Invalid or expired invite token");
-    }
-
-    // Check if user is already a member
-    const existingMember = await tx.query.member
-      .where("groupId", mockGroup.id)
-      .where("userId", opts.userId)
-      .one()
-      .run();
-
-    // if (existingMember) {
-    //   throw new Error("User is already a member");
-    // }
-
-    await tx.mutate.member.insert({
-      groupId: mockGroup.id,
-      userId: opts.userId,
-      nickname: opts.nickname,
-    });
   },
 });

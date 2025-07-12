@@ -32,8 +32,10 @@ export function useExpenseListByGroupId(
 
 export function useCreateExpense() {
   const auth = useAuthentication();
-  const params = useParams({ strict: false })["slug_id"];
-  const group = useGroupById(params?.id ?? "");
+  const params = useParams({ strict: false });
+  const group = useGroupById(
+    typeof params.slug_id !== "string" ? (params.slug_id?.id ?? "") : "",
+  );
   const userPreferences = useUserPreferences(auth.user.id);
   const groupId = group.data?.id ?? userPreferences.data?.defaultGroupId;
 

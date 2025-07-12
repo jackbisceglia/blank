@@ -6,9 +6,7 @@ import { build, cn } from "@/lib/utils";
 import { PropsWithChildren } from "react";
 import { useGroupById } from "../../@data/groups";
 import { slugify } from "@blank/core/lib/utils/index";
-import { Effect, Array, String, pipe, Match } from "effect";
-import { fromParsedEffect, TaggedError } from "@blank/core/lib/effect/index";
-import * as v from "valibot";
+import { transformSlugAndId } from "@/lib/slug_id";
 
 export const States = {
   Loading: () => null,
@@ -30,6 +28,14 @@ function GroupNavigation(props: GroupNavigationProps) {
 
   const buildTo = (l: (typeof links)[number]) =>
     build("/")("groups", "$slug_id", l !== "dashboard" && l);
+
+  // test for preload issue
+  // <Link
+  //   to="/groups/$slug_id/settings"
+  //   params={{ slug_id: { id: props.id, slug: props.slug } }}
+  // >
+  //   Settings 2
+  // </Link>
 
   return (
     <div className="sm:ml-auto uppercase text-xs sm:text-sm flex items-center justify-center sm:justify-start gap-4">
@@ -78,7 +84,7 @@ export function GroupBody(props: PropsWithChildren<{ className?: string }>) {
 }
 
 function GroupLayout() {
-  const params = Route.useParams()["slug_id"];
+  const params = Route.useParams({ select: (p) => p.slug_id });
   const group = useGroupById(params.id);
 
   const title = group.data?.title ?? slugify(params.slug).decode();
@@ -97,52 +103,16 @@ function GroupLayout() {
   );
 }
 
-class InvalidPathParamError extends TaggedError("InvalidSlugIdFormatError") {}
-
-const SEPARATOR = "_";
-
-const Params = v.object({
-  slug_id: v.object({
-    id: v.pipe(v.string(), v.uuid()),
-    slug: v.string(),
-  }),
-});
-
 export const Route = createFileRoute("/_protected/groups/$slug_id")({
   component: GroupLayout,
   params: {
-    parse: (params) =>
-      pipe(
-        Effect.succeed(
-          Array.reverse(String.split(params["slug_id"], SEPARATOR)),
-        ),
-        Effect.flatMap((parts) =>
-          pipe(
-            parts,
-            Match.value,
-            Match.when(
-              (parts) => parts.length >= 2,
-              (parts) => Effect.succeed(parts),
-            ),
-            Match.orElse(() =>
-              Effect.fail(
-                new InvalidPathParamError("Path must contain slug and id"),
-              ),
-            ),
-            Effect.map(([id, ...slugParts]) => ({
-              id: id,
-              slug: slugParts.join(""),
-            })),
-            Effect.andThen((data) =>
-              fromParsedEffect(Params.entries.slug_id, data),
-            ),
-            Effect.map((data) => ({ slug_id: data })),
-          ),
-        ),
-        Effect.runSync,
-      ),
+    parse: (params) => ({
+      ...params,
+      ...transformSlugAndId.parse(params),
+    }),
     stringify: (params) => ({
-      slug_id: `${params["slug_id"]?.slug}_${params["slug_id"]?.id}`,
+      ...params,
+      ...transformSlugAndId.stringify(params),
     }),
   },
   loader: (context) => ({

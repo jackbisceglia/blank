@@ -204,3 +204,15 @@ export const throwOnError =
         throw new Error("Fallback");
       }),
     );
+
+// this helps if we need to type narrow on a _tagged error if we're forced to throw in a third party lib (eg. in a react component)
+export function isTaggedError<Errors extends { _tag: string }>(
+  error: unknown,
+): error is Errors {
+  return (
+    typeof error === "object" &&
+    error !== null &&
+    "_tag" in error &&
+    typeof (error as any)._tag === "string"
+  );
+}
