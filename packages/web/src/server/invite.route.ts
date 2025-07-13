@@ -10,12 +10,13 @@ import { AuthTokens } from "./utils";
 import { invites } from "@blank/core/modules/invite/entity";
 import { members } from "@blank/core/modules/member/entity";
 import { Transaction, withTransaction } from "@blank/core/lib/drizzle/utils";
+import {
+  ACTIVE_INVITE_CAPACITY,
+  MEMBER_CAPACITY,
+} from "@blank/core/lib/utils/constants";
 import { TaggedError } from "@blank/core/lib/effect/index";
 import { groups } from "@blank/core/modules/group/entity";
 import { Invite } from "@blank/core/modules/invite/schema";
-
-const MAX_INVITE_CAPACITY = 6;
-const MAX_MEMBER_CAPACITY = 5;
 
 class DuplicateMemberError extends TaggedError("DuplicateMemberError") {}
 class MemberCapacityError extends TaggedError("MemberCapacityError") {}
@@ -77,10 +78,10 @@ const assertGroupHasInviteCapacity = Effect.fn("assertGroupHasInviteCapacity")(
   function* (groupId: string, tx?: Transaction) {
     const invites = yield* groups.getPendingInvites(groupId, tx);
 
-    if (invites.length >= MAX_INVITE_CAPACITY) {
+    if (invites.length >= ACTIVE_INVITE_CAPACITY) {
       return yield* Effect.fail(
         new InviteCapacityError(
-          `Group has maximum ${MAX_INVITE_CAPACITY} invites in use`,
+          `Group has maximum ${ACTIVE_INVITE_CAPACITY} invites in use`,
         ),
       );
     }
@@ -91,10 +92,10 @@ const assertGroupHasMemberCapacity = Effect.fn("assertGroupHasMemberCapacity")(
   function* (groupId: string, tx?: Transaction) {
     const members = yield* groups.getMembers(groupId, tx);
 
-    if (members.length >= MAX_MEMBER_CAPACITY) {
+    if (members.length >= MEMBER_CAPACITY) {
       return yield* Effect.fail(
         new MemberCapacityError(
-          `Group can't have more than ${MAX_MEMBER_CAPACITY} members`,
+          `Group can't have more than ${MEMBER_CAPACITY} members`,
         ),
       );
     }

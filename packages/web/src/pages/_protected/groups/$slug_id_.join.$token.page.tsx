@@ -16,7 +16,7 @@ import {
 } from "@blank/core/lib/effect/index";
 import { FieldsErrors, useAppForm } from "@/components/form";
 import { prevented } from "@/lib/utils";
-import { Console, Effect, Exit, Match, pipe } from "effect";
+import { Effect, Exit, Match, pipe } from "effect";
 import { Button } from "@/components/ui/button";
 import { useMutation } from "@tanstack/react-query";
 import { joinGroupServerFn } from "@/server/invite.route";
@@ -223,11 +223,6 @@ export const Route = createFileRoute(
   "/_protected/groups/$slug_id_/join/$token/",
 )({
   errorComponent: (props) => {
-    console.log(
-      "[isTagged]? ",
-      isTaggedError<PageErrorTypes>(props.error),
-      props.error._tag,
-    );
     if (!isTaggedError<PageErrorTypes>(props.error)) {
       return <DefaultFallbackError />;
     }
@@ -264,7 +259,6 @@ export const Route = createFileRoute(
   loader: async ({ params }) => {
     const token = pipe(
       fromParsedEffect(InviteToken, params.token),
-      Effect.tapError((e) => Console.log(`Validation Error [${e._tag}]: ${e}`)),
       Effect.runSyncExit,
       Exit.match({
         onSuccess: (token) => token,

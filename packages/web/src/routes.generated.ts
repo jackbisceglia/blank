@@ -14,6 +14,7 @@ import { Route as rootRouteImport } from './pages/__root'
 import { Route as StaticLayoutRouteImport } from './pages/_static/layout'
 import { Route as ProtectedLayoutRouteImport } from './pages/_protected/layout'
 import { Route as ProtectedPageRouteImport } from './pages/_protected/page'
+import { Route as ProtectedRouteRouteImport } from './pages/_protected/Route'
 import { Route as ProtectedGroupsLayoutRouteImport } from './pages/_protected/groups/layout'
 import { Route as StaticLandingPageRouteImport } from './pages/_static/landing.page'
 import { Route as StaticAboutPageRouteImport } from './pages/_static/about.page'
@@ -40,6 +41,11 @@ const ProtectedLayoutRoute = ProtectedLayoutRouteImport.update({
 const ProtectedPageRoute = ProtectedPageRouteImport.update({
   id: '/',
   path: '/',
+  getParentRoute: () => ProtectedLayoutRoute,
+} as any)
+const ProtectedRouteRoute = ProtectedRouteRouteImport.update({
+  id: '/Route',
+  path: '/Route',
   getParentRoute: () => ProtectedLayoutRoute,
 } as any)
 const ProtectedGroupsLayoutRoute = ProtectedGroupsLayoutRouteImport.update({
@@ -110,6 +116,7 @@ const ApiAuthCallbackServerRoute = ApiAuthCallbackServerRouteImport.update({
 
 export interface FileRoutesByFullPath {
   '/groups': typeof ProtectedGroupsLayoutRouteWithChildren
+  '/Route': typeof ProtectedRouteRoute
   '/': typeof ProtectedPageRoute
   '/groups/$slug_id': typeof ProtectedGroupsSlug_idLayoutRouteWithChildren
   '/account': typeof ProtectedAccountPageRoute
@@ -122,6 +129,7 @@ export interface FileRoutesByFullPath {
   '/groups/$slug_id/join/$token': typeof ProtectedGroupsSlug_idJoinTokenPageRoute
 }
 export interface FileRoutesByTo {
+  '/Route': typeof ProtectedRouteRoute
   '/': typeof ProtectedPageRoute
   '/account': typeof ProtectedAccountPageRoute
   '/groups': typeof ProtectedGroupsPageRoute
@@ -137,6 +145,7 @@ export interface FileRoutesById {
   '/_protected': typeof ProtectedLayoutRouteWithChildren
   '/_static': typeof StaticLayoutRouteWithChildren
   '/_protected/groups': typeof ProtectedGroupsLayoutRouteWithChildren
+  '/_protected/Route': typeof ProtectedRouteRoute
   '/_protected/': typeof ProtectedPageRoute
   '/_protected/groups/$slug_id': typeof ProtectedGroupsSlug_idLayoutRouteWithChildren
   '/_protected/account/': typeof ProtectedAccountPageRoute
@@ -152,6 +161,7 @@ export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/groups'
+    | '/Route'
     | '/'
     | '/groups/$slug_id'
     | '/account'
@@ -164,6 +174,7 @@ export interface FileRouteTypes {
     | '/groups/$slug_id/join/$token'
   fileRoutesByTo: FileRoutesByTo
   to:
+    | '/Route'
     | '/'
     | '/account'
     | '/groups'
@@ -178,6 +189,7 @@ export interface FileRouteTypes {
     | '/_protected'
     | '/_static'
     | '/_protected/groups'
+    | '/_protected/Route'
     | '/_protected/'
     | '/_protected/groups/$slug_id'
     | '/_protected/account/'
@@ -241,6 +253,13 @@ declare module '@tanstack/react-router' {
       path: '/'
       fullPath: '/'
       preLoaderRoute: typeof ProtectedPageRouteImport
+      parentRoute: typeof ProtectedLayoutRoute
+    }
+    '/_protected/Route': {
+      id: '/_protected/Route'
+      path: '/Route'
+      fullPath: '/Route'
+      preLoaderRoute: typeof ProtectedRouteRouteImport
       parentRoute: typeof ProtectedLayoutRoute
     }
     '/_protected/groups': {
@@ -375,12 +394,14 @@ const ProtectedGroupsLayoutRouteWithChildren =
 
 interface ProtectedLayoutRouteChildren {
   ProtectedGroupsLayoutRoute: typeof ProtectedGroupsLayoutRouteWithChildren
+  ProtectedRouteRoute: typeof ProtectedRouteRoute
   ProtectedPageRoute: typeof ProtectedPageRoute
   ProtectedAccountPageRoute: typeof ProtectedAccountPageRoute
 }
 
 const ProtectedLayoutRouteChildren: ProtectedLayoutRouteChildren = {
   ProtectedGroupsLayoutRoute: ProtectedGroupsLayoutRouteWithChildren,
+  ProtectedRouteRoute: ProtectedRouteRoute,
   ProtectedPageRoute: ProtectedPageRoute,
   ProtectedAccountPageRoute: ProtectedAccountPageRoute,
 }

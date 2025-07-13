@@ -27,6 +27,9 @@ export const FieldsErrors = (props: FieldsErrorsProps) => {
   const isInErrorState =
     props.metas.some((meta) => meta.isTouched) && errors.length > 0;
 
+  // TODO: before merge, this should only be the case for that one card, not all field errors
+  if (!isInErrorState || errors.length === 0) return null;
+
   return (
     <ul
       className={cn("list-none p-0 m-0 py-2 uppercase", props.className)}

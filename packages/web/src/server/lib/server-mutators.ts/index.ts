@@ -1,13 +1,19 @@
 import { createClientMutators } from "@/lib/client-mutators";
 import { OpenAuthToken } from "@blank/auth/subjects";
 import { schema } from "@blank/zero";
-import { connectionProvider, PushProcessor } from "@rocicorp/zero/pg";
-import postgres from "postgres";
+import {
+  PostgresJSConnection,
+  PushProcessor,
+  ZQLDatabase,
+} from "@rocicorp/zero/pg";
 import { Resource } from "sst";
+import postgres from "postgres";
 
 export const processor = new PushProcessor(
-  schema,
-  connectionProvider(postgres(Resource.Database.connection)),
+  new ZQLDatabase(
+    new PostgresJSConnection(postgres(Resource.Database.connection)),
+    schema,
+  ),
 );
 
 // whenever this grows, we can break it out the same way as client-mutators
