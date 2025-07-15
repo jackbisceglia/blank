@@ -68,8 +68,6 @@ export function findClosestMatch(
 
   const score = similarityScore(target, bestMatch);
 
-  console.log(target, bestMatch, score, "\n\n");
-
   return [bestMatch, score];
 }
 

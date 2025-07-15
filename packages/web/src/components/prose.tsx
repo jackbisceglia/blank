@@ -31,7 +31,7 @@ export function SubHeading(props: React.ComponentProps<"h3">) {
   return (
     <h3
       className={cn(
-        "font-base leading-none lowercase text-muted-foreground text-sm sm:text-base",
+        "font-base leading-none lowercase text-muted-foreground text-sm",
         className,
       )}
       {...rest}

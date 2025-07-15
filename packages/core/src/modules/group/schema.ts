@@ -9,7 +9,7 @@ export const groupTable = pgTable("group", {
   id: uuid()
     .default(sql`gen_random_uuid()`)
     .primaryKey(), // update to make into ulid
-  title: text().notNull().unique(),
+  title: text().notNull(), // not unique for now
   slug: text().notNull(),
   description: text().notNull(),
   ownerId: uuid().notNull(), // update to make into ulid

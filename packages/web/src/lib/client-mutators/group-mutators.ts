@@ -52,10 +52,15 @@ type CreateOptions = Prettify<
   }
 >;
 export type DeleteGroupOptions = { groupId: string };
+export type UpdateGroupOptions = {
+  groupId: string;
+  updates: { title: string; description: string };
+};
 
 type Mutators = ClientMutatorGroup<{
   create: ClientMutator<CreateOptions, void>;
   delete: ClientMutator<DeleteGroupOptions, void>;
+  update: ClientMutator<UpdateGroupOptions, void>;
 }>;
 
 export const mutators: Mutators = (auth) => ({
@@ -78,6 +83,17 @@ export const mutators: Mutators = (auth) => ({
       groupId: opts.id,
       userId,
       nickname,
+    });
+  },
+  update: async (tx, opts) => {
+    assertIsAuthenticated(auth);
+
+    await assertGroupExists(tx, opts.groupId);
+
+    await tx.mutate.group.update({
+      id: opts.groupId,
+      slug: slugify(opts.updates.title).encode(),
+      ...opts.updates,
     });
   },
   delete: async (tx, opts) => {

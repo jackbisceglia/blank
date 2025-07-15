@@ -12,7 +12,7 @@ import {
 } from "../../lib/effect";
 import { db } from "../../lib/drizzle";
 import { GroupInsert, groupTable } from "./schema";
-import { and, eq, gt, lt } from "drizzle-orm/sql";
+import { and, eq, gt } from "drizzle-orm/sql";
 import { inviteTable } from "../invite/schema";
 
 class GroupNotFoundError extends TaggedError("GroupNotFoundError") {}
