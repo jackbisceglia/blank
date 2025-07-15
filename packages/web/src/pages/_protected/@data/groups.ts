@@ -28,7 +28,6 @@ export const queries = {
             p.related("member").related("member"),
           ),
       )
-
       .related("members")
       .related("owner")
       .one();
