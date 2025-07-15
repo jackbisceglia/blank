@@ -2,7 +2,6 @@ import {
   AnyFieldMeta,
   createFormHook,
   createFormHookContexts,
-  StandardSchemaV1Issue,
 } from "@tanstack/react-form";
 import {
   SheetCostField,
@@ -13,27 +12,25 @@ import {
 } from "./fields";
 import { cn } from "@/lib/utils";
 import { CancelButton, SettleButton, SubmitButton } from "./buttons";
+import { metasToErrors } from "@/lib/validation-errors";
 
 type FieldsErrorsProps = {
-  metas: AnyFieldMeta[];
+  metas: Record<any, AnyFieldMeta>;
+  id?: string;
   className?: string;
 };
 
 export const FieldsErrors = (props: FieldsErrorsProps) => {
-  const errors = props.metas
-    .map((meta) => meta.errors as StandardSchemaV1Issue[])
-    .flat();
-
-  const isInErrorState =
-    props.metas.some((meta) => meta.isTouched) && errors.length > 0;
+  const errors = metasToErrors(props.metas);
 
   return (
     <ul
+      id={props.id}
       className={cn("list-none p-0 m-0 py-2 uppercase", props.className)}
       role="alert"
     >
-      {isInErrorState &&
-        errors.map((error, index) => (
+      {errors.status === "errored" &&
+        errors.values.map((error, index) => (
           <li
             key={index}
             className="text-sm text-destructive w-full text-center"

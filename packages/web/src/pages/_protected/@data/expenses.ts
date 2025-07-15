@@ -8,7 +8,7 @@ import {
 import { useZero } from "@/lib/zero";
 import { useAuthentication } from "@/lib/authentication";
 import { useParams } from "@tanstack/react-router";
-import { useGroupById, useGroupBySlug } from "./groups";
+import { useGroupById } from "./groups";
 import { useUserPreferences } from "./users";
 import { createFromDescriptionServerFn } from "@/server/expense.route";
 import { Expense } from "@blank/zero";
@@ -57,25 +57,26 @@ export function useUpdateExpense() {
   const z = useZero();
 
   return (opts: UpdateExpenseOptions) => {
-    return z.mutate.expense.update(opts);
+    return z.mutate.expense.update(opts).client;
   };
 }
 
 export function useDeleteOneExpense() {
   const z = useZero();
 
-  return (opts: DeleteExpenseOptions) => z.mutate.expense.delete(opts);
+  return (opts: DeleteExpenseOptions) => z.mutate.expense.delete(opts).client;
 }
 
 export function useDeleteAllExpenses() {
   const z = useZero();
 
   return (opts: DeleteAllExpensesOptions) =>
-    z.mutate.expense.deleteByGroupId(opts);
+    z.mutate.expense.deleteByGroupId(opts).client;
 }
 
 export function useBulkSettleExpenses() {
   const z = useZero();
 
-  return (opts: BulkSettleExpensesOptions) => z.mutate.expense.bulkSettle(opts);
+  return (opts: BulkSettleExpensesOptions) =>
+    z.mutate.expense.bulkSettle(opts).client;
 }

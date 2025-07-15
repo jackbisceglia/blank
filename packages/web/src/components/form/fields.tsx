@@ -1,4 +1,9 @@
-import { SharedInputFromField, SharedLabel, SharedSheetLabel } from "./shared";
+import {
+  SharedError,
+  SharedInputFromField,
+  SharedLabel,
+  SharedSheetLabel,
+} from "./shared";
 import { Input } from "../ui/input";
 import { cn } from "@/lib/utils";
 import { Popover, PopoverContent, PopoverTrigger } from "../ui/popover";
@@ -16,11 +21,23 @@ import {
 import { type ParticipantWithMember } from "@/lib/participants";
 import { useFieldContext } from ".";
 import { Member } from "@blank/zero";
+import { metaToErrors } from "@/lib/validation-errors";
+import { Data, Match } from "effect";
+
+export type ErrorPositions = Data.TaggedEnum<{
+  inline: {};
+  custom: { readonly elementId: string };
+}>;
+
+export const positions = Data.taggedEnum<ErrorPositions>();
+const isInline = positions.$is("inline");
 
 type TextFieldProps = {
   label: string;
+  errorPosition?: ErrorPositions;
   labelProps?: React.ComponentProps<typeof SharedLabel>;
   inputProps?: React.ComponentProps<typeof Input>;
+  errorProps?: React.ComponentProps<typeof SharedError>;
 };
 
 export const TextField = (props: TextFieldProps) => {
@@ -30,6 +47,20 @@ export const TextField = (props: TextFieldProps) => {
     rest.labelProps ?? {};
   const { className: inputClassName, ...restInputProps } =
     rest.inputProps ?? {};
+  const { className: errorClassName, ...restErrorProps } =
+    rest.errorProps ?? {};
+
+  const errors = metaToErrors(field.state.meta);
+
+  const errorPosition = props.errorPosition ?? positions.inline();
+
+  const hasErrors = errors.status === "errored";
+
+  const errorId = Match.value(errorPosition).pipe(
+    Match.tag("inline", () => `${field}-error`),
+    Match.tag("custom", (config) => config.elementId),
+    Match.exhaustive,
+  );
 
   return (
     <>
@@ -41,14 +72,23 @@ export const TextField = (props: TextFieldProps) => {
         {label}
       </SharedLabel>
       <SharedInputFromField
+        aria-invalid={hasErrors}
+        aria-errormessage={hasErrors ? errorId : undefined}
+        aria-describedby={hasErrors ? errorId : undefined}
         type="text"
         field={field}
         className={cn(
-          "sm:px-3 sm:py-2 w-full bg-popover col-span-full border-0 p-0 focus-visible:ring-0 placeholder:text-muted-foreground/60 flex-1",
+          "sm:px-3 sm:py-2 w-full bg-popover col-span-full border-0 p-0 focus-visible:ring-0 placeholder:text-muted-foreground/60 flex-1 placeholder:lowercase",
           inputClassName,
         )}
         {...restInputProps}
       />
+
+      {isInline(errorPosition) && hasErrors && (
+        <SharedError id={errorId} {...restErrorProps}>
+          {errors.values[0]?.message}
+        </SharedError>
+      )}
     </>
   );
 };

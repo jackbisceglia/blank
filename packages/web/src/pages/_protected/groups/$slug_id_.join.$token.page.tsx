@@ -16,15 +16,19 @@ import {
 } from "@blank/core/lib/effect/index";
 import { FieldsErrors, useAppForm } from "@/components/form";
 import { prevented } from "@/lib/utils";
-import { Console, Effect, Exit, Match, pipe } from "effect";
+import { Effect, Exit, Match, pipe } from "effect";
 import { Button } from "@/components/ui/button";
 import { useMutation } from "@tanstack/react-query";
 import { joinGroupServerFn } from "@/server/invite.route";
 import { useGroupById } from "../@data/groups";
 import { transformSlugAndId } from "@/lib/slug_id";
-import { DefaultCatchBoundary } from "@/components/default-catch-boundary";
+import {
+  DefaultCatchBoundary,
+  DefaultFallbackError,
+} from "@/components/default-catch-boundary";
 import { slugify } from "@blank/core/lib/utils/index";
 import { useStore } from "@tanstack/react-form";
+import { positions } from "@/components/form/fields";
 
 const PageErrors = {
   GroupDoesNotExist: class _ extends TaggedError("GroupDoesNotExistError") {},
@@ -145,6 +149,8 @@ function JoinGroupPage() {
     () => void navigate(linkOpts),
   );
 
+  const fieldErrorId = `nickname-error`;
+
   if (group.status === "loading") return null;
 
   if (!group.data) {
@@ -179,6 +185,7 @@ function JoinGroupPage() {
           name="nickname"
           children={(field) => (
             <field.TextField
+              errorPosition={positions.custom({ elementId: fieldErrorId })}
               label="Nickname"
               inputProps={{
                 placeholder: "enter your nickname",
@@ -202,8 +209,9 @@ function JoinGroupPage() {
           selector={(state) => state.fieldMeta}
           children={(fieldMeta) => (
             <FieldsErrors
+              id={fieldErrorId}
               className="col-span-full min-h-9"
-              metas={Object.values(fieldMeta)}
+              metas={fieldMeta}
             />
           )}
         />
@@ -220,18 +228,9 @@ export const Route = createFileRoute(
   "/_protected/groups/$slug_id_/join/$token/",
 )({
   errorComponent: (props) => {
-    const Fallback = () => (
-      <DefaultCatchBoundary
-        reset={() => {}}
-        error={
-          new Error(
-            "Uh Oh. Something unexpected happened trying to join this group",
-          )
-        }
-      />
-    );
-
-    if (!isTaggedError<PageErrorTypes>(props.error)) return <Fallback />;
+    if (!isTaggedError<PageErrorTypes>(props.error)) {
+      return <DefaultFallbackError />;
+    }
 
     return Match.value(props.error._tag).pipe(
       Match.when("GroupDoesNotExistError", () => (
@@ -247,7 +246,7 @@ export const Route = createFileRoute(
           error={new Error(props.error.message)}
         />
       )),
-      Match.orElse(() => <Fallback />),
+      Match.orElse(() => <DefaultFallbackError />),
     );
   },
   component: JoinGroupPage,
@@ -265,7 +264,6 @@ export const Route = createFileRoute(
   loader: async ({ params }) => {
     const token = pipe(
       fromParsedEffect(InviteToken, params.token),
-      Effect.tapError((e) => Console.log(`Validation Error [${e._tag}]: ${e}`)),
       Effect.runSyncExit,
       Exit.match({
         onSuccess: (token) => token,
