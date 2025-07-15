@@ -59,3 +59,16 @@ export function SharedInputFromField<T extends string | number>(
     />
   );
 }
+
+type SharedErrorProps = React.ComponentProps<"p">;
+
+export function SharedError(props: SharedErrorProps) {
+  const { className, ...rest } = props;
+
+  return (
+    <p
+      className={cn("text-xs text-destructive uppercase", className)}
+      {...rest}
+    />
+  );
+}

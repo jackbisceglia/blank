@@ -9,10 +9,7 @@ import {
   InviteSettingsCard,
 } from "./@settings/invite-settings-card";
 import { DangerZoneCard } from "./@settings/danger-zone-card";
-import {
-  authenticationQueryOptions,
-  useAuthentication,
-} from "@/lib/authentication";
+import { useAuthentication } from "@/lib/authentication";
 import { isTaggedError, TaggedError } from "@blank/core/lib/effect/index";
 import { Match } from "effect";
 import {

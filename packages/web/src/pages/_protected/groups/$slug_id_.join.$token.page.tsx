@@ -28,6 +28,7 @@ import {
 } from "@/components/default-catch-boundary";
 import { slugify } from "@blank/core/lib/utils/index";
 import { useStore } from "@tanstack/react-form";
+import { positions } from "@/components/form/fields";
 
 const PageErrors = {
   GroupDoesNotExist: class _ extends TaggedError("GroupDoesNotExistError") {},
@@ -148,6 +149,8 @@ function JoinGroupPage() {
     () => void navigate(linkOpts),
   );
 
+  const fieldErrorId = `nickname-error`;
+
   if (group.status === "loading") return null;
 
   if (!group.data) {
@@ -182,6 +185,7 @@ function JoinGroupPage() {
           name="nickname"
           children={(field) => (
             <field.TextField
+              errorPosition={positions.custom({ elementId: fieldErrorId })}
               label="Nickname"
               inputProps={{
                 placeholder: "enter your nickname",
@@ -205,8 +209,9 @@ function JoinGroupPage() {
           selector={(state) => state.fieldMeta}
           children={(fieldMeta) => (
             <FieldsErrors
+              id={fieldErrorId}
               className="col-span-full min-h-9"
-              metas={Object.values(fieldMeta)}
+              metas={fieldMeta}
             />
           )}
         />

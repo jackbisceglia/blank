@@ -1,10 +1,11 @@
-import { useAppForm, FieldsErrors } from "@/components/form";
+import { useAppForm } from "@/components/form";
 import { withToast } from "@/lib/toast";
 import { useUpdateGroup } from "../../../@data/groups";
 import { slugify } from "@blank/core/lib/utils/index";
 import { prevented } from "@/lib/utils";
 import * as v from "valibot";
 import { Group } from "@blank/zero";
+import { positions } from "@/components/form/fields";
 
 const schemas = {
   title: v.pipe(
@@ -84,7 +85,7 @@ export function GroupSettingsCard({ group }: GroupSettingsCardProps) {
 
       <form
         onSubmit={prevented(() => void form.api.handleSubmit())}
-        className="flex flex-col gap-2"
+        className="flex flex-col h-full gap-1.5"
       >
         <form.api.AppField
           name="title"
@@ -92,10 +93,14 @@ export function GroupSettingsCard({ group }: GroupSettingsCardProps) {
             <>
               <field.TextField
                 label="Group Name"
+                errorPosition={positions.inline()}
+                labelProps={{
+                  className: "mt-0.5",
+                }}
                 inputProps={{
                   placeholder: "Enter group name",
                   className:
-                    "bg-transparent border border-border hover:bg-secondary/25 text-foreground placeholder:text-foreground/40 h-10",
+                    "bg-transparent border border-border hover:bg-secondary/25 text-foreground placeholder:text-foreground/40 flex-0",
                 }}
               />
             </>
@@ -105,37 +110,30 @@ export function GroupSettingsCard({ group }: GroupSettingsCardProps) {
         <form.api.AppField
           name="description"
           children={(field) => (
-            <field.TextField
-              label="Description"
-              inputProps={{
-                placeholder: "Enter group description",
-                className:
-                  "bg-transparent border border-border hover:bg-secondary/25 text-foreground placeholder:text-foreground/40 h-10",
-              }}
-            />
+            <>
+              <field.TextField
+                label="Description"
+                errorPosition={positions.inline()}
+                inputProps={{
+                  placeholder: "Enter group description",
+                  className:
+                    "bg-transparent border border-border hover:bg-secondary/25 text-foreground placeholder:text-foreground/40 flex-0",
+                }}
+                labelProps={{
+                  className: "mt-0.5",
+                }}
+              />
+            </>
           )}
         />
 
-        <form.api.AppForm>
-          <form.api.SubmitButton
-            className="mt-3"
-            dirty={{ disableForAria: true }}
-          >
-            Update Group
-          </form.api.SubmitButton>
-        </form.api.AppForm>
-
-        <form.api.Subscribe
-          selector={(state) => state.fieldMeta}
-          children={(fieldMeta) =>
-            Object.values(fieldMeta) && (
-              <FieldsErrors
-                className="min-h-0 p-0"
-                metas={Object.values(fieldMeta)}
-              />
-            )
-          }
-        />
+        <div className="mb-0 mt-auto pt-3">
+          <form.api.AppForm>
+            <form.api.SubmitButton dirty={{ disableForAria: true }}>
+              Update Group
+            </form.api.SubmitButton>
+          </form.api.AppForm>
+        </div>
       </form>
     </div>
   );

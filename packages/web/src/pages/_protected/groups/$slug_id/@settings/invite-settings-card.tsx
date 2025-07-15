@@ -27,11 +27,11 @@ function InviteList(props: InviteListProps) {
 
   return (
     <>
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-y-2 gap-x-2 mb-auto flex-1">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-y-2 gap-x-2 mb-auto items-start">
         {props.invites.map((invite) => (
           <div
             key={invite.token}
-            className="flex items-center justify-between gap-1 p-2 bg-transparent border h-min"
+            className="flex items-center justify-between gap-1 py-1.5 px-2 bg-transparent border h-min"
           >
             <span className="text-sm text-muted-foreground lowercase mr-auto">
               {invite.token.slice(-6)}
@@ -184,7 +184,7 @@ export function InviteSettingsCard({
 
       {invites.query.status === "success" && (
         <>
-          <p className="uppercase text-sm font-medium mb-auto">
+          <p className="uppercase text-sm font-medium">
             {activeInvitesTitle()}
           </p>
           <InviteList
@@ -199,19 +199,21 @@ export function InviteSettingsCard({
         </>
       )}
 
-      <Button
-        onClick={invites.create.handler}
-        disabled={
-          invites.create.mutation.isPending || !hasActiveInviteCapacity()
-        }
-        variant="theme"
-        size="xs"
-        className="py-2 w-full h-auto mt-auto"
-      >
-        {invites.create.mutation.isPending
-          ? "Creating..."
-          : "Create Invite Link"}
-      </Button>
+      <div className="mb-0 mt-auto">
+        <Button
+          onClick={invites.create.handler}
+          disabled={
+            invites.create.mutation.isPending || !hasActiveInviteCapacity()
+          }
+          variant="theme"
+          size="xs"
+          className="py-2 w-full h-auto mt-auto"
+        >
+          {invites.create.mutation.isPending
+            ? "Creating..."
+            : "Create Invite Link"}
+        </Button>
+      </div>
     </div>
   );
 }

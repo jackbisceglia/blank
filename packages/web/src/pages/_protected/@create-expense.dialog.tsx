@@ -12,6 +12,7 @@ import { createStackableSearchRoute } from "@/lib/search-route";
 import { prevented } from "@/lib/utils";
 import { withToast } from "@/lib/toast";
 import { PropsWithChildren } from "react";
+import { positions } from "@/components/form/fields";
 
 const KEY = "action" as const;
 const ENTRY = "new-expense" as const;
@@ -86,6 +87,8 @@ export function CreateExpenseDialog(props: PropsWithChildren) {
     view: route.view,
   });
 
+  const fieldErrorsId = "create-expense-errors";
+
   return (
     <Dialog open={route.view() === "open"} onOpenChange={route.sync}>
       <DialogTrigger asChild>{props.children}</DialogTrigger>
@@ -105,6 +108,7 @@ export function CreateExpenseDialog(props: PropsWithChildren) {
             name="description"
             children={(field) => (
               <field.TextField
+                errorPosition={positions.custom({ elementId: fieldErrorsId })}
                 label="Expense Description"
                 inputProps={{
                   placeholder: "enter description",
@@ -124,8 +128,9 @@ export function CreateExpenseDialog(props: PropsWithChildren) {
             selector={(state) => state.fieldMeta}
             children={(fieldMeta) => (
               <FieldsErrors
+                id={fieldErrorsId}
                 className="col-span-full min-h-32 "
-                metas={Object.values(fieldMeta)}
+                metas={fieldMeta}
               />
             )}
           />
