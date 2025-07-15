@@ -60,9 +60,6 @@ function InviteList(props: InviteListProps) {
   );
 }
 
-// <p className="lowercase text-muted-foreground text-sm pt-1">
-//   Invites stay active for 1 hour
-// </p>
 export function groupInvitesQueryOptions(id: string) {
   return queryOptions({
     queryKey: ["groupInvites", id],
