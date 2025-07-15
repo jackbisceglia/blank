@@ -4,9 +4,15 @@ import { SubHeading } from "@/components/prose";
 import { States } from "./layout";
 import { useGroupById } from "../../@data/groups";
 import { GroupSettingsCard } from "./@settings/group-settings-card";
-import { InviteSettingsCard } from "./@settings/invite-settings-card";
+import {
+  groupInvitesQueryOptions,
+  InviteSettingsCard,
+} from "./@settings/invite-settings-card";
 import { DangerZoneCard } from "./@settings/danger-zone-card";
-import { useAuthentication } from "@/lib/authentication";
+import {
+  authenticationQueryOptions,
+  useAuthentication,
+} from "@/lib/authentication";
 import { isTaggedError, TaggedError } from "@blank/core/lib/effect/index";
 import { Match } from "effect";
 import {
@@ -81,7 +87,13 @@ export const Route = createFileRoute("/_protected/groups/$slug_id/settings/")({
     );
   },
   component: SettingsRoute,
-  loader: async () => {
+  loader: async (opts) => {
+    try {
+      await opts.context.queryClient.ensureQueryData(
+        groupInvitesQueryOptions(opts.params.slug_id.id),
+      );
+    } catch {}
+
     return { crumb: "Settings" };
   },
 });

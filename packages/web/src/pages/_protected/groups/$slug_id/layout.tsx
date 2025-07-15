@@ -3,7 +3,7 @@ import { PrimaryHeading } from "@/components/prose";
 import { PageHeaderRow } from "@/components/layouts";
 import { underline_defaults } from "@/components/ui/utils";
 import { build, cn } from "@/lib/utils";
-import { PropsWithChildren } from "react";
+import { PropsWithChildren, useEffect } from "react";
 import { useGroupById } from "../../@data/groups";
 import { slugify } from "@blank/core/lib/utils/index";
 import { transformSlugAndId } from "@/lib/slug_id";
@@ -18,6 +18,29 @@ export const States = {
   ),
 };
 
+function useSyncUrlReactively(
+  id: string,
+  target: string,
+  slug: string | undefined,
+) {
+  const navigate = Route.useNavigate();
+
+  return () => {
+    if (!slug) return;
+    if (slug === target) return;
+
+    void navigate({
+      to: ".",
+      params: (p) => ({ ...p, slug_id: { id, slug: slug } }),
+    });
+  };
+}
+
+type Tabs = (typeof tabs)[number];
+const tabs = ["dashboard", "members", "settings"] as const;
+
+const isRootTab = (tab: string) => tab === "dashboard";
+
 type GroupNavigationProps = {
   id: string;
   slug: string;
@@ -28,8 +51,13 @@ function GroupNavigation(props: GroupNavigationProps) {
   const authentication = useAuthentication();
   const params = Route.useParams({ select: (s) => s.slug_id });
   const group = useGroupById(params.id);
-  const tabs = ["dashboard", "members", "settings"] as const;
-  type Tabs = (typeof tabs)[number];
+  const syncUrl = useSyncUrlReactively(
+    params.id,
+    params.slug,
+    group.data?.slug,
+  );
+
+  useEffect(syncUrl, [params.id, params.slug, group.data]);
 
   const permissions: Record<Tabs, () => boolean> = {
     dashboard: () => true,
@@ -37,20 +65,10 @@ function GroupNavigation(props: GroupNavigationProps) {
     settings: () => authentication.user.id === group.data?.ownerId,
   };
 
-  const isRootTab = (tab: string) => tab === "dashboard";
-
   const links = (tab: Tabs) =>
     ["groups", "$slug_id", !isRootTab(tab) && tab] as const;
 
   const buildTo = (l: Tabs) => build("/")(...links(l));
-
-  // test for preload issue
-  // <Link
-  //   to="/groups/$slug_id/settings"
-  //   params={{ slug_id: { id: props.id, slug: props.slug } }}
-  // >
-  //   Settings 2
-  // </Link>
 
   return (
     <div className="sm:ml-auto uppercase text-xs sm:text-sm flex items-center justify-center sm:justify-start gap-4">

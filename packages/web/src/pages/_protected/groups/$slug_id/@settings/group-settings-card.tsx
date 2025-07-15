@@ -5,7 +5,6 @@ import { slugify } from "@blank/core/lib/utils/index";
 import { prevented } from "@/lib/utils";
 import * as v from "valibot";
 import { Group } from "@blank/zero";
-import { Route } from "../settings.page";
 
 const schemas = {
   title: v.pipe(
@@ -33,7 +32,7 @@ type GroupSettingsCardProps = {
   group: Group;
 };
 
-function useForm(group: Group, leave: (name: string) => void) {
+function useForm(group: Group) {
   const updateGroup = useUpdateGroup();
 
   const api = useAppForm({
@@ -42,7 +41,7 @@ function useForm(group: Group, leave: (name: string) => void) {
       description: group.description,
     },
     validators: { onChange: formSchema },
-    onSubmit: async ({ value }) => {
+    onSubmit: async ({ value, formApi }) => {
       const hasChanges =
         value.title !== group.title || value.description !== group.description;
 
@@ -53,8 +52,6 @@ function useForm(group: Group, leave: (name: string) => void) {
         updates: value,
       });
 
-      leave(value.title);
-
       await withToast({
         promise,
         notify: {
@@ -63,6 +60,8 @@ function useForm(group: Group, leave: (name: string) => void) {
           error: "Failed to update group settings",
         },
       });
+
+      formApi.reset();
     },
   });
 
@@ -70,17 +69,7 @@ function useForm(group: Group, leave: (name: string) => void) {
 }
 
 export function GroupSettingsCard({ group }: GroupSettingsCardProps) {
-  const navigate = Route.useNavigate();
-  const leave = (name: string) => {
-    const params = { id: group.id, slug: slugify(name).encode() };
-
-    void navigate({
-      to: "/groups/$slug_id/settings",
-      params: { slug_id: params },
-    });
-  };
-
-  const form = useForm(group, leave);
+  const form = useForm(group);
 
   return (
     <div className="border rounded-md p-4 flex flex-col gap-3 h-full">
@@ -88,14 +77,14 @@ export function GroupSettingsCard({ group }: GroupSettingsCardProps) {
         <h3 className="text-lg font-medium mb-1 uppercase">
           Group Information
         </h3>
-        <p className="text-sm text-muted-foreground mb-3 lowercase">
+        <p className="text-sm text-muted-foreground mb-2 lowercase">
           Update your group's basic information and settings.
         </p>
       </div>
 
       <form
         onSubmit={prevented(() => void form.api.handleSubmit())}
-        className="flex flex-col gap-3"
+        className="flex flex-col gap-2"
       >
         <form.api.AppField
           name="title"
@@ -105,6 +94,8 @@ export function GroupSettingsCard({ group }: GroupSettingsCardProps) {
                 label="Group Name"
                 inputProps={{
                   placeholder: "Enter group name",
+                  className:
+                    "bg-transparent border border-border hover:bg-secondary/25 text-foreground placeholder:text-foreground/40 h-10",
                 }}
               />
             </>
@@ -118,13 +109,18 @@ export function GroupSettingsCard({ group }: GroupSettingsCardProps) {
               label="Description"
               inputProps={{
                 placeholder: "Enter group description",
+                className:
+                  "bg-transparent border border-border hover:bg-secondary/25 text-foreground placeholder:text-foreground/40 h-10",
               }}
             />
           )}
         />
 
         <form.api.AppForm>
-          <form.api.SubmitButton dirty={{ disableForAria: true }}>
+          <form.api.SubmitButton
+            className="mt-3"
+            dirty={{ disableForAria: true }}
+          >
             Update Group
           </form.api.SubmitButton>
         </form.api.AppForm>

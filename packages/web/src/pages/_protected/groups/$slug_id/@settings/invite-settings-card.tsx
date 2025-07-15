@@ -63,7 +63,7 @@ function InviteList(props: InviteListProps) {
 // <p className="lowercase text-muted-foreground text-sm pt-1">
 //   Invites stay active for 1 hour
 // </p>
-function groupInvitesQueryOptions(id: string) {
+export function groupInvitesQueryOptions(id: string) {
   return queryOptions({
     queryKey: ["groupInvites", id],
     queryFn: async () => {
@@ -164,7 +164,11 @@ export function InviteSettingsCard({
   const invites = useInviteData(groupId, groupSlug);
 
   const activeInvitesTitle = () =>
-    !!invites.query.data?.length ? "Active Invites" : "No Active Invites";
+    invites.query.status === "pending"
+      ? "..."
+      : !!invites.query.data?.length
+        ? "Active Invites"
+        : "No Active Invites";
 
   const hasActiveInviteCapacity = () =>
     invites.query.data && invites.query.data.length < ACTIVE_INVITE_CAPACITY;
@@ -173,23 +177,28 @@ export function InviteSettingsCard({
     <div className="border rounded-md p-4 flex flex-col gap-3 h-full">
       <div>
         <h3 className="text-lg font-medium mb-1 uppercase">Invite People</h3>
-        <p className="text-sm text-muted-foreground mb-3 lowercase">
+        <p className="text-sm text-muted-foreground mb-2 lowercase">
           Create links to add new members— active for 1 hour.
         </p>
       </div>
 
-      <p className="uppercase text-sm font-medium mb-auto">
-        {activeInvitesTitle()}
-      </p>
-      <InviteList
-        copy={invites.copyInviteLink}
-        invites={invites.query.data}
-        revoke={invites.revoke.handler}
-        isPending={(token: string) =>
-          invites.revoke.mutation.variables == token &&
-          (invites.revoke.mutation.isPending || invites.query.isRefetching)
-        }
-      />
+      {invites.query.status === "success" && (
+        <>
+          <p className="uppercase text-sm font-medium mb-auto">
+            {activeInvitesTitle()}
+          </p>
+          <InviteList
+            copy={invites.copyInviteLink}
+            invites={invites.query.data}
+            revoke={invites.revoke.handler}
+            isPending={(token: string) =>
+              invites.revoke.mutation.variables == token &&
+              (invites.revoke.mutation.isPending || invites.query.isRefetching)
+            }
+          />
+        </>
+      )}
+
       <Button
         onClick={invites.create.handler}
         disabled={
@@ -197,7 +206,7 @@ export function InviteSettingsCard({
         }
         variant="theme"
         size="xs"
-        className="py-2 w-full h-auto"
+        className="py-2 w-full h-auto mt-auto"
       >
         {invites.create.mutation.isPending
           ? "Creating..."
@@ -206,4 +215,3 @@ export function InviteSettingsCard({
     </div>
   );
 }
-
