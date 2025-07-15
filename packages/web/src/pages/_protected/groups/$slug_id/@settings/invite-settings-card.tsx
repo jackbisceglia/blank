@@ -174,7 +174,7 @@ export function InviteSettingsCard({
     invites.query.data && invites.query.data.length < ACTIVE_INVITE_CAPACITY;
 
   return (
-    <div className="border rounded-md p-4 flex flex-col gap-3 h-full">
+    <div className="border rounded-md p-4 flex flex-col gap-2 h-full">
       <div>
         <h3 className="text-lg font-medium mb-1 uppercase">Invite People</h3>
         <p className="text-sm text-muted-foreground mb-2 lowercase">

@@ -120,14 +120,14 @@ export function GroupSettingsCard({ group }: GroupSettingsCardProps) {
                     "bg-transparent border border-border hover:bg-secondary/25 text-foreground placeholder:text-foreground/40 flex-0",
                 }}
                 labelProps={{
-                  className: "mt-0.5",
+                  className: "mt-1.5",
                 }}
               />
             </>
           )}
         />
 
-        <div className="mb-0 mt-auto pt-3">
+        <div className="mb-0 mt-auto pt-3.5">
           <form.api.AppForm>
             <form.api.SubmitButton dirty={{ disableForAria: true }}>
               Update Group
