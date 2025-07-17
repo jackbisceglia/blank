@@ -136,7 +136,15 @@ function JoinGroupPage() {
 
   // we're safe to navigate whenever the group reactively syncs (means we've joined it)
   if (group.status === "loading") return <States.Loading />;
-  if (group.status === "success") return <Navigate {...linkOpts} />;
+  if (group.status === "success" && group.data) {
+    if (form.api.state.isSubmitSuccessful) {
+      return <Navigate {...linkOpts} />;
+    } else {
+      const message = `You're already a member of ${group.data.title}`;
+
+      throw new PageErrors.UserAlreadyAMember(message, params);
+    }
+  }
 
   const fieldErrorId = `nickname-error`;
 
@@ -208,12 +216,6 @@ export const Route = createFileRoute(
     }
 
     return Match.value(props.error._tag).pipe(
-      Match.when("GroupDoesNotExistError", () => (
-        <DefaultCatchBoundary
-          reset={() => {}}
-          error={new Error(props.error.message)}
-        />
-      )),
       Match.when("UserAlreadyAMemberError", () => (
         <DefaultCatchBoundary
           reset={() => {}}

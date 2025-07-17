@@ -1,4 +1,4 @@
-import { Effect, pipe } from "effect";
+import { Effect, Match, pipe } from "effect";
 import { createServerFn } from "@tanstack/react-start";
 import * as v from "valibot";
 import {
@@ -252,6 +252,28 @@ export const joinGroupServerFn = createServerFn()
 
           return member;
         }),
+      ).pipe(
+        // user facing error mappings
+        Effect.catchTag("InviteNotFoundError", "InvalidTokenError", () =>
+          Effect.fail(new InvalidTokenError("Invalid invite")),
+        ),
+        Effect.catchTag("GroupNotFoundError", "MembersNotFoundError", () =>
+          Effect.fail(new InvalidTokenError("Invalid invite, group not found")),
+        ),
+        Effect.catchTag("MemberCapacityError", () =>
+          Effect.fail(new InvalidTokenError("Invalid invite, group full")),
+        ),
+        Effect.catchTag("DuplicateMemberError", () =>
+          Effect.fail(
+            new InvalidTokenError("Invalid invite, already a member"),
+          ),
+        ),
+        Effect.catchTag(
+          "DatabaseReadError",
+          "DatabaseWriteError",
+          "DatabaseTransactionError",
+          () => Effect.fail(new InvalidTokenError("Try again later")),
+        ),
       );
     });
 
