@@ -117,6 +117,7 @@ export function CreateGroupDialog() {
               Group Name
             </Label>
             <Input
+              autoComplete="off"
               aria-errormessage="error-message"
               min={1}
               id={formKeys.title}
@@ -133,6 +134,7 @@ export function CreateGroupDialog() {
               Group Description
             </Label>
             <Input
+              autoComplete="off"
               aria-errormessage="error-message"
               min={1}
               id={formKeys.description}

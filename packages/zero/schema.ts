@@ -1,5 +1,4 @@
 import {
-  ANYONE_CAN,
   createSchema,
   definePermissions,
   PermissionsConfig,
@@ -10,10 +9,10 @@ import {
   string,
   table,
   relationships,
-  ExpressionBuilder,
 } from "@rocicorp/zero";
+import { useRuleSet } from "./ruleset";
 
-type AuthData = {
+export type AuthData = {
   sub: string | null;
 };
 
@@ -133,67 +132,31 @@ export const schema = createSchema({
   ],
 });
 
-type Tables = keyof Schema["tables"];
-type Expression<T extends Tables> = ExpressionBuilder<Schema, T>;
-
-// permissions
 export const permissions = definePermissions<AuthData, Schema>(schema, () => {
-  // This rule allows operations only when the user is NOT authenticated (sub is null)
-  // When authData.sub is null, the user is unauthenticated and operations are allowed
-  // When authData.sub has a value, the user is authenticated and operations are blocked
-  class Rules<T extends Tables> {
-    private sub: AuthData["sub"] | null;
-    private expression: Expression<T>;
-
-    constructor(authentication: AuthData | null, expression: Expression<T>) {
-      this.sub = authentication?.sub ?? null;
-      this.expression = expression;
-    }
-
-    isAuthenticated() {
-      return this.expression.cmpLit(this.sub, "IS NOT", null);
-    }
-
-    isMemberOfGroup() {
-      return this.expression.cmpLit(this.sub, "IS NOT", null);
-    }
-  }
-
-  // use a single permission
-  const rule =
-    <TSpecifiedTable extends Tables>(rule: keyof InstanceType<typeof Rules>) =>
-    <T extends Tables>(
-      authentication: AuthData,
-      expression: Expression<
-        TSpecifiedTable extends never ? T : TSpecifiedTable
-      >,
-    ) =>
-      new Rules(authentication, expression)[rule]();
-
   return {
     preference: {
       row: {
-        select: [rule("isAuthenticated")],
+        select: useRuleSet("MustBeAuthenticated", "MustBePreferenceOwner"),
       },
     },
     group: {
       row: {
-        select: [rule<"group">("isAuthenticated")],
+        select: useRuleSet("MustBeAuthenticated", "MustBeGroupMember"),
       },
     },
     member: {
       row: {
-        select: [rule("isAuthenticated")],
+        select: useRuleSet("MustBeAuthenticated", "MustBeCoMember"),
       },
     },
     expense: {
       row: {
-        select: [rule("isAuthenticated")],
+        select: useRuleSet("MustBeAuthenticated", "MustBeCoMemberExpense"),
       },
     },
     participant: {
       row: {
-        select: [rule("isAuthenticated")],
+        select: useRuleSet("MustBeAuthenticated", "MustBeCoMemberParticipant"),
       },
     },
   } satisfies PermissionsConfig<AuthData, Schema>;
