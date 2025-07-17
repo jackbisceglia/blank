@@ -2,6 +2,8 @@ import { logoutRPC, meRPC } from "@/server/auth/route";
 import { queryOptions, useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { useQueryClient } from "@/pages/__root";
+import { dropAllDatabases } from "@rocicorp/zero";
+import { toast } from "sonner";
 
 export function authenticationQueryOptions() {
   return queryOptions({
@@ -28,6 +30,12 @@ export function useLogout() {
 
   return {
     fn: async function () {
+      const reset = await dropAllDatabases();
+
+      if (reset.errors.length !== 0) {
+        return toast.error("Issue logging out. Please try again.");
+      }
+
       await queryClient.invalidateQueries({ queryKey: ["authentication"] });
       await logout();
     },
