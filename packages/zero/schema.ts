@@ -1,5 +1,4 @@
 import {
-  ANYONE_CAN_DO_ANYTHING,
   createSchema,
   definePermissions,
   PermissionsConfig,
@@ -11,9 +10,10 @@ import {
   table,
   relationships,
 } from "@rocicorp/zero";
+import { useRuleSet } from "./ruleset";
 
-type AuthData = {
-  sub: string;
+export type AuthData = {
+  sub: string | null;
 };
 
 // tables
@@ -132,13 +132,32 @@ export const schema = createSchema({
   ],
 });
 
-// permissions
 export const permissions = definePermissions<AuthData, Schema>(schema, () => {
   return {
-    preference: ANYONE_CAN_DO_ANYTHING,
-    group: ANYONE_CAN_DO_ANYTHING,
-    member: ANYONE_CAN_DO_ANYTHING,
-    expense: ANYONE_CAN_DO_ANYTHING,
-    participant: ANYONE_CAN_DO_ANYTHING,
+    preference: {
+      row: {
+        select: useRuleSet("MustBeAuthenticated", "MustBePreferenceOwner"),
+      },
+    },
+    group: {
+      row: {
+        select: useRuleSet("MustBeAuthenticated", "MustBeGroupMember"),
+      },
+    },
+    member: {
+      row: {
+        select: useRuleSet("MustBeAuthenticated", "MustBeCoMember"),
+      },
+    },
+    expense: {
+      row: {
+        select: useRuleSet("MustBeAuthenticated", "MustBeCoMemberExpense"),
+      },
+    },
+    participant: {
+      row: {
+        select: useRuleSet("MustBeAuthenticated", "MustBeCoMemberParticipant"),
+      },
+    },
   } satisfies PermissionsConfig<AuthData, Schema>;
 });

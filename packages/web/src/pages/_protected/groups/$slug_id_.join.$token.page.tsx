@@ -2,8 +2,8 @@ import {
   createFileRoute,
   Link,
   LinkOptions,
+  Navigate,
   notFound,
-  useNavigate,
   useRouter,
 } from "@tanstack/react-router";
 import * as v from "valibot";
@@ -20,7 +20,6 @@ import { Effect, Exit, Match, pipe } from "effect";
 import { Button } from "@/components/ui/button";
 import { useMutation } from "@tanstack/react-query";
 import { joinGroupServerFn } from "@/server/invite.route";
-import { useGroupById } from "../@data/groups";
 import { transformSlugAndId } from "@/lib/slug_id";
 import {
   DefaultCatchBoundary,
@@ -29,6 +28,8 @@ import {
 import { slugify } from "@blank/core/lib/utils/index";
 import { useStore } from "@tanstack/react-form";
 import { positions } from "@/components/form/fields";
+import { useGroupById } from "../@data/groups";
+import { States } from "./$slug_id/layout";
 
 const PageErrors = {
   GroupDoesNotExist: class _ extends TaggedError("GroupDoesNotExistError") {},
@@ -89,7 +90,7 @@ function useJoinGroup(token: string, groupId: string) {
   };
 }
 
-function useForm(token: string, groupId: string, leave: () => void) {
+function useForm(token: string, groupId: string) {
   const auth = useAuthentication();
   const joinGroup = useJoinGroup(token, groupId);
 
@@ -97,11 +98,7 @@ function useForm(token: string, groupId: string, leave: () => void) {
     defaultValues: { nickname: auth.user.name },
     validators: { onChange: schema },
     onSubmit: async (fields) => {
-      await joinGroup.handler(fields.value.nickname);
-
-      leave();
-
-      return;
+      return await joinGroup.handler(fields.value.nickname);
     },
   });
 
@@ -132,46 +129,29 @@ function useForm(token: string, groupId: string, leave: () => void) {
 function JoinGroupPage() {
   const router = useRouter();
   const loader = Route.useLoaderData();
-  const params = Route.useParams();
-  const navigate = useNavigate();
+  const params = Route.useParams({ select: (p) => p.slug_id });
+  const group = useGroupById(params.id);
+  const form = useForm(loader.token, params.id);
+  const linkOpts = toGroupPageOpts(params.id, params.slug);
 
-  const auth = useAuthentication();
-  const group = useGroupById(params.slug_id.id);
+  // we're safe to navigate whenever the group reactively syncs (means we've joined it)
+  if (group.status === "loading") return <States.Loading />;
+  if (group.status === "success" && group.data) {
+    if (form.api.state.isSubmitSuccessful) {
+      return <Navigate {...linkOpts} />;
+    } else {
+      const message = `You're already a member of ${group.data.title}`;
 
-  const linkOpts = toGroupPageOpts(
-    group.data?.id ?? "",
-    group.data?.slug ?? "",
-  );
-
-  const form = useForm(
-    loader.token,
-    group.data?.id ?? "",
-    () => void navigate(linkOpts),
-  );
+      throw new PageErrors.UserAlreadyAMember(message, params);
+    }
+  }
 
   const fieldErrorId = `nickname-error`;
-
-  if (group.status === "loading") return null;
-
-  if (!group.data) {
-    throw new PageErrors.GroupDoesNotExist(
-      `Group ${params.slug_id.slug} does not exist`,
-    );
-  }
-
-  const isMember = group.data.members.find((m) => m.userId === auth.user.id);
-
-  if (isMember && form.status === "idle") {
-    throw new PageErrors.UserAlreadyAMember(
-      `You are already a member of group ${params.slug_id.slug}`,
-      { id: group.data.id, slug: group.data.slug },
-    );
-  }
 
   return (
     <div className="flex flex-col items-center justify-center p-4 mx-auto mb-auto mt-32 w-full max-w-2xl">
       <h1 className="text-xl font-semibold uppercase">
-        {slugify(params.slug_id.slug).decode()}
+        {slugify(params.slug).decode()}
       </h1>
       <p className="text-muted-foreground lowercase text-sm">
         you've been invited to join this group
@@ -197,7 +177,10 @@ function JoinGroupPage() {
         />
         <form.api.AppForm>
           <form.api.SubmitButton
-            disabled={form.status !== "idle"}
+            disabled={
+              form.status === "submitting" ||
+              (form.status === "success" && !group.data)
+            }
             onPointerOver={() => router.preloadRoute(linkOpts)}
             onFocus={() => router.preloadRoute(linkOpts)}
             className="col-start-1 -col-end-1"
@@ -233,12 +216,6 @@ export const Route = createFileRoute(
     }
 
     return Match.value(props.error._tag).pipe(
-      Match.when("GroupDoesNotExistError", () => (
-        <DefaultCatchBoundary
-          reset={() => {}}
-          error={new Error(props.error.message)}
-        />
-      )),
       Match.when("UserAlreadyAMemberError", () => (
         <DefaultCatchBoundary
           reset={() => {}}

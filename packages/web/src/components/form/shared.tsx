@@ -45,6 +45,7 @@ export function SharedInputFromField<T extends string | number>(
   const { className, field, transform, ...rest } = props;
   return (
     <Input
+      autoComplete="off"
       id={field.name}
       name={field.name}
       value={field.state.value}
