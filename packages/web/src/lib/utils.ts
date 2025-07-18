@@ -121,3 +121,12 @@ export function wrapInBox(...strings: string[]) {
 
   return [y, content, y].join("\n");
 }
+
+export function formatUSD(amount: number) {
+  return new Intl.NumberFormat("en-US", {
+    style: "currency",
+    currency: "USD",
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  }).format(amount);
+}

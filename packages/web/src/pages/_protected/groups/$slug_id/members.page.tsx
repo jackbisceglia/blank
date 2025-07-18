@@ -6,19 +6,22 @@ import { useAuthentication } from "@/lib/authentication";
 import { createBalanceMap } from "@/lib/balances";
 import { Member } from "@blank/zero";
 import { slugify } from "@blank/core/lib/utils/index";
-import { MemberStatsCards } from "./@members/member-stats-cards";
+
 import { MemberList } from "./@members/member-list";
-import { EmptyMembersState, LoadingMembersState } from "./@members/member-states";
+import {
+  EmptyMembersState,
+  LoadingMembersState,
+} from "./@members/member-states";
 import { useRemoveMember } from "../../@data/members";
 import { ExpenseWithParticipants } from "./page";
-import { useToast } from "@/lib/toast";
+import { withToast } from "@/lib/toast";
+import { Button } from "@/components/ui/button";
 
 function MembersRoute() {
   const params = Route.useParams({ select: (p) => p.slug_id });
   const authentication = useAuthentication();
   const group = useGroupById(params.id);
   const removeMember = useRemoveMember();
-  const { toast } = useToast();
 
   if (group.status === "not-found") {
     return <States.NotFound title={slugify(params.slug).decode()} />;
@@ -31,7 +34,10 @@ function MembersRoute() {
         <GroupBody>
           <div className="grid grid-rows-1 grid-cols-1 md:grid-cols-3 gap-4">
             {Array.from({ length: 3 }).map((_, i) => (
-              <div key={i} className="animate-pulse bg-card border rounded-xl h-32" />
+              <div
+                key={i}
+                className="animate-pulse bg-card border rounded-xl h-32"
+              />
             ))}
           </div>
           <LoadingMembersState />
@@ -41,33 +47,34 @@ function MembersRoute() {
   }
 
   const members = group.data?.members as Member[];
-  const balances = createBalanceMap(group.data?.expenses as ExpenseWithParticipants[]);
+  const balances = createBalanceMap(
+    group.data?.expenses as ExpenseWithParticipants[],
+  );
   const isOwner = authentication.user.id === group.data?.ownerId;
 
   const handleRemoveMember = async (member: Member) => {
-    try {
-      await removeMember({
+    await withToast({
+      promise: () => removeMember({
         groupId: params.id,
         userId: member.userId,
-      });
-      toast({
-        title: "Member removed",
-        description: `${member.nickname} has been removed from the group`,
-      });
-    } catch (error) {
-      toast({
-        title: "Failed to remove member",
-        description: error instanceof Error ? error.message : "An unexpected error occurred",
-        variant: "destructive",
-      });
-    }
+      }),
+      notify: {
+        loading: "Removing member...",
+        success: `${member.nickname} has been removed from the group`,
+        error: "Failed to remove member",
+      },
+    });
   };
 
   const handleInviteMember = () => {
     // TODO: Implement invite dialog
-    toast({
-      title: "Invite feature",
-      description: "Member invitation feature coming soon",
+    void withToast({
+      promise: () => Promise.resolve(),
+      notify: {
+        loading: "",
+        success: "Member invitation feature coming soon",
+        error: "Error",
+      },
     });
   };
 
@@ -76,8 +83,8 @@ function MembersRoute() {
       <>
         <SubHeading>Manage group members and permissions</SubHeading>
         <GroupBody>
-          <EmptyMembersState 
-            canInvite={isOwner} 
+          <EmptyMembersState
+            canInvite={isOwner}
             onInvite={handleInviteMember}
           />
         </GroupBody>
@@ -89,12 +96,22 @@ function MembersRoute() {
     <>
       <SubHeading>Manage group members and permissions</SubHeading>
       <GroupBody>
-        <MemberStatsCards
-          members={members}
-          balances={balances}
-          canInvite={isOwner}
-          onInvite={handleInviteMember}
-        />
+        <div className="flex items-center justify-between mb-6">
+          <div className="flex items-center gap-2">
+            <span className="text-sm text-muted-foreground">
+              {members.length} {members.length === 1 ? "member" : "members"}
+            </span>
+          </div>
+          {isOwner && (
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={handleInviteMember}
+            >
+              Invite Member
+            </Button>
+          )}
+        </div>
         <MemberList
           members={members}
           balances={balances}

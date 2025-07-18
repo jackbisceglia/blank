@@ -22,13 +22,16 @@ type MemberStatsCardsProps = {
 
 export function MemberStatsCards(props: MemberStatsCardsProps) {
   const { members, balances, canInvite, onInvite } = props;
-  
+
   const totalMembers = members.length;
-  const membersWithBalances = members.filter(m => balances.get(m.userId) !== 0);
-  const totalOutstanding = members.reduce((sum, member) => {
-    const balance = balances.get(member.userId);
-    return sum + Math.abs(balance);
-  }, 0) / 2; // Divide by 2 because each transaction is counted twice (once for each party)
+  const membersWithBalances = members.filter(
+    (m) => balances.get(m.userId) !== 0,
+  );
+  const totalOutstanding =
+    members.reduce((sum, member) => {
+      const balance = balances.get(member.userId);
+      return sum + Math.abs(balance);
+    }, 0) / 2; // Divide by 2 because each transaction is counted twice (once for each party)
 
   return (
     <CardsSection>
@@ -42,7 +45,8 @@ export function MemberStatsCards(props: MemberStatsCardsProps) {
         )}
         footer={() => (
           <p className="text-xs text-muted-foreground lowercase">
-            {totalMembers === 1 ? "1 member" : `${totalMembers} members`} in group
+            {totalMembers === 1 ? "1 member" : `${totalMembers} members`} in
+            group
           </p>
         )}
       />
@@ -52,15 +56,16 @@ export function MemberStatsCards(props: MemberStatsCardsProps) {
         content={() => (
           <div className="flex items-center gap-2">
             <DollarSign className="w-5 h-5 text-muted-foreground" />
-            <span className="text-lg font-semibold">{formatUSD(totalOutstanding)}</span>
+            <span className="text-lg font-semibold">
+              {formatUSD(totalOutstanding)}
+            </span>
           </div>
         )}
         footer={() => (
           <p className="text-xs text-muted-foreground lowercase">
-            {membersWithBalances.length === 0 
-              ? "all members settled" 
-              : `${membersWithBalances.length} ${membersWithBalances.length === 1 ? "member" : "members"} with balances`
-            }
+            {membersWithBalances.length === 0
+              ? "all members settled"
+              : `${membersWithBalances.length} ${membersWithBalances.length === 1 ? "member" : "members"} with balances`}
           </p>
         )}
       />
@@ -83,13 +88,13 @@ export function MemberStatsCards(props: MemberStatsCardsProps) {
         )}
         footer={() => (
           <p className="text-xs text-muted-foreground lowercase">
-            {canInvite 
-              ? "add new members to the group" 
-              : "only group owners can invite"
-            }
+            {canInvite
+              ? "add new members to the group"
+              : "only group owners can invite"}
           </p>
         )}
       />
     </CardsSection>
   );
 }
+
