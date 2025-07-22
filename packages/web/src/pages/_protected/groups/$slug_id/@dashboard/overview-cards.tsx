@@ -10,8 +10,8 @@ import { Member } from "@blank/zero";
 import { ComponentProps, PropsWithChildren } from "react";
 import { Button } from "@/components/ui/button";
 import { compareParticipantsCustomOrder } from "@/lib/participants";
-import { Status } from "./table-status";
 import { Balances, withBalance } from "@/lib/balances";
+import { Status } from "../@table/table-status";
 
 function formatUSD(amount: number) {
   return new Intl.NumberFormat("en-US", {

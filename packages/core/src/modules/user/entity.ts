@@ -17,7 +17,7 @@ class UserNotFoundError extends TaggedError("UserNotFoundError") {}
 class UserNotCreatedError extends TaggedError("UserNotCreatedError") {}
 class DuplicateUserError extends TaggedError("DuplicateUserError") {}
 class UserNotRemovedError extends TaggedError("UserNotRemovedError") {}
-class UsersNotRemovedError extends TaggedError("UsersNotRemovedError") {}
+class UserNotUpdatedError extends TaggedError("UserNotUpdatedError") {}
 
 export namespace users {
   export function getByEmail(email: string, tx?: Transaction) {
@@ -110,6 +110,33 @@ export namespace users {
       Effect.catchTag(
         "UnknownException",
         (e) => new DatabaseWriteError("Failed to remove users", e),
+      ),
+    );
+  }
+
+  export function update(
+    id: string,
+    updates: { name?: string; image?: string },
+    tx?: Transaction,
+  ) {
+    return pipe(
+      Effect.tryPromise(() =>
+        (tx ?? db)
+          .update(userTable)
+          .set(updates)
+          .where(eq(userTable.id, id))
+          .returning({ id: userTable.id, name: userTable.name, image: userTable.image }),
+      ),
+      Effect.flatMap(
+        requireSingleElement({
+          empty: () => new UserNotUpdatedError("User not updated"),
+          success: (row) => row,
+          dup: () => new Error("Unexpected duplicate user update"),
+        }),
+      ),
+      Effect.catchTag(
+        "UnknownException",
+        (e) => new DatabaseWriteError("Failed to update user", e),
       ),
     );
   }

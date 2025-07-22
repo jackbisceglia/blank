@@ -4,6 +4,7 @@ import {
   createFormHookContexts,
 } from "@tanstack/react-form";
 import {
+  DefaultGroupSelectField,
   SheetCostField,
   SheetDateField,
   SheetPaidByField,
@@ -52,6 +53,7 @@ export const { useAppForm } = createFormHook({
     SheetCostField,
     SheetDateField,
     SheetPaidByField,
+    DefaultGroupSelectField,
   },
   formComponents: {
     SubmitButton,
