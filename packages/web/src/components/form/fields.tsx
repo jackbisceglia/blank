@@ -86,7 +86,7 @@ export const TextField = (props: TextFieldProps) => {
         {...restInputProps}
       />
 
-      {isInline(errorPosition) && (
+      {isInline(errorPosition) && hasErrors && (
         <SharedError id={errorId} {...restErrorProps}>
           {errors.values[0]?.message}
         </SharedError>
