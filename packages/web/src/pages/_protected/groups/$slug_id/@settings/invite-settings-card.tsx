@@ -9,7 +9,7 @@ import {
 } from "@/server/invite.route";
 import { useRouter } from "@tanstack/react-router";
 import { ACTIVE_INVITE_CAPACITY } from "@blank/core/lib/utils/constants";
-import { key, useInvalidateAll } from "@/lib/query";
+import { key, useInvalidate } from "@/lib/query";
 
 type InviteListProps = {
   invites: Invite[] | undefined;
@@ -65,41 +65,35 @@ export function invitesQueryOptions(groupId: string) {
 
 function useInviteData(groupId: string, groupSlug: string) {
   const router = useRouter();
-  const invalidate = useInvalidateAll();
+  const invalidate = useInvalidate();
 
   const query = useQuery(invitesQueryOptions(groupId));
 
   const createInvite = useMutation({
     mutationFn: () => createGroupInviteServerFn({ data: { groupId } }),
-    onSuccess: () => invalidate((inject) => inject("invites", groupId)),
+    onSuccess: () => invalidate((tuple) => tuple("invites", groupId)),
   });
 
   const revokeInvite = useMutation({
     mutationFn: (token: string) =>
       revokeInviteServerFn({ data: { groupId, token } }),
-    onSuccess: () => invalidate((inject) => inject("invites", groupId)),
+    onSuccess: () => invalidate((tuple) => tuple("invites", groupId)),
   });
 
   const handleCreateInvite = async () => {
-    const promise = createInvite.mutateAsync();
-
-    const result = await withToast({
-      promise,
+    return await withToast({
+      promise: createInvite.mutateAsync(),
       notify: {
         loading: "Creating invite...",
         success: "Invite created successfully!",
         error: "Failed to create invite",
       },
     });
-
-    return result;
   };
 
   const handleRevokeInvite = async (token: string) => {
-    const promise = revokeInvite.mutateAsync(token);
-
-    const result = await withToast({
-      promise,
+    return await withToast({
+      promise: revokeInvite.mutateAsync(token),
       classNames: { success: "bg-muted! border-border!" },
       notify: {
         loading: "Revoking invite...",
@@ -107,8 +101,6 @@ function useInviteData(groupId: string, groupSlug: string) {
         error: "Failed to revoke invite",
       },
     });
-
-    return result;
   };
 
   const copyInviteLink = (token: string) => {
@@ -120,10 +112,10 @@ function useInviteData(groupId: string, groupSlug: string) {
       },
     });
 
-    navigator.clipboard.writeText(`${window.location.origin}${to.href}`);
-
     withToast({
-      promise: Promise.resolve(),
+      promise: Promise.resolve(() =>
+        navigator.clipboard.writeText(`${window.location.origin}${to.href}`),
+      ),
       classNames: { success: "bg-muted! border-border!" },
       notify: {
         loading: "",

@@ -5,9 +5,8 @@ import * as v from "valibot";
 import { positions } from "@/components/form/fields";
 import { useMutation } from "@tanstack/react-query";
 import { updateUserServerFn } from "@/server/user.route";
-import { useInvalidateAll } from "@/lib/query";
+import { useInvalidate } from "@/lib/query";
 import { useAuthentication } from "@/lib/authentication";
-import { useStore } from "@tanstack/react-form";
 
 type Data = { name: string; image: string };
 
@@ -48,7 +47,7 @@ const formSchemaNotStale = (init: Data) =>
 type AccountSettingsFormProps = { user: Data };
 
 function AccountSettingsForm(props: AccountSettingsFormProps) {
-  const invalidate = useInvalidateAll();
+  const invalidate = useInvalidate();
   const update = useMutation({
     mutationFn: (data: Data) => updateUserServerFn({ data }),
     onSuccess: () => invalidate("authentication"),

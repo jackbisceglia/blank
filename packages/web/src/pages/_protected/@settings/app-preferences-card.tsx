@@ -12,7 +12,7 @@ import {
   updateDefaultGroupServerFn,
 } from "@/server/preferences.route";
 import { Suspense } from "react";
-import { key, useInvalidateAll } from "@/lib/query";
+import { key, useInvalidate } from "@/lib/query";
 
 type Data = { defaultGroupId: string };
 
@@ -36,7 +36,7 @@ export function userPreferencesQueryOptions() {
 }
 
 function AppPreferencesForm() {
-  const invalidate = useInvalidateAll();
+  const invalidate = useInvalidate();
   const query = useSuspenseQuery(userPreferencesQueryOptions());
   const update = useMutation({
     mutationFn: (data: Data) => updateDefaultGroupServerFn({ data }),

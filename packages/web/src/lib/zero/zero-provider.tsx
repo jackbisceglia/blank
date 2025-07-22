@@ -9,11 +9,11 @@ import { UnsecuredJWT } from "jose";
 import { JWTExpired } from "jose/errors";
 import { Zero } from ".";
 import { preload } from "@/pages/_protected/@data/preload";
-import { useInvalidateAll } from "../query";
+import { useInvalidate } from "../query";
 
 export const ZeroProvider = (props: PropsWithChildren) => {
   const authentication = useAuthentication();
-  const invalidate = useInvalidateAll();
+  const invalidate = useInvalidate();
 
   const options = useMemo(() => {
     return {

@@ -1,9 +1,10 @@
-import { logoutRPC, meRPC } from "@/server/auth/route";
+import { logoutRPC } from "@/server/auth/route";
+import { meRPC } from "@/server/user.route";
 import { queryOptions, useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { dropAllDatabases } from "@rocicorp/zero";
 import { toast } from "sonner";
-import { key, useInvalidateAll } from "../query";
+import { key, useInvalidate } from "../query";
 
 export function authenticationQueryOptions() {
   return queryOptions({
@@ -24,7 +25,7 @@ export function useAuthentication() {
 
 export function useLogout() {
   const logout = useServerFn(logoutRPC);
-  const invalidate = useInvalidateAll();
+  const invalidate = useInvalidate();
 
   return {
     fn: async function () {

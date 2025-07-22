@@ -10,7 +10,6 @@ const keys = {
 
 type Keys = typeof keys;
 
-// type Key = keyof Keys;
 type KeyLiteral = Keys[keyof Keys];
 
 type KeyFn = typeof key;
@@ -21,7 +20,7 @@ export function key<T>(key: KeyLiteral, ...params: T[]) {
   return [key, ...params] as DynamicKey;
 }
 
-export function invalidateAll(
+export function invalidateKeys(
   queryClient: QueryClient,
   ...keys: Array<KeyLiteral | DynamicKey>
 ) {
@@ -34,7 +33,7 @@ export function invalidateAll(
   );
 }
 
-export function useInvalidateAll() {
+export function useInvalidate() {
   const queryClient = useQueryClient();
 
   return function (
@@ -48,6 +47,6 @@ export function useInvalidateAll() {
       return k;
     });
 
-    return invalidateAll(queryClient, ...transformed);
+    return invalidateKeys(queryClient, ...transformed);
   };
 }
