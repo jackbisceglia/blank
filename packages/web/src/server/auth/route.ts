@@ -7,7 +7,7 @@ import { requireValueExists, TaggedError } from "@blank/core/lib/effect/index";
 import { authenticate, openauth } from "@/server/auth/core";
 import { AuthTokens } from "@/server/utils";
 import { Effect, pipe } from "effect";
-import { evaluate, wrapInBox } from "@/lib/utils";
+import { evaluate } from "@/lib/utils";
 import { optional } from "@blank/core/lib/utils/index";
 
 class AuthenticatedError extends TaggedError("AuthenticatedError") {}

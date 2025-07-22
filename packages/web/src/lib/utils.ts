@@ -1,7 +1,5 @@
-import { fromParsedEffect, TaggedError } from "@blank/core/lib/effect/index";
 import { Participant } from "@blank/core/modules/participant/schema";
 import { clsx, type ClassValue } from "clsx";
-import { Effect, pipe, String, Array, Match } from "effect";
 import { twMerge } from "tailwind-merge";
 
 export function fraction(split: Participant["split"]) {
@@ -111,13 +109,11 @@ export const flags = {
 
 export function wrapInBox(...strings: string[]) {
   const y = "-------------------------------------";
-  const x = "|";
   const content = strings.join("");
 
-  const padded = content
-    .split("\n")
-    .map((line) => `${x}${line}${x}`)
-    .join("\n");
-
   return [y, content, y].join("\n");
+}
+
+export function sleep(ms: number): Promise<void> {
+  return new Promise((resolve) => setTimeout(resolve, ms));
 }

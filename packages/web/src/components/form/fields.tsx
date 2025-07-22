@@ -23,6 +23,8 @@ import { useFieldContext } from ".";
 import { Member } from "@blank/zero";
 import { metaToErrors } from "@/lib/validation-errors";
 import { Data, Match } from "effect";
+import { useGroupListByUserId } from "@/pages/_protected/@data/groups";
+import { useAuthentication } from "@/lib/authentication";
 
 export type ErrorPositions = Data.TaggedEnum<{
   inline: {};
@@ -78,13 +80,13 @@ export const TextField = (props: TextFieldProps) => {
         type="text"
         field={field}
         className={cn(
-          "sm:px-3 sm:py-2 w-full bg-popover col-span-full border-0 p-0 focus-visible:ring-0 placeholder:text-muted-foreground/60 flex-1 placeholder:lowercase",
+          "px-3 py-2 w-full bg-popover col-span-full border-0 focus-visible:ring-0 placeholder:text-muted-foreground/60 flex-1 placeholder:lowercase",
           inputClassName,
         )}
         {...restInputProps}
       />
 
-      {isInline(errorPosition) && hasErrors && (
+      {isInline(errorPosition) && (
         <SharedError id={errorId} {...restErrorProps}>
           {errors.values[0]?.message}
         </SharedError>
@@ -265,5 +267,88 @@ export const SheetDateField = (props: SheetDateFieldProps) => {
         </PopoverContent>
       </Popover>
     </div>
+  );
+};
+
+type DefaultGroupSelectFieldProps = {
+  label: string;
+  errorPosition?: ErrorPositions;
+  labelProps?: React.ComponentProps<typeof SharedLabel>;
+  triggerProps?: React.ComponentProps<typeof SelectTrigger>;
+  itemProps?: Partial<React.ComponentProps<typeof SelectItem>>;
+  errorProps?: React.ComponentProps<typeof SharedError>;
+};
+
+export const DefaultGroupSelectField = (
+  props: DefaultGroupSelectFieldProps,
+) => {
+  const { label, ...rest } = props;
+  const { className: labelClassName, ...restLabelProps } =
+    rest.labelProps ?? {};
+  const { className: triggerClassName, ...restTriggerProps } =
+    rest.triggerProps ?? {};
+  const { className: itemClassName, ...restItemProps } = rest.itemProps ?? {};
+
+  const auth = useAuthentication();
+  const groups = useGroupListByUserId(auth.user.id);
+  const field = useFieldContext<string>();
+
+  const errors = metaToErrors(field.state.meta);
+  const errorPosition = props.errorPosition ?? positions.inline();
+  const hasErrors = errors.status === "errored";
+
+  const errorId = Match.value(errorPosition).pipe(
+    Match.tag("inline", () => `${field.name}-error`),
+    Match.tag("custom", (config) => config.elementId),
+    Match.exhaustive,
+  );
+
+  return (
+    <>
+      <SharedLabel
+        className={labelClassName}
+        htmlFor={field.name}
+        {...restLabelProps}
+      >
+        {label}
+      </SharedLabel>
+      <Select
+        value={field.state.value}
+        onValueChange={field.handleChange}
+        disabled={restTriggerProps?.disabled ?? false}
+      >
+        <SelectTrigger
+          className={cn(
+            "bg-transparent border border-border hover:bg-secondary/25 text-foreground placeholder:text-foreground/40",
+            hasErrors && "border-destructive",
+            triggerClassName,
+          )}
+          aria-invalid={hasErrors}
+          aria-errormessage={hasErrors ? errorId : undefined}
+          aria-describedby={hasErrors ? errorId : undefined}
+          {...restTriggerProps}
+        >
+          <SelectValue placeholder="Select default group" />
+        </SelectTrigger>
+        <SelectContent>
+          {groups.data?.map((group) => (
+            <SelectItem
+              className={cn("", itemClassName)}
+              key={group.id}
+              value={group.id}
+              {...restItemProps}
+            >
+              {group.title}
+            </SelectItem>
+          ))}
+        </SelectContent>
+      </Select>
+
+      {isInline(errorPosition) && hasErrors && (
+        <SharedError id={errorId} {...rest.errorProps}>
+          {errors.values[0]?.message}
+        </SharedError>
+      )}
+    </>
   );
 };

@@ -5,7 +5,7 @@ import { States } from "./layout";
 import { useGroupById } from "../../@data/groups";
 import { GroupSettingsCard } from "./@settings/group-settings-card";
 import {
-  groupInvitesQueryOptions,
+  invitesQueryOptions,
   InviteSettingsCard,
 } from "./@settings/invite-settings-card";
 import { DangerZoneCard } from "./@settings/danger-zone-card";
@@ -87,7 +87,7 @@ export const Route = createFileRoute("/_protected/groups/$slug_id/settings/")({
   loader: async (opts) => {
     try {
       await opts.context.queryClient.ensureQueryData(
-        groupInvitesQueryOptions(opts.params.slug_id.id),
+        invitesQueryOptions(opts.params.slug_id.id),
       );
     } catch {}
 

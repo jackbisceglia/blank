@@ -154,8 +154,8 @@ function Providers(props: PropsWithChildren) {
 }
 
 export const Route = createFileRoute("/_protected")({
-  loader: (opts) => {
-    void opts.context.queryClient.ensureQueryData(authenticationQueryOptions());
+  loader: async (opts) => {
+    opts.context.queryClient.ensureQueryData(authenticationQueryOptions());
   },
   component: () => (
     <Providers>

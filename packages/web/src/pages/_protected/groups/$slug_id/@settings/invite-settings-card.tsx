@@ -1,12 +1,7 @@
 import { Button } from "@/components/ui/button";
 import { Invite } from "@blank/core/modules/invite/schema";
 import { withToast } from "@/lib/toast";
-import {
-  queryOptions,
-  useQuery,
-  useMutation,
-  useQueryClient,
-} from "@tanstack/react-query";
+import { queryOptions, useQuery, useMutation } from "@tanstack/react-query";
 import {
   getInvitesByGroupServerFn,
   createGroupInviteServerFn,
@@ -14,6 +9,7 @@ import {
 } from "@/server/invite.route";
 import { useRouter } from "@tanstack/react-router";
 import { ACTIVE_INVITE_CAPACITY } from "@blank/core/lib/utils/constants";
+import { key, useInvalidateAll } from "@/lib/query";
 
 type InviteListProps = {
   invites: Invite[] | undefined;
@@ -60,50 +56,50 @@ function InviteList(props: InviteListProps) {
   );
 }
 
-export function groupInvitesQueryOptions(id: string) {
+export function invitesQueryOptions(groupId: string) {
   return queryOptions({
-    queryKey: ["groupInvites", id],
-    queryFn: async () => {
-      return getInvitesByGroupServerFn({ data: { groupId: id } });
-    },
+    queryKey: key("invites", groupId),
+    queryFn: () => getInvitesByGroupServerFn({ data: { groupId } }),
   });
 }
 
 function useInviteData(groupId: string, groupSlug: string) {
-  const queryClient = useQueryClient();
   const router = useRouter();
+  const invalidate = useInvalidateAll();
 
-  const query = useQuery(groupInvitesQueryOptions(groupId));
+  const query = useQuery(invitesQueryOptions(groupId));
 
   const createInvite = useMutation({
     mutationFn: () => createGroupInviteServerFn({ data: { groupId } }),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["groupInvites", groupId] });
-    },
+    onSuccess: () => invalidate((inject) => inject("invites", groupId)),
   });
 
   const revokeInvite = useMutation({
     mutationFn: (token: string) =>
       revokeInviteServerFn({ data: { groupId, token } }),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["groupInvites", groupId] });
-    },
+    onSuccess: () => invalidate((inject) => inject("invites", groupId)),
   });
 
-  const handleCreateInvite = () => {
-    withToast({
-      promise: createInvite.mutateAsync(),
+  const handleCreateInvite = async () => {
+    const promise = createInvite.mutateAsync();
+
+    const result = await withToast({
+      promise,
       notify: {
         loading: "Creating invite...",
         success: "Invite created successfully!",
         error: "Failed to create invite",
       },
     });
+
+    return result;
   };
 
-  const handleRevokeInvite = (token: string) => {
-    withToast({
-      promise: revokeInvite.mutateAsync(token),
+  const handleRevokeInvite = async (token: string) => {
+    const promise = revokeInvite.mutateAsync(token);
+
+    const result = await withToast({
+      promise,
       classNames: { success: "bg-muted! border-border!" },
       notify: {
         loading: "Revoking invite...",
@@ -111,6 +107,8 @@ function useInviteData(groupId: string, groupSlug: string) {
         error: "Failed to revoke invite",
       },
     });
+
+    return result;
   };
 
   const copyInviteLink = (token: string) => {
