@@ -3,6 +3,9 @@ import { useRecordQuery } from "@/lib/zero";
 
 export function useUserPreferences(userId: string) {
   const z = useZero();
-  const query = z.query.preference.where("userId", userId).one();
-  return useRecordQuery(query, ZERO_CACHE_DEFAULT);
+
+  return useRecordQuery(
+    z.query.preference.where("userId", userId).one(),
+    ZERO_CACHE_DEFAULT,
+  );
 }

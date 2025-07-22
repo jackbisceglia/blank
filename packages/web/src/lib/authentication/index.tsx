@@ -1,16 +1,15 @@
-import { logoutRPC, meRPC } from "@/server/auth/route";
+import { logoutRPC } from "@/server/auth/route";
+import { meRPC } from "@/server/user.route";
 import { queryOptions, useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
-import { useQueryClient } from "@/pages/__root";
 import { dropAllDatabases } from "@rocicorp/zero";
 import { toast } from "sonner";
+import { key, useInvalidate } from "../query";
 
 export function authenticationQueryOptions() {
   return queryOptions({
-    queryKey: ["authentication"],
-    queryFn: async () => {
-      return meRPC();
-    },
+    queryKey: key("authentication"),
+    queryFn: meRPC,
   });
 }
 
@@ -25,8 +24,8 @@ export function useAuthentication() {
 }
 
 export function useLogout() {
-  const queryClient = useQueryClient();
   const logout = useServerFn(logoutRPC);
+  const invalidate = useInvalidate();
 
   return {
     fn: async function () {
@@ -36,7 +35,7 @@ export function useLogout() {
         return toast.error("Issue logging out. Please try again.");
       }
 
-      await queryClient.invalidateQueries({ queryKey: ["authentication"] });
+      await invalidate("authentication");
       await logout();
     },
   };

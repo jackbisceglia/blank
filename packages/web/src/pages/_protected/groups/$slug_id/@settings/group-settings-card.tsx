@@ -73,7 +73,7 @@ export function GroupSettingsCard({ group }: GroupSettingsCardProps) {
   const form = useForm(group);
 
   return (
-    <div className="border rounded-md p-4 flex flex-col gap-3 h-full">
+    <div className="border p-4 flex flex-col gap-3 h-full">
       <div>
         <h3 className="text-lg font-medium mb-1 uppercase">
           Group Information

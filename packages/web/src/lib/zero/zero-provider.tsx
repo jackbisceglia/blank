@@ -6,14 +6,14 @@ import { PropsWithChildren, useMemo } from "react";
 import { createClientMutators } from "../client-mutators";
 import { Result } from "neverthrow";
 import { UnsecuredJWT } from "jose";
-import { useQueryClient } from "@tanstack/react-query";
 import { JWTExpired } from "jose/errors";
 import { Zero } from ".";
 import { preload } from "@/pages/_protected/@data/preload";
+import { useInvalidate } from "../query";
 
 export const ZeroProvider = (props: PropsWithChildren) => {
-  const queryClient = useQueryClient();
   const authentication = useAuthentication();
+  const invalidate = useInvalidate();
 
   const options = useMemo(() => {
     return {
@@ -26,7 +26,7 @@ export const ZeroProvider = (props: PropsWithChildren) => {
         )();
 
         if (payload.isErr() && payload.error instanceof JWTExpired) {
-          await queryClient.invalidateQueries({ queryKey: ["authentication"] });
+          await invalidate("authentication");
         }
 
         return authentication.token;

@@ -19,6 +19,7 @@ import { Group } from "@blank/zero";
 import { QueryStatus } from "@/lib/zero";
 import { useAuthentication, useLogout } from "@/lib/authentication";
 import { useGroupListByUserId } from "@/pages/_protected/@data/groups";
+import { useUserPreferences } from "@/pages/_protected/@data/users";
 
 type SidebarItemChunk =
   | {
@@ -39,6 +40,11 @@ type SidebarMenuItemChunkProps = PropsWithClassname<{
   nested?: boolean;
   index: number;
   matchOnSearch?: boolean;
+  selected?:
+    | false
+    | {
+        label: string;
+      };
 }>;
 
 function SidebarMenuItemChunk(props: SidebarMenuItemChunkProps) {
@@ -69,11 +75,19 @@ function SidebarMenuItemChunk(props: SidebarMenuItemChunkProps) {
                 exact: false,
                 includeSearch: props.matchOnSearch ?? false,
               }}
-              activeProps={{ className: `${underline_defaults} text-primary` }}
+              activeProps={{
+                className: `${underline_defaults} text-primary [&_#selected]:!no-underline`,
+              }}
               {...props.item.opts}
             >
               <Icon />
               <span>{props.item.title}</span>
+              {props.selected && (
+                <span
+                  className="ml-auto mr-2 before:content-['*'] before:inline-block"
+                  aria-label={props.selected.label}
+                ></span>
+              )}
             </Link>
           ) : (
             <>
@@ -127,6 +141,7 @@ function QuickActions(props: QuickActionsProps) {
 type GroupsProps = {
   position: number;
   groups: Group[];
+  defaultGroup: string;
   status: QueryStatus;
 };
 
@@ -149,6 +164,11 @@ function Groups(props: GroupsProps) {
       {props.groups.map((item, index) => (
         <SidebarMenuItemChunk
           key={item.title}
+          selected={
+            props.defaultGroup === item.id && {
+              label: "Your default group",
+            }
+          }
           item={{
             title: item.title,
             type: "link",
@@ -172,6 +192,7 @@ export function GlobalSidebar(props: SideNavigationProps) {
   const logout = useLogout();
 
   const groups = useGroupListByUserId(user.id);
+  const prefs = useUserPreferences(user.id);
 
   return (
     <Sidebar variant="inset" {...props} className="overflow-x-hidden">
@@ -218,7 +239,12 @@ export function GlobalSidebar(props: SideNavigationProps) {
             </Link>
           </SidebarGroupLabel>
           <SidebarMenu>
-            <Groups position={2} groups={groups.data} status={groups.status} />
+            <Groups
+              position={2}
+              groups={groups.data}
+              defaultGroup={prefs.data?.defaultGroupId ?? ""}
+              status={groups.status}
+            />
           </SidebarMenu>
         </SidebarGroup>
       </SidebarContent>

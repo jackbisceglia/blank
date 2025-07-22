@@ -8,6 +8,7 @@ type WithToastOptions<T> = {
     error: string;
   };
   classNames?: ToastClassnames;
+  finally?: () => void;
 };
 
 export function withToast<T>(opts: WithToastOptions<T>): Promise<T> {
@@ -36,6 +37,7 @@ export function withToast<T>(opts: WithToastOptions<T>): Promise<T> {
         description: e instanceof Error ? e.message : "Unknown error occurred",
       };
     },
+    ...(opts.finally ? { finally: opts.finally } : {}),
   });
 
   return promise;

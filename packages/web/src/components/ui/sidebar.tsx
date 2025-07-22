@@ -22,7 +22,6 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { useEffect, useState } from "react";
-import { useNavigate } from "@tanstack/react-router";
 
 const MOBILE_BREAKPOINT = 1024;
 
