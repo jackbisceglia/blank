@@ -4,6 +4,10 @@ import * as v from "valibot";
 import { authenticate, UserNotAuthenticatedError } from "./auth/core";
 import { AuthTokens } from "./utils";
 import { users } from "@blank/core/modules/user/entity";
+import { requireValueExists, TaggedError } from "@blank/core/lib/effect/index";
+import { notFound } from "@tanstack/react-router";
+
+class AuthenticatedError extends TaggedError("AuthenticatedError") {}
 
 const checkUserAuthenticated = Effect.fn("checkUserAuthenticated")(
   function* () {
@@ -30,6 +34,50 @@ const inputs = {
   }),
 };
 
+export const meRPC = createServerFn().handler(async function () {
+  const authenticated = Effect.tryPromise(() =>
+    authenticate({ cookies: AuthTokens.cookies }),
+  );
+
+  const user = pipe(
+    authenticated,
+    Effect.flatMap(
+      requireValueExists({
+        error: () => new AuthenticatedError("Could not authenticate user"),
+      }),
+    ),
+    Effect.map((result) => result.subject.properties.userID),
+    Effect.flatMap(users.getById),
+    Effect.flatMap(
+      requireValueExists({
+        error: () => new AuthenticatedError("Could not fetch current user"),
+      }),
+    ),
+  );
+
+  const token = pipe(
+    Effect.try(() => AuthTokens.cookies.get()),
+    Effect.map((tokens) => tokens.access),
+    Effect.flatMap(
+      requireValueExists({
+        error: () => new AuthenticatedError("Could not fetch access token"),
+      }),
+    ),
+  );
+
+  const result = pipe(
+    Effect.all([user, token]),
+    Effect.map(([user, token]) => ({ user, token })),
+    Effect.mapError((e) =>
+      e._tag === "UserNotFoundError" || e._tag === "AuthenticatedError"
+        ? notFound({ data: e.data })
+        : e,
+    ),
+  );
+
+  return Effect.runPromise(result);
+});
+
 export const updateUserServerFn = createServerFn()
   .validator(inputs.updateUser)
   .handler(async function ({ data }) {
@@ -47,18 +95,4 @@ export const updateUserServerFn = createServerFn()
 
     return pipe(handler(), Effect.runPromise);
   });
-
-export const getCurrentUserServerFn = createServerFn().handler(
-  async function () {
-    const handler = Effect.fn("getCurrentUser")(function* () {
-      const { subject: auth } = yield* checkUserAuthenticated();
-
-      const user = yield* users.getById(auth.properties.userID);
-
-      return user;
-    });
-
-    return pipe(handler(), Effect.runPromise);
-  },
-);
 
