@@ -11,7 +11,11 @@ const assertGroupExists = async (tx: ZTransaction, groupId: string) => {
   return group;
 };
 
-const assertMemberExists = async (tx: ZTransaction, groupId: string, userId: string) => {
+const assertMemberExists = async (
+  tx: ZTransaction,
+  groupId: string,
+  userId: string,
+) => {
   const member = await tx.query.member
     .where("groupId", groupId)
     .where("userId", userId)
@@ -21,7 +25,11 @@ const assertMemberExists = async (tx: ZTransaction, groupId: string, userId: str
   return member;
 };
 
-const assertIsGroupOwner = async (tx: ZTransaction, groupId: string, userId: string) => {
+const assertIsGroupOwner = async (
+  tx: ZTransaction,
+  groupId: string,
+  userId: string,
+) => {
   const group = await assertGroupExists(tx, groupId);
   if (group.ownerId !== userId) {
     throw new Error("Only group owners can manage members");
@@ -48,10 +56,10 @@ type Mutators = ClientMutatorGroup<{
 export const mutators: Mutators = (auth) => ({
   remove: async (tx, opts) => {
     const authenticatedUser = assertIsAuthenticated(auth);
-    
-    await assertIsGroupOwner(tx, opts.groupId, authenticatedUser.sub);
+
+    await assertIsGroupOwner(tx, opts.groupId, authenticatedUser.userID);
     await assertMemberExists(tx, opts.groupId, opts.userId);
-    
+
     // Don't allow removing the group owner
     const group = await assertGroupExists(tx, opts.groupId);
     if (group.ownerId === opts.userId) {
@@ -77,19 +85,19 @@ export const mutators: Mutators = (auth) => ({
       userId: opts.userId,
     });
   },
-  
+
   invite: async (tx, opts) => {
     const authenticatedUser = assertIsAuthenticated(auth);
-    
-    await assertIsGroupOwner(tx, opts.groupId, authenticatedUser.sub);
-    
+
+    await assertIsGroupOwner(tx, opts.groupId, authenticatedUser.userID);
+
     // Check if member already exists
     const existingMember = await tx.query.member
       .where("groupId", opts.groupId)
       .where("userId", opts.userId)
       .one()
       .run();
-      
+
     if (existingMember) {
       throw new Error("User is already a member of this group");
     }
@@ -101,3 +109,4 @@ export const mutators: Mutators = (auth) => ({
     });
   },
 });
+

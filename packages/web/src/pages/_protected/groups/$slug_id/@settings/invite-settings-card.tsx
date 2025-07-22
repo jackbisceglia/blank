@@ -112,10 +112,10 @@ function useInviteData(groupId: string, groupSlug: string) {
       },
     });
 
+    navigator.clipboard.writeText(`${window.location.origin}${to.href}`);
+
     withToast({
-      promise: Promise.resolve(() =>
-        navigator.clipboard.writeText(`${window.location.origin}${to.href}`),
-      ),
+      promise: Promise.resolve(),
       classNames: { success: "bg-muted! border-border!" },
       notify: {
         loading: "",

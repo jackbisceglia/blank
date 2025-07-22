@@ -54,10 +54,11 @@ function MembersRoute() {
 
   const handleRemoveMember = async (member: Member) => {
     await withToast({
-      promise: () => removeMember({
-        groupId: params.id,
-        userId: member.userId,
-      }),
+      promise: () =>
+        removeMember({
+          groupId: params.id,
+          userId: member.userId,
+        }),
       notify: {
         loading: "Removing member...",
         success: `${member.nickname} has been removed from the group`,
@@ -96,22 +97,6 @@ function MembersRoute() {
     <>
       <SubHeading>Manage group members and permissions</SubHeading>
       <GroupBody>
-        <div className="flex items-center justify-between mb-6">
-          <div className="flex items-center gap-2">
-            <span className="text-sm text-muted-foreground">
-              {members.length} {members.length === 1 ? "member" : "members"}
-            </span>
-          </div>
-          {isOwner && (
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={handleInviteMember}
-            >
-              Invite Member
-            </Button>
-          )}
-        </div>
         <MemberList
           members={members}
           balances={balances}
