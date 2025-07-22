@@ -1,63 +1,14 @@
 import { getHeader } from "@tanstack/react-start/server";
 import { subjects } from "@blank/auth/subjects";
-import { notFound, redirect } from "@tanstack/react-router";
+import { redirect } from "@tanstack/react-router";
 import { createServerFn } from "@tanstack/react-start";
-import { users } from "@blank/core/modules";
-import { requireValueExists, TaggedError } from "@blank/core/lib/effect/index";
 import { authenticate, openauth } from "@/server/auth/core";
 import { AuthTokens } from "@/server/utils";
-import { Effect, pipe } from "effect";
-import { evaluate, wrapInBox } from "@/lib/utils";
+import { evaluate } from "@/lib/utils";
 import { optional } from "@blank/core/lib/utils/index";
-
-class AuthenticatedError extends TaggedError("AuthenticatedError") {}
 
 export const authenticateRPC = createServerFn().handler(async function () {
   return authenticate({ cookies: AuthTokens.cookies });
-});
-
-export const meRPC = createServerFn().handler(async function () {
-  const authenticated = Effect.tryPromise(() =>
-    authenticate({ cookies: AuthTokens.cookies }),
-  );
-
-  const user = pipe(
-    authenticated,
-    Effect.flatMap(
-      requireValueExists({
-        error: () => new AuthenticatedError("Could not authenticate user"),
-      }),
-    ),
-    Effect.map((result) => result.subject.properties.userID),
-    Effect.flatMap(users.getById),
-    Effect.flatMap(
-      requireValueExists({
-        error: () => new AuthenticatedError("Could not fetch current user"),
-      }),
-    ),
-  );
-
-  const token = pipe(
-    Effect.try(() => AuthTokens.cookies.get()),
-    Effect.map((tokens) => tokens.access),
-    Effect.flatMap(
-      requireValueExists({
-        error: () => new AuthenticatedError("Could not fetch access token"),
-      }),
-    ),
-  );
-
-  const result = pipe(
-    Effect.all([user, token]),
-    Effect.map(([user, token]) => ({ user, token })),
-    Effect.mapError((e) =>
-      e._tag === "UserNotFoundError" || e._tag === "AuthenticatedError"
-        ? notFound({ data: e.data })
-        : e,
-    ),
-  );
-
-  return Effect.runPromise(result);
 });
 
 export const loginRPC = createServerFn().handler(async function () {

@@ -1,4 +1,4 @@
-import { Cause, Data, Effect, pipe } from "effect";
+import { Cause, Data, Effect } from "effect";
 import * as v from "valibot";
 
 /**

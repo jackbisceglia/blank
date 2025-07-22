@@ -1,5 +1,5 @@
 import { createServerFn } from "@tanstack/react-start";
-import { requireValueExists, TaggedError } from "@blank/core/lib/effect/index";
+import { requireValueExists } from "@blank/core/lib/effect/index";
 import { expenses } from "@blank/core/modules";
 import { authenticate, UserNotAuthenticatedError } from "@/server/auth/core";
 import * as v from "valibot";
