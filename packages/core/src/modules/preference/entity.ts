@@ -87,32 +87,5 @@ export namespace preferences {
       ),
     );
   }
-
-  export function updateDefaultGroup(
-    userId: string,
-    defaultGroupId: string,
-    tx?: Transaction,
-  ) {
-    return pipe(
-      Effect.tryPromise(() =>
-        (tx ?? db)
-          .update(preferenceTable)
-          .set({ defaultGroupId })
-          .where(eq(preferenceTable.userId, userId))
-          .returning(),
-      ),
-      Effect.flatMap(
-        requireSingleElement({
-          empty: () => new PreferenceNotUpdatedError("Preference not updated"),
-          success: (row) => row,
-          dup: () => new Error("Unexpected duplicate preference update"),
-        }),
-      ),
-      Effect.catchTag(
-        "UnknownException",
-        (e) => new DatabaseWriteError("Failed updating preference", e),
-      ),
-    );
-  }
 }
 
