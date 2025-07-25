@@ -5,19 +5,14 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { cn, formatUSD } from "@/lib/utils";
+import { cn, formatUSD, matchSign } from "@/lib/utils";
 import { Member } from "@blank/zero";
 import { ComponentProps, PropsWithChildren } from "react";
 import { Button } from "@/components/ui/button";
 import { compareParticipantsCustomOrder } from "@/lib/participants";
 import { Balances, withBalance } from "@/lib/balances";
 import { Status } from "../@table/table-status";
-
-function compare<T>(balance: number, neg: T, even: T, pos: T) {
-  if (balance === 0) return even;
-
-  return balance > 0 ? pos : neg;
-}
+import { getBalanceStyle, getBalanceText } from "@/components/utils";
 
 type CardsContainerProps = PropsWithChildren;
 
@@ -116,15 +111,10 @@ export function BalancesCard(props: BalancesCardProps) {
                 <span
                   className={cn(
                     "text-sm font-medium",
-                    compare(
-                      props.balances.get(member.userId),
-                      "text-rose-400",
-                      "text-muted-foreground",
-                      "text-blank-theme",
-                    ),
+                    getBalanceStyle(props.balances.get(member.userId)),
                   )}
                 >
-                  {`${compare(member.balance, "-", "", "+")} ${formatUSD(Math.abs(member.balance))}`}
+                  {getBalanceText(member.balance)}
                 </span>
               </div>
             </li>

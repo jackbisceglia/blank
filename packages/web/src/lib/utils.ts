@@ -126,3 +126,9 @@ export function formatUSD(amount: number) {
 export function sleep(ms: number): Promise<void> {
   return new Promise((resolve) => setTimeout(resolve, ms));
 }
+
+export function matchSign<T>(balance: number, neg: T, even: T, pos: T) {
+  if (balance === 0) return even;
+
+  return balance > 0 ? pos : neg;
+}
