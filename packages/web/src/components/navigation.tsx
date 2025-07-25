@@ -84,7 +84,7 @@ function SidebarMenuItemChunk(props: SidebarMenuItemChunkProps) {
               <span>{props.item.title}</span>
               {props.selected && (
                 <span
-                  className="ml-auto mr-2 before:content-['*'] before:inline-block"
+                  className="ml-auto mr-1 before:content-['*'] before:inline-block"
                   aria-label={props.selected.label}
                 ></span>
               )}
@@ -159,6 +159,12 @@ function Groups(props: GroupsProps) {
     );
   }
 
+  console.log(
+    "default /",
+    props.defaultGroup,
+    "list /",
+    props.groups.map((g) => g.id),
+  );
   return (
     <>
       {props.groups.map((item, index) => (
@@ -193,6 +199,7 @@ export function GlobalSidebar(props: SideNavigationProps) {
 
   const groups = useGroupListByUserId(user.id);
   const prefs = useUserPreferences(user.id);
+  console.log("data: ", prefs.data);
 
   return (
     <Sidebar variant="inset" {...props} className="overflow-x-hidden">
@@ -241,7 +248,7 @@ export function GlobalSidebar(props: SideNavigationProps) {
           <SidebarMenu>
             <Groups
               position={2}
-              groups={groups.data}
+              groups={groups.data ?? []}
               defaultGroup={prefs.data?.defaultGroupId ?? ""}
               status={groups.status}
             />
