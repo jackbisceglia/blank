@@ -1,5 +1,8 @@
 import { useZero } from "@/lib/zero";
-import { RemoveMemberOptions, InviteMemberOptions } from "@/lib/client-mutators/member-mutators";
+import {
+  RemoveMemberOptions,
+  UpdateMemberNicknameOptions,
+} from "@/lib/client-mutators/member-mutators";
 
 export function useRemoveMember() {
   const z = useZero();
@@ -9,10 +12,11 @@ export function useRemoveMember() {
   };
 }
 
-export function useInviteMember() {
+export function useUpdateMemberNickname() {
   const z = useZero();
 
-  return (options: InviteMemberOptions) => {
-    return z.mutate.member.invite(options).client;
+  return (options: UpdateMemberNicknameOptions) => {
+    return z.mutate.member.updateNickname(options).client;
   };
 }
+
