@@ -1,7 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { SubHeading } from "@/components/prose";
 import { GroupBody, States } from "./layout";
-import { DataTable } from "./@table/expense-table";
+import { DataTable } from "./@dashboard/expense-table";
 import {
   ExpenseSheet,
   SearchRoute as ExpenseSheetSearchRoute,
@@ -21,16 +21,16 @@ import {
   CardsSection,
   ActionsCard,
 } from "./@dashboard/overview-cards";
-import { TableActions } from "./@table/table-actions";
+import { TableActions } from "./@dashboard/table-actions";
 import {
   useDeleteAllExpenses,
   useExpenseListByGroupId,
   useUpdateExpense,
 } from "../../@data/expenses";
 import { useGroupById } from "../../@data/groups";
-import { FiltersSchema } from "./@table/table-filters";
-import { QuerySchema, useQueryFromSearch } from "./@table/table-query";
-import { StatusSchema, useStatusFromSearch } from "./@table/table-status";
+import { FiltersSchema } from "./@dashboard/table-filters";
+import { QuerySchema, useQueryFromSearch } from "./@dashboard/table-query";
+import { StatusSchema, useStatusFromSearch } from "./@dashboard/table-status";
 import { createBalanceMap } from "@/lib/balances";
 import { slugify } from "@blank/core/lib/utils/index";
 

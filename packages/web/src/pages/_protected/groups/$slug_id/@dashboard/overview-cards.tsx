@@ -5,13 +5,13 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { cn, formatUSD, matchSign } from "@/lib/utils";
+import { cn, formatUSD } from "@/lib/utils";
 import { Member } from "@blank/zero";
 import { ComponentProps, PropsWithChildren } from "react";
 import { Button } from "@/components/ui/button";
 import { compareParticipantsCustomOrder } from "@/lib/participants";
 import { Balances, withBalance } from "@/lib/balances";
-import { Status } from "../@table/table-status";
+import { Status } from "./table-status";
 import { getBalanceStyle, getBalanceText } from "@/components/utils";
 
 type CardsContainerProps = PropsWithChildren;
