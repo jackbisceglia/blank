@@ -1,27 +1,13 @@
 import { Effect, pipe } from "effect";
 import { createServerFn } from "@tanstack/react-start";
 import * as v from "valibot";
-import { authenticate, UserNotAuthenticatedError } from "./auth/core";
+import { requireUserAuthenticated } from "./auth/core";
 import { AuthTokens } from "./utils";
 import { users } from "@blank/core/modules/user/entity";
 import { requireValueExists, TaggedError } from "@blank/core/lib/effect/index";
 import { notFound } from "@tanstack/react-router";
 
-class AuthenticatedError extends TaggedError("AuthenticatedError") {}
-
-const checkUserAuthenticated = Effect.fn("checkUserAuthenticated")(
-  function* () {
-    const auth = yield* Effect.tryPromise(() =>
-      authenticate({ cookies: AuthTokens.cookies }),
-    );
-
-    if (!auth) {
-      return yield* new UserNotAuthenticatedError("User not authenticated");
-    }
-
-    return auth;
-  },
-);
+class AuthenticationError extends TaggedError("AuthenticationError") {}
 
 const inputs = {
   updateUser: v.object({
@@ -35,22 +21,13 @@ const inputs = {
 };
 
 export const meRPC = createServerFn().handler(async function () {
-  const authenticated = Effect.tryPromise(() =>
-    authenticate({ cookies: AuthTokens.cookies }),
-  );
-
   const user = pipe(
-    authenticated,
-    Effect.flatMap(
-      requireValueExists({
-        error: () => new AuthenticatedError("Could not authenticate user"),
-      }),
-    ),
+    requireUserAuthenticated(AuthTokens.cookies),
     Effect.map((result) => result.subject.properties.userID),
     Effect.flatMap(users.getById),
     Effect.flatMap(
       requireValueExists({
-        error: () => new AuthenticatedError("Could not fetch current user"),
+        error: () => new AuthenticationError("Could not fetch current user"),
       }),
     ),
   );
@@ -60,7 +37,7 @@ export const meRPC = createServerFn().handler(async function () {
     Effect.map((tokens) => tokens.access),
     Effect.flatMap(
       requireValueExists({
-        error: () => new AuthenticatedError("Could not fetch access token"),
+        error: () => new AuthenticationError("Could not fetch access token"),
       }),
     ),
   );
@@ -69,7 +46,7 @@ export const meRPC = createServerFn().handler(async function () {
     Effect.all([user, token]),
     Effect.map(([user, token]) => ({ user, token })),
     Effect.mapError((e) =>
-      e._tag === "UserNotFoundError" || e._tag === "AuthenticatedError"
+      e._tag === "UserNotFoundError" || e._tag === "AuthenticationError"
         ? notFound({ data: e.data })
         : e,
     ),
@@ -82,17 +59,14 @@ export const updateUserServerFn = createServerFn()
   .validator(inputs.updateUser)
   .handler(async function ({ data }) {
     const handler = Effect.fn("updateUser")(function* () {
-      const auth = yield* checkUserAuthenticated();
+      const auth = yield* requireUserAuthenticated(AuthTokens.cookies);
+
       const userId = auth.subject.properties.userID;
 
-      const updatedUser = yield* users.update(userId, {
-        image: data.image,
-        name: data.name,
-      });
+      const updatedUser = yield* users.update(userId, data);
 
       return updatedUser;
     });
 
     return pipe(handler(), Effect.runPromise);
   });
-
