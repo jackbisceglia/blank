@@ -26,11 +26,16 @@ type Step1Props = PropsWithChildren<{
 
 export function Step1(props: Step1Props) {
   const params = Route.useParams()["slug_id"];
+  const expenses = useExpenseListByGroupId(params.id, { status: "active" });
   const route = SearchRouteStep1.useSearchRoute({
     hooks: { onOpen: selectAll },
   });
 
-  const expenses = useExpenseListByGroupId(params.id, { status: "active" });
+  function selectAll() {
+    if (expenses.status !== "success") return;
+
+    props.setSelectedExpenseIds(() => expenses.data.map((e) => e.id));
+  }
 
   function toggle(expenseId: string, checked: boolean) {
     props.setSelectedExpenseIds((previous) =>
@@ -45,11 +50,8 @@ export function Step1(props: Step1Props) {
     );
   }
 
-  function selectAll() {
-    props.setSelectedExpenseIds(() => expenses.data.map((e) => e.id));
-  }
-
-  if (expenses.data.length === 0) return null;
+  if (expenses.status === "loading") return null;
+  if (expenses.status === "empty") return null;
 
   const someSelected = props.selectedExpenseIds.length > 0;
 

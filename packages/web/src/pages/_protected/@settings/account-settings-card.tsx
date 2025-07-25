@@ -149,7 +149,9 @@ export function AccountSettingsCard() {
   return (
     <div className="border rounded-md p-4 flex flex-col gap-3 h-full">
       <div>
-        <h3 className="text-lg font-medium mb-1 uppercase">User Information</h3>
+        <h3 className="text-base font-medium mb-1 uppercase">
+          User Information
+        </h3>
         <p className="text-sm text-muted-foreground mb-2 lowercase">
           Update your username and profile image.
         </p>

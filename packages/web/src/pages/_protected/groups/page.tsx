@@ -48,6 +48,8 @@ function GroupsRoute() {
   const { user } = useAuthentication();
   const groups = useGroupListByUserId(user.id);
 
+  if (groups.status === "loading") return null;
+
   return (
     <>
       <PageHeaderRow className="h-8">

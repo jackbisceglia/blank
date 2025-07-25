@@ -78,20 +78,28 @@ function GroupRoute() {
   const query = useQueries(params.id, status.value);
   const mutate = useMutations();
 
-  if (!query.group.data || query.group.status === "not-found") {
-    return <States.NotFound title={slugify(params.slug).decode()} />;
+  if (query.group.status === "loading") {
+    return null;
   }
+
+  if (query.group.status === "not-found")
+    return <States.NotFound title={slugify(params.slug).decode()} />;
 
   const group = query.group.data;
   const expenses = query.expenses.data;
 
-  const active = expenses.find((e) => e.id === sheet.state());
-  const sum = expenses.reduce((sum, { amount }) => sum + amount, 0);
+  const active = expenses?.find((e) => e.id === sheet.state());
+  const sum = expenses?.reduce((sum, { amount }) => sum + amount, 0) ?? 0;
   const map = createBalanceMap(group.expenses as ExpenseWithParticipants[]);
   // add as property on db entity -> group.lastSettled
   const lastSettled =
     group.expenses.filter((e) => e.status === "settled" && e.createdAt).at(0)
       ?.createdAt ?? undefined;
+
+  // TODO: we don't want to block the whole ui on the status fetching
+  // we can
+  //   a. let each component fetch its data, and show loading state. this solves everything
+  //   b. conditionally render each component with some skeleton
 
   return (
     <>
@@ -100,11 +108,11 @@ function GroupRoute() {
         <CardsSection>
           <ActiveExpensesCard
             total={sum}
-            count={expenses.length}
+            count={expenses?.length ?? 0}
             status={status.value}
           />
           <BalancesCard
-            count={expenses.length}
+            count={expenses?.length ?? 0}
             members={group.members as Member[]}
             balances={map}
           />
@@ -117,14 +125,14 @@ function GroupRoute() {
         </CardsSection>
         <TableActions
           id={group.id}
-          expenseCount={expenses.length}
+          expenseCount={expenses?.length ?? 0}
           members={group.members as Member[]}
           actions={{ deleteAll: mutate.expense.deleteAll }}
         />
         <DataTable
           query={tableQuery.value ?? ""}
           expand={sheet.open}
-          data={expenses as ExpenseWithParticipants[]}
+          data={(expenses ?? []) as ExpenseWithParticipants[]}
           totalGroupExpenses={group.expenses.length}
           updateTitle={mutate.expense.randomizeTitle}
         />

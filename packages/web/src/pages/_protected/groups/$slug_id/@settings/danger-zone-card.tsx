@@ -37,7 +37,7 @@ export function DangerZoneCard({ groupId }: DangerZoneCardProps) {
     <>
       <div className="border rounded-md p-4 flex flex-col gap-3 h-min">
         <div>
-          <h3 className="text-lg font-medium mb-1 uppercase">Danger Zone</h3>
+          <h3 className="text-base font-medium mb-1 uppercase">Danger Zone</h3>
           <p className="text-sm text-muted-foreground mb-2 lowercase">
             Destructive actions that cannot be undone.
           </p>
