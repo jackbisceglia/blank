@@ -64,12 +64,6 @@ export function ActiveExpensesCard(props: ActiveExpensesCardProps) {
     all: "All Expenses",
   };
 
-  const trailing: Record<Status, (count: number) => string> = {
-    active: (count: number) => `${count.toString()} active expenses`,
-    settled: (count: number) => `${count.toString()} settled expenses`,
-    all: (count: number) => `${count.toString()} total expenses`,
-  };
-
   const suffix = (
     {
       active: "active expenses",

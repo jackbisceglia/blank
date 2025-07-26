@@ -16,15 +16,13 @@ import {
   getBalanceText,
 } from "@/components/utils";
 import { Hash } from "effect";
-import { ComponentProps, FormEvent, PropsWithChildren, useState } from "react";
+import { ComponentProps, PropsWithChildren, useState } from "react";
 import { useUpdateMemberNickname } from "@/pages/_protected/@data/members";
 import { withToast } from "@/lib/toast";
-import { Input } from "@/components/ui/input";
 import { prevented } from "@/lib/utils";
 import * as v from "valibot";
 import { useAppForm } from "@/components/form";
 
-const constants = { nickname: "nickname" };
 const constraints = { nickname: { minLength: 1, maxLength: 32 } };
 
 const gradients = [
@@ -91,6 +89,7 @@ function MemberDropdownMenu(props: MemberDropdownMenuProps) {
       <DropdownMenuContent align="end">
         {
           <StyledItem
+            // TODO: update to do a proper check if this pair has anything to settle
             disabled={!settle.enabled || props.balance !== 0}
             onClick={props.settle}
           >
@@ -106,8 +105,6 @@ function MemberDropdownMenu(props: MemberDropdownMenuProps) {
     </DropdownMenu>
   );
 }
-
-type Data = { nickname: string };
 
 const schemas = {
   nickname: v.pipe(
@@ -217,13 +214,9 @@ function useEditState(defaultState?: "write" | "read") {
 }
 
 export function MembersList(props: MemberManagementCardProps) {
-  const updateNickname = useUpdateMemberNickname();
   const editing = useEditState("read");
-  const currentMember = props.members.find((m) => m.userId === props.userId);
-  const [value, setValue] = useState(currentMember?.nickname);
 
-  const balances = createBalanceMap(props.expenses); // todo: move to global store
-
+  const balances = createBalanceMap(props.expenses);
   const sortedMembers = props.members.toSorted(
     createCustomMemberSort(props.userId, props.group.ownerId),
   );
