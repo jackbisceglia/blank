@@ -9,19 +9,40 @@ import { ExpenseWithParticipants } from "./page";
 import { MembersList } from "./@members/members-list";
 import { useRemoveMember } from "../../@data/members";
 import { withToast } from "@/lib/toast";
+import { useWithConfirmationImperative } from "@/components/with-confirmation-dialog";
+
+function useRemoveMemberWithConfirmation(groupId: string) {
+  const remove = useRemoveMember();
+  const action = useWithConfirmationImperative({
+    title: "Remove Member?",
+    description: { type: "default", entity: "member" },
+  });
+
+  async function confirm(member: Member) {
+    if (!(await action.confirm())) return;
+
+    const promise = remove({
+      groupId: groupId,
+      memberUserId: member.userId,
+    });
+
+    return withToast({
+      promise,
+      notify: {
+        loading: "Removing member...",
+        success: `${member.nickname} has been removed from the group`,
+        error: "Failed to remove member",
+      },
+    });
+  }
+
+  return { confirm, dialog: action.dialog };
+}
 
 function MembersRoute() {
   const params = Route.useParams({ select: (p) => p.slug_id });
   const authentication = useAuthentication();
   const group = useGroupById(params.id);
-  const removeMember = useRemoveMember();
-
-  const members = group.data?.members as Member[];
-  const currentMember = members?.find(
-    (m) => m.userId === authentication.user.id,
-  );
-
-  if (!currentMember) throw new Error("You are not a member of this group");
 
   if (group.status === "loading") return <States.Loading />;
 
@@ -29,20 +50,14 @@ function MembersRoute() {
     return <States.NotFound title={slugify(params.slug).decode()} />;
   }
 
-  const handleRemoveMember = async (member: Member) => {
-    await withToast({
-      promise: () =>
-        removeMember({
-          groupId: group.data.id,
-          memberUserId: member.userId,
-        }),
-      notify: {
-        loading: "Removing member...",
-        success: `${member.nickname} has been removed from the group`,
-        error: "Failed to remove member",
-      },
-    });
-  };
+  const removeMember = useRemoveMemberWithConfirmation(group.data.id);
+
+  const members = group.data?.members as Member[];
+  const currentMember = members?.find(
+    (m) => m.userId === authentication.user.id,
+  );
+
+  if (!currentMember) throw new Error("You are not a member of this group");
 
   return (
     <>
@@ -56,11 +71,13 @@ function MembersRoute() {
             members={members}
             expenses={group.data.expenses as ExpenseWithParticipants[]}
             group={group.data}
+            // TODO: implement
             settle={() => {}}
-            remove={handleRemoveMember}
+            remove={removeMember.confirm}
           />
         </ul>
       </GroupBody>
+      <removeMember.dialog />
     </>
   );
 }
