@@ -65,12 +65,18 @@ export function Step2(props: Step2Props) {
   const params = Route.useParams()["slug_id"];
   const route = SearchRouteStep2.useSearchRoute();
 
-  const q = useQueries(params.id);
+  const queries = useQueries(params.id);
   const bulkSettleMutation = useBulkSettleExpenses();
 
-  if (!q.group.data?.members) return null;
+  // leaving these separate to potentially handle cases differently in the future
+  if (queries.expenses.status === "loading") return null;
+  if (queries.group.status === "loading") return null;
+  if (queries.group.status === "not-found") return null;
+  if (!queries.group.data?.members) return null;
 
-  const selectedExpenses = q.expenses.data.filter((e) =>
+  const { expenses, group } = queries;
+
+  const selectedExpenses = expenses.data.filter((e) =>
     props.selectedExpenseIds.includes(e.id),
   );
 
@@ -78,13 +84,13 @@ export function Step2(props: Step2Props) {
     selectedExpenses as ExpenseWithParticipants[],
   );
 
-  const settlements = calculateSettlements(q.group.data.members, balances);
+  const settlements = calculateSettlements(group.data.members, balances);
 
   const handleSettlement = () => {
     void withToast({
       promise: () =>
         bulkSettleMutation({
-          groupId: q.group.data?.id ?? "",
+          groupId: group.data.id,
           expenseIds: props.selectedExpenseIds,
         }),
       notify: {
@@ -98,7 +104,11 @@ export function Step2(props: Step2Props) {
     });
   };
 
-  if (settlements.length === 0) return null;
+  if (route.view() === "open" && settlements.length === 0) {
+    throw new Error(
+      "Active expense mismatch, no settlements to be made. Please fix the expenses missing a debtor.",
+    );
+  }
 
   return (
     <Dialog open={route.view() === "open"} onOpenChange={route.sync}>

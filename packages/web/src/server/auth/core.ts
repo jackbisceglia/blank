@@ -3,7 +3,8 @@ import { subjects } from "@blank/auth/subjects";
 import { createClient } from "@openauthjs/openauth/client";
 import { constants } from "@/server/utils";
 import { optional } from "@blank/core/lib/utils/index";
-import { TaggedError } from "@blank/core/lib/effect/index";
+import { requireValueExists, TaggedError } from "@blank/core/lib/effect/index";
+import { Effect, pipe } from "effect";
 
 export class UserAuthorizationError extends TaggedError(
   "UserAuthorizationError",
@@ -50,4 +51,17 @@ export async function authenticate(opts: AuthenticateOptions) {
     subject: verified.subject,
     tokens: verified.tokens,
   };
+}
+
+export function requireUserAuthenticated(
+  cookies: NonNullable<AuthenticateOptions["cookies"]>,
+) {
+  return pipe(
+    Effect.tryPromise(() => authenticate({ cookies: cookies })),
+    Effect.flatMap(
+      requireValueExists({
+        error: () => new UserNotAuthenticatedError("User not authenticated"),
+      }),
+    ),
+  );
 }

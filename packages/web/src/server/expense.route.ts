@@ -1,7 +1,6 @@
 import { createServerFn } from "@tanstack/react-start";
-import { requireValueExists } from "@blank/core/lib/effect/index";
 import { expenses } from "@blank/core/modules";
-import { authenticate, UserNotAuthenticatedError } from "@/server/auth/core";
+import { requireUserAuthenticated } from "@/server/auth/core";
 import * as v from "valibot";
 import { AuthTokens } from "@/server/utils";
 import { Effect, pipe } from "effect";
@@ -17,12 +16,7 @@ export const createFromDescriptionServerFn = createServerFn()
   .validator(inputs.createFromDescription)
   .handler(async function (ctx) {
     const result = pipe(
-      Effect.tryPromise(() => authenticate({ cookies: AuthTokens.cookies })),
-      Effect.flatMap(
-        requireValueExists({
-          error: () => new UserNotAuthenticatedError("User not authenticated"),
-        }),
-      ),
+      requireUserAuthenticated(AuthTokens.cookies),
       Effect.flatMap((result) =>
         expenses.createFromDescription({
           userId: result.subject.properties.userID,

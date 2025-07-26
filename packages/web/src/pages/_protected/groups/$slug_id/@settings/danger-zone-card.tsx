@@ -1,5 +1,8 @@
 import { Button } from "@/components/ui/button";
-import { useWithConfirmation } from "@/components/with-confirmation-dialog";
+import {
+  useWithConfirmation,
+  useWithConfirmationImperative,
+} from "@/components/with-confirmation-dialog";
 import { useDeleteGroup } from "../../../@data/groups";
 import { useNavigate } from "@tanstack/react-router";
 import { withToast } from "@/lib/toast";
@@ -8,12 +11,17 @@ type DangerZoneCardProps = {
   groupId: string;
 };
 
-export function DangerZoneCard({ groupId }: DangerZoneCardProps) {
-  const deleteGroup = useDeleteGroup();
+export function DangerZoneCard(props: DangerZoneCardProps) {
   const navigate = useNavigate();
+  const deleteGroup = useDeleteGroup();
+  const action = useWithConfirmationImperative({
+    description: { type: "default", entity: "group" },
+  });
 
   async function handleDeleteGroup() {
-    const promise = deleteGroup({ groupId });
+    if (!(await action.confirm())) return;
+
+    const promise = deleteGroup({ groupId: props.groupId });
 
     await withToast({
       promise,
@@ -28,16 +36,11 @@ export function DangerZoneCard({ groupId }: DangerZoneCardProps) {
     void navigate({ to: "/groups" });
   }
 
-  const confirmDelete = useWithConfirmation({
-    description: { type: "default", entity: "group" },
-    onConfirm: handleDeleteGroup,
-  });
-
   return (
     <>
       <div className="border rounded-md p-4 flex flex-col gap-3 h-min">
         <div>
-          <h3 className="text-lg font-medium mb-1 uppercase">Danger Zone</h3>
+          <h3 className="text-base font-medium mb-1 uppercase">Danger Zone</h3>
           <p className="text-sm text-muted-foreground mb-2 lowercase">
             Destructive actions that cannot be undone.
           </p>
@@ -46,13 +49,13 @@ export function DangerZoneCard({ groupId }: DangerZoneCardProps) {
         <Button
           variant="destructive"
           size="sm"
-          onClick={confirmDelete.confirm}
+          onClick={handleDeleteGroup}
           className="w-full"
         >
           Delete Group
         </Button>
       </div>
-      <confirmDelete.dialog />
+      <action.dialog />
     </>
   );
 }

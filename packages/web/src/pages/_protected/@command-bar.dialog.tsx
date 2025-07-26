@@ -109,7 +109,7 @@ export function GlobalCommandBar() {
     };
   }, [route.state()]);
 
-  const groupCommands = groups.data.map(
+  const groupCommands = (groups?.data ?? []).map(
     (group) =>
       ({
         type: "link",

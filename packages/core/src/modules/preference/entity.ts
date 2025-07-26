@@ -9,7 +9,7 @@ import {
   requireValueExists,
   TaggedError,
 } from "../../lib/effect";
-import { PreferenceInsert, preferenceTable } from "./schema";
+import { Preference, PreferenceInsert, preferenceTable } from "./schema";
 import { eq } from "drizzle-orm/sql";
 import { db } from "../../lib/drizzle";
 
@@ -39,6 +39,12 @@ export namespace preferences {
         "UnknownException",
         (e) => new DatabaseReadError("Failed fetching preference by userId", e),
       ),
+      Effect.catchTag("PreferenceNotFoundError", () =>
+        Effect.succeed({
+          userId,
+          defaultGroupId: null,
+        } satisfies Preference),
+      ),
     );
   }
 
@@ -61,7 +67,7 @@ export namespace preferences {
     );
   }
 
-  export function update(
+  export function upsert(
     userId: string,
     defaultGroupId: string,
     tx?: Transaction,
@@ -69,9 +75,12 @@ export namespace preferences {
     return pipe(
       Effect.tryPromise(() =>
         (tx ?? db)
-          .update(preferenceTable)
-          .set({ defaultGroupId })
-          .where(eq(preferenceTable.userId, userId))
+          .insert(preferenceTable)
+          .values({ userId, defaultGroupId })
+          .onConflictDoUpdate({
+            target: preferenceTable.userId,
+            set: { defaultGroupId },
+          })
           .returning(),
       ),
       Effect.flatMap(
@@ -87,5 +96,18 @@ export namespace preferences {
       ),
     );
   }
-}
 
+  export function removeAll(tx?: Transaction) {
+    return pipe(
+      Effect.tryPromise(() =>
+        (tx ?? db)
+          .delete(preferenceTable)
+          .returning({ userId: preferenceTable.userId }),
+      ),
+      Effect.catchTag(
+        "UnknownException",
+        (e) => new DatabaseWriteError("Failed to remove preferences", e),
+      ),
+    );
+  }
+}

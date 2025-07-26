@@ -1,11 +1,7 @@
-import { Effect, Match, pipe } from "effect";
+import { Effect, pipe } from "effect";
 import { createServerFn } from "@tanstack/react-start";
 import * as v from "valibot";
-import {
-  authenticate,
-  UserAuthorizationError,
-  UserNotAuthenticatedError,
-} from "./auth/core";
+import { requireUserAuthenticated, UserAuthorizationError } from "./auth/core";
 import { AuthTokens } from "./utils";
 import { invites } from "@blank/core/modules/invite/entity";
 import { members } from "@blank/core/modules/member/entity";
@@ -102,20 +98,6 @@ const assertGroupHasMemberCapacity = Effect.fn("assertGroupHasMemberCapacity")(
   },
 );
 
-const checkUserAuthenticated = Effect.fn("checkUserAuthenticated ")(
-  function* () {
-    const auth = yield* Effect.tryPromise(() =>
-      authenticate({ cookies: AuthTokens.cookies }),
-    );
-
-    if (!auth) {
-      return yield* new UserNotAuthenticatedError("User not authenticated");
-    }
-
-    return auth;
-  },
-);
-
 const inputs = {
   getInvites: v.object({
     groupId: v.string(),
@@ -138,16 +120,13 @@ export const getInvitesByGroupServerFn = createServerFn()
   .validator(inputs.getInvites)
   .handler(async function ({ data }) {
     const handler = Effect.fn("getInvitesByGroup")(function* () {
-      const { subject: auth } = yield* checkUserAuthenticated();
+      const auth = yield* requireUserAuthenticated(AuthTokens.cookies);
+
+      const userId = auth.subject.properties.userID;
 
       const tokens = yield* withTransaction(
         Effect.fn("getInvitesByGroupTx")(function* (tx) {
-          yield* assertUserIsOwner(
-            data.groupId,
-            auth.properties.userID,
-            "view invites",
-            tx,
-          );
+          yield* assertUserIsOwner(data.groupId, userId, "view invites", tx);
 
           return yield* groups.getPendingInvites(data.groupId);
         }),
@@ -163,16 +142,13 @@ export const createGroupInviteServerFn = createServerFn()
   .validator(inputs.createInviteToken)
   .handler(async function ({ data }) {
     const handler = Effect.fn("createGroupInvite")(function* () {
-      const { subject: auth } = yield* checkUserAuthenticated();
+      const auth = yield* requireUserAuthenticated(AuthTokens.cookies);
+
+      const userId = auth.subject.properties.userID;
 
       const token = yield* withTransaction(
         Effect.fn("createGroupInviteTx")(function* (tx) {
-          yield* assertUserIsOwner(
-            data.groupId,
-            auth.properties.userID,
-            "create invite",
-            tx,
-          );
+          yield* assertUserIsOwner(data.groupId, userId, "create invite", tx);
 
           yield* assertGroupHasInviteCapacity(data.groupId, tx);
           yield* assertGroupHasMemberCapacity(data.groupId, tx);
@@ -194,16 +170,13 @@ export const revokeInviteServerFn = createServerFn()
   .validator(inputs.revokeInvite)
   .handler(async function ({ data }) {
     const handler = Effect.fn("revokeInvite")(function* () {
-      const { subject: auth } = yield* checkUserAuthenticated();
+      const auth = yield* requireUserAuthenticated(AuthTokens.cookies);
+
+      const userId = auth.subject.properties.userID;
 
       const result = yield* withTransaction(
         Effect.fn("revokeInviteTx")(function* (tx) {
-          yield* assertUserIsOwner(
-            data.groupId,
-            auth.properties.userID,
-            "revoke invite",
-            tx,
-          );
+          yield* assertUserIsOwner(data.groupId, userId, "revoke invite", tx);
 
           return yield* invites.updateStatus(data.token, "expired", tx);
         }),
@@ -219,15 +192,13 @@ export const joinGroupServerFn = createServerFn()
   .validator(inputs.joinGroup)
   .handler(async function ({ data }) {
     const handler = Effect.fn("joinGroup")(function* () {
-      const { subject: auth } = yield* checkUserAuthenticated();
+      const auth = yield* requireUserAuthenticated(AuthTokens.cookies);
+
+      const userId = auth.subject.properties.userID;
 
       return yield* withTransaction(
         Effect.fn("joinGroupTx")(function* (tx) {
-          yield* assertUserIsNotAMember(
-            auth.properties.userID,
-            data.groupId,
-            tx,
-          );
+          yield* assertUserIsNotAMember(userId, data.groupId, tx);
 
           yield* assertGroupHasMemberCapacity(data.groupId, tx);
 
@@ -243,7 +214,7 @@ export const joinGroupServerFn = createServerFn()
             {
               groupId: data.groupId,
               nickname: data.nickname,
-              userId: auth.properties.userID,
+              userId: userId,
             },
             tx,
           );

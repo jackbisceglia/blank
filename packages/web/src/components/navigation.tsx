@@ -84,7 +84,7 @@ function SidebarMenuItemChunk(props: SidebarMenuItemChunkProps) {
               <span>{props.item.title}</span>
               {props.selected && (
                 <span
-                  className="ml-auto mr-2 before:content-['*'] before:inline-block"
+                  className="ml-auto mr-1 before:content-['*'] before:inline-block"
                   aria-label={props.selected.label}
                 ></span>
               )}
@@ -241,7 +241,7 @@ export function GlobalSidebar(props: SideNavigationProps) {
           <SidebarMenu>
             <Groups
               position={2}
-              groups={groups.data}
+              groups={groups.data ?? []}
               defaultGroup={prefs.data?.defaultGroupId ?? ""}
               status={groups.status}
             />
