@@ -43,6 +43,10 @@ function AppPreferencesForm() {
     onSuccess: async () => invalidate("userPreferences"),
   });
 
+  if (!query.data) {
+    return <p className="lowercase text-xs">Trouble fetching preferences</p>;
+  }
+
   const init = { defaultGroupId: query.data.defaultGroupId ?? "" };
 
   const schema = formSchemaNotStale(init);
@@ -104,7 +108,7 @@ export function AppPreferencesCard() {
   return (
     <div className="border p-4 flex flex-col gap-3 h-full">
       <div>
-        <h3 className="text-lg font-medium mb-1 uppercase">Preferences</h3>
+        <h3 className="text-base font-medium mb-1 uppercase">Preferences</h3>
         <p className="text-sm text-muted-foreground mb-2 lowercase">
           Set your default group for new expenses.
         </p>

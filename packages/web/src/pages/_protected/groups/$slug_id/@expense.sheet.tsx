@@ -328,7 +328,7 @@ export function ExpenseSheet(props: ExpenseSheetProps) {
               </div>
             </SheetHeader>
             <SheetBody className="grid grid-cols-2 gap-y-4 gap-x-6">
-              <div className="col-span-2">
+              <div className="col-span-2 space-y-2">
                 <form.api.AppField
                   name="description"
                   children={(field) => (
@@ -341,7 +341,7 @@ export function ExpenseSheet(props: ExpenseSheetProps) {
                   )}
                 />
               </div>
-              <div className="col-span-1">
+              <div className="col-span-1 space-y-2">
                 <form.api.AppField
                   name="amount"
                   children={(field) => (
@@ -354,7 +354,7 @@ export function ExpenseSheet(props: ExpenseSheetProps) {
                   )}
                 />
               </div>
-              <div className="col-span-1">
+              <div className="col-span-1 space-y-2">
                 <form.api.AppField
                   name="date"
                   children={(field) => (
@@ -368,7 +368,7 @@ export function ExpenseSheet(props: ExpenseSheetProps) {
                 />
               </div>
 
-              <div className="col-span-2">
+              <div className="col-span-2 space-y-2">
                 <form.api.AppField
                   name="paidBy"
                   children={(field) => (
@@ -416,14 +416,14 @@ export function ExpenseSheet(props: ExpenseSheetProps) {
                 </form.api.SubmitButton>
                 {active.status === "active" ? (
                   <form.api.SettleButton
-                    className="col-span-1"
+                    className="col-span-1 h-min"
                     onClick={settleExpense.confirm}
                   >
                     Settle
                   </form.api.SettleButton>
                 ) : (
                   <form.api.SettleButton
-                    className="col-span-1"
+                    className="col-span-1 h-auto"
                     onClick={() => unsettleExpense()}
                   >
                     Unsettle

@@ -36,19 +36,45 @@ export const computeListQueryStatus = function (
   return "success";
 };
 
+type ListQueryResult<T> =
+  | { status: "success"; data: NonNullable<T>[] }
+  | { status: "empty"; data: [] }
+  | { status: "loading"; data: undefined };
+
 export function useListQuery<
   TSchema extends Schema,
   TTable extends keyof TSchema["tables"] & string,
   TReturn,
->(query: Query<TSchema, TTable, TReturn>, options?: UseQueryOptions) {
+>(
+  query: Query<TSchema, TTable, TReturn>,
+  options?: UseQueryOptions,
+): ListQueryResult<TReturn> {
   const [data, status] = useQuery(query, options);
 
-  return { data, status: computeListQueryStatus(status.type, data) } as const;
+  const computedStatus = computeListQueryStatus(status.type, data);
+
+  switch (computedStatus) {
+    case "success":
+      return {
+        status: "success",
+        data: data as NonNullable<TReturn>[],
+      };
+    case "loading":
+      return {
+        status: "loading",
+        data: undefined,
+      };
+    case "empty":
+      return {
+        status: "empty",
+        data: [],
+      };
+  }
 }
 
-export const computeRecordQueryStatus = function (
+export const computeRecordQueryStatus = function <T>(
   type: StatusType,
-  data: unknown,
+  data: T,
 ) {
   if (type === "unknown") {
     return "loading";
@@ -59,12 +85,33 @@ export const computeRecordQueryStatus = function (
   return "success";
 };
 
+type RecordQueryResult<T> =
+  | { status: "success"; data: NonNullable<T> }
+  | { status: "not-found"; data: undefined }
+  | { status: "loading"; data: undefined };
+
+// not perfect, but does narrow types and infer 'data'
 export function useRecordQuery<
   TSchema extends Schema,
   TTable extends keyof TSchema["tables"] & string,
   TReturn,
->(query: Query<TSchema, TTable, TReturn>, options?: UseQueryOptions) {
+>(
+  query: Query<TSchema, TTable, TReturn>,
+  options?: UseQueryOptions,
+): RecordQueryResult<TReturn> {
   const [data, status] = useQuery(query, options);
 
-  return { data, status: computeRecordQueryStatus(status.type, data) } as const;
+  const computedStatus = computeRecordQueryStatus(status.type, data);
+
+  if (computedStatus === "success") {
+    return {
+      status: "success",
+      data: data as NonNullable<TReturn>,
+    };
+  } else {
+    return {
+      status: computedStatus,
+      data: undefined,
+    };
+  }
 }

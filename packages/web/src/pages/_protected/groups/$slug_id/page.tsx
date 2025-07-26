@@ -1,7 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { SubHeading } from "@/components/prose";
 import { GroupBody, States } from "./layout";
-import { DataTable } from "./@table/expense-table";
+import { DataTable } from "./@dashboard/expense-table";
 import {
   ExpenseSheet,
   SearchRoute as ExpenseSheetSearchRoute,
@@ -21,16 +21,16 @@ import {
   CardsSection,
   ActionsCard,
 } from "./@dashboard/overview-cards";
-import { TableActions } from "./@table/table-actions";
+import { TableActions } from "./@dashboard/table-actions";
 import {
   useDeleteAllExpenses,
   useExpenseListByGroupId,
   useUpdateExpense,
 } from "../../@data/expenses";
 import { useGroupById } from "../../@data/groups";
-import { FiltersSchema } from "./@table/table-filters";
-import { QuerySchema, useQueryFromSearch } from "./@table/table-query";
-import { StatusSchema, useStatusFromSearch } from "./@table/table-status";
+import { FiltersSchema } from "./@dashboard/table-filters";
+import { QuerySchema, useQueryFromSearch } from "./@dashboard/table-query";
+import { StatusSchema, useStatusFromSearch } from "./@dashboard/table-status";
 import { createBalanceMap } from "@/lib/balances";
 import { slugify } from "@blank/core/lib/utils/index";
 
@@ -78,19 +78,22 @@ function GroupRoute() {
   const query = useQueries(params.id, status.value);
   const mutate = useMutations();
 
-  if (!query.group.data || query.group.status === "not-found") {
-    return <States.NotFound title={slugify(params.slug).decode()} />;
+  if (query.group.status === "loading") {
+    return null;
   }
+
+  if (query.group.status === "not-found")
+    return <States.NotFound title={slugify(params.slug).decode()} />;
 
   const group = query.group.data;
   const expenses = query.expenses.data;
 
-  const active = expenses.find((e) => e.id === sheet.state());
-  const sum = expenses.reduce((sum, { amount }) => sum + amount, 0);
+  const active = expenses?.find((e) => e.id === sheet.state());
+  const sum = expenses?.reduce((sum, { amount }) => sum + amount, 0) ?? 0;
   const map = createBalanceMap(group.expenses as ExpenseWithParticipants[]);
   // add as property on db entity -> group.lastSettled
   const lastSettled =
-    group.expenses.filter((e) => e.status === "settled" && e.createdAt).at(0)
+    expenses?.filter((e) => e.status === "settled" && e.createdAt).at(0)
       ?.createdAt ?? undefined;
 
   return (
@@ -99,12 +102,13 @@ function GroupRoute() {
       <GroupBody>
         <CardsSection>
           <ActiveExpensesCard
+            loading={query.expenses.status === "loading"}
             total={sum}
-            count={expenses.length}
+            count={expenses?.length ?? 0}
             status={status.value}
           />
           <BalancesCard
-            count={expenses.length}
+            count={expenses?.length ?? 0}
             members={group.members as Member[]}
             balances={map}
           />
@@ -117,14 +121,14 @@ function GroupRoute() {
         </CardsSection>
         <TableActions
           id={group.id}
-          expenseCount={expenses.length}
+          expenseCount={expenses?.length ?? 0}
           members={group.members as Member[]}
           actions={{ deleteAll: mutate.expense.deleteAll }}
         />
         <DataTable
           query={tableQuery.value ?? ""}
           expand={sheet.open}
-          data={expenses as ExpenseWithParticipants[]}
+          data={(expenses ?? []) as ExpenseWithParticipants[]}
           totalGroupExpenses={group.expenses.length}
           updateTitle={mutate.expense.randomizeTitle}
         />

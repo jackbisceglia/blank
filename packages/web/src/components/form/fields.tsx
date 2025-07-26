@@ -10,7 +10,7 @@ import { Popover, PopoverContent, PopoverTrigger } from "../ui/popover";
 import { format, isWithinInterval, subYears } from "date-fns";
 import { Calendar } from "../ui/calendar";
 import { CalendarIcon } from "lucide-react";
-import { Button } from "../ui/button";
+import { Button, buttonVariants } from "../ui/button";
 import {
   Select,
   SelectContent,
@@ -25,6 +25,7 @@ import { metaToErrors } from "@/lib/validation-errors";
 import { Data, Match } from "effect";
 import { useGroupListByUserId } from "@/pages/_protected/@data/groups";
 import { useAuthentication } from "@/lib/authentication";
+import { Link } from "@tanstack/react-router";
 
 export type ErrorPositions = Data.TaggedEnum<{
   inline: {};
@@ -34,13 +35,23 @@ export type ErrorPositions = Data.TaggedEnum<{
 export const positions = Data.taggedEnum<ErrorPositions>();
 const isInline = positions.$is("inline");
 
-type TextFieldProps = {
-  label: string;
-  errorPosition?: ErrorPositions;
-  labelProps?: React.ComponentProps<typeof SharedLabel>;
-  inputProps?: React.ComponentProps<typeof Input>;
-  errorProps?: React.ComponentProps<typeof SharedError>;
-};
+type TextFieldProps =
+  | {
+      label: string;
+      errorPosition?: ErrorPositions;
+      labelProps?: React.ComponentProps<typeof SharedLabel>;
+      inputProps?: React.ComponentProps<typeof Input>;
+      errorProps?: React.ComponentProps<typeof SharedError>;
+    }
+  | {
+      label?: never;
+      errorPosition?: ErrorPositions;
+      labelProps?: React.ComponentProps<typeof SharedLabel>;
+      inputProps: React.ComponentProps<typeof Input> & {
+        "aria-label": string;
+      };
+      errorProps?: React.ComponentProps<typeof SharedError>;
+    };
 
 export const TextField = (props: TextFieldProps) => {
   const field = useFieldContext<string>();
@@ -66,13 +77,15 @@ export const TextField = (props: TextFieldProps) => {
 
   return (
     <>
-      <SharedLabel
-        className={labelClassName}
-        htmlFor={field.name}
-        {...restLabelProps}
-      >
-        {label}
-      </SharedLabel>
+      {label && (
+        <SharedLabel
+          className={labelClassName}
+          htmlFor={field.name}
+          {...restLabelProps}
+        >
+          {label}
+        </SharedLabel>
+      )}
       <SharedInputFromField
         aria-invalid={hasErrors}
         aria-errormessage={hasErrors ? errorId : undefined}
@@ -106,24 +119,26 @@ export const SheetTextField = (props: SheetTextFieldProps) => {
     rest.inputProps ?? {};
 
   return (
-    <div className="space-y-2">
-      <SharedSheetLabel
-        className={labelClassName}
-        htmlFor={field.name}
-        {...restLabelProps}
-      >
-        {label}
-      </SharedSheetLabel>
+    <>
+      {label && (
+        <SharedSheetLabel
+          className={labelClassName}
+          htmlFor={field.name}
+          {...restLabelProps}
+        >
+          {label}
+        </SharedSheetLabel>
+      )}
       <SharedInputFromField
         type="text"
         field={field}
         className={cn(
-          inputClassName,
           "bg-accent/50 border-border/50 text-foreground placeholder:text-muted-foreground/60 h-10",
+          inputClassName,
         )}
         {...restInputProps}
       />
-    </div>
+    </>
   );
 };
 
@@ -138,7 +153,7 @@ export const SheetCostField = (props: SheetCostFieldProps) => {
     rest.inputProps ?? {};
 
   return (
-    <div className="space-y-2">
+    <>
       <SharedSheetLabel
         className={labelClassName}
         htmlFor={field.name}
@@ -162,7 +177,7 @@ export const SheetCostField = (props: SheetCostFieldProps) => {
           {...restInputProps}
         />
       </div>
-    </div>
+    </>
   );
 };
 
@@ -182,7 +197,7 @@ export const SheetPaidByField = (props: SheetPaidByFieldProps) => {
     useFieldContext<(typeof participants)[number]["member"]["userId"]>();
 
   return (
-    <div className="space-y-2">
+    <>
       <SharedSheetLabel
         className={labelClassName}
         htmlFor={field.name}
@@ -209,7 +224,7 @@ export const SheetPaidByField = (props: SheetPaidByFieldProps) => {
           ))}
         </SelectContent>
       </Select>
-    </div>
+    </>
   );
 };
 
@@ -224,7 +239,7 @@ export const SheetDateField = (props: SheetDateFieldProps) => {
   const value = field.state.value as Date | undefined;
 
   return (
-    <div className="space-y-2">
+    <>
       <SharedSheetLabel
         className={labelClassName}
         htmlFor={field.name}
@@ -266,7 +281,7 @@ export const SheetDateField = (props: SheetDateFieldProps) => {
           />
         </PopoverContent>
       </Popover>
-    </div>
+    </>
   );
 };
 
@@ -302,6 +317,26 @@ export const DefaultGroupSelectField = (
     Match.tag("custom", (config) => config.elementId),
     Match.exhaustive,
   );
+
+  if (groups.status === "loading") return null;
+  if (groups.status === "empty") {
+    return (
+      <p className="mx-auto my-auto uppercase text-muted-foreground font-medium text-sm">
+        Please{" "}
+        <Link
+          to={"/groups"}
+          search={{ action: ["new-group"] }}
+          className={cn(
+            buttonVariants({ variant: "link" }),
+            "p-0 text-blank-theme-text",
+          )}
+        >
+          create a group
+        </Link>{" "}
+        before selecting a default
+      </p>
+    );
+  }
 
   return (
     <>

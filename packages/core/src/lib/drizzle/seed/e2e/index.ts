@@ -4,9 +4,17 @@ import { createGroups } from "./groups";
 import { expenses, groups, participants, users } from "../../../../modules";
 import { members } from "../../../../modules/member/entity";
 import { createExpenses } from "./expenses";
+import { preferences } from "../../../../modules/preference/entity";
 
 const clean = Effect.fn("clean")(function* () {
-  for (const namespace of [expenses, groups, members, participants, users]) {
+  for (const namespace of [
+    expenses,
+    groups,
+    members,
+    participants,
+    users,
+    preferences,
+  ]) {
     yield* namespace.removeAll();
   }
 });

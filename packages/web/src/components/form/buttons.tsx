@@ -14,7 +14,7 @@ export const SettleButton = (props: SettleButtonProps) => {
       variant="secondary"
       size="xs"
       className={cn(
-        "col-span-1 mb-auto py-2.5 w-full border-border",
+        "col-span-1 mb-auto py-2 w-full h-auto border-border",
         className,
       )}
       {...rest}
@@ -46,7 +46,7 @@ type SubmitButtonProps = React.ComponentProps<typeof Button> & {
 };
 
 export const SubmitButton = (props: SubmitButtonProps) => {
-  const { className, ...rest } = props;
+  const { className, dirty, ...rest } = props;
   const form = useFormContext();
 
   const isSubmitting = useStore(form.store, (state) => state.isSubmitting);
@@ -64,7 +64,7 @@ export const SubmitButton = (props: SubmitButtonProps) => {
       )}
       disabled={isSubmitting}
       aria-disabled={
-        !canSubmit || isSubmitting || (props.dirty?.disableForAria && !isDirty)
+        !canSubmit || isSubmitting || (dirty?.disableForAria && !isDirty)
       }
       {...rest}
     />

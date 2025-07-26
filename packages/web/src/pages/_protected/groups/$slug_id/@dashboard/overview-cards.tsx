@@ -5,28 +5,14 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { cn } from "@/lib/utils";
+import { cn, formatUSD } from "@/lib/utils";
 import { Member } from "@blank/zero";
 import { ComponentProps, PropsWithChildren } from "react";
 import { Button } from "@/components/ui/button";
 import { compareParticipantsCustomOrder } from "@/lib/participants";
 import { Balances, withBalance } from "@/lib/balances";
-import { Status } from "../@table/table-status";
-
-function formatUSD(amount: number) {
-  return new Intl.NumberFormat("en-US", {
-    style: "currency",
-    currency: "USD",
-    minimumFractionDigits: 2,
-    maximumFractionDigits: 2,
-  }).format(amount);
-}
-
-function compare<T>(balance: number, neg: T, even: T, pos: T) {
-  if (balance === 0) return even;
-
-  return balance > 0 ? pos : neg;
-}
+import { Status } from "./table-status";
+import { getBalanceStyle, getBalanceText } from "@/components/utils";
 
 type CardsContainerProps = PropsWithChildren;
 
@@ -64,7 +50,12 @@ export function GroupCard(props: CardsProps) {
   );
 }
 
-type ActiveExpensesCardProps = { total: number; count: number; status: Status };
+type ActiveExpensesCardProps = {
+  total: number;
+  count: number;
+  status: Status;
+  loading: boolean;
+};
 
 export function ActiveExpensesCard(props: ActiveExpensesCardProps) {
   const titles: Record<Status, string> = {
@@ -79,17 +70,53 @@ export function ActiveExpensesCard(props: ActiveExpensesCardProps) {
     all: (count: number) => `${count.toString()} total expenses`,
   };
 
+  const suffix = (
+    {
+      active: "active expenses",
+      settled: "settled expenses",
+      all: "total expenses",
+    } satisfies Record<Status, string>
+  )[props.status];
+
+  const SkeletonContent = () => (
+    <div className="text-lg text-muted-foreground/90 font-medium">$____.__</div>
+  );
+
+  const SkeletonFooter = () => (
+    <p className="text-xs text-muted-foreground/90 h-full">__ {suffix}</p>
+  );
+
   return (
     <GroupCard
       header={() => titles[props.status]}
-      content={() => (
-        <div className="text-lg font-semibold">{formatUSD(props.total)}</div>
-      )}
-      footer={() => (
-        <p className="text-xs text-muted-foreground h-full">
-          {trailing[props.status](props.count)}
-        </p>
-      )}
+      content={
+        props.loading
+          ? SkeletonContent
+          : () => (
+              <div
+                className={cn(
+                  "text-lg font-semibold",
+                  props.loading && "text-muted-foreground/90 font-medium",
+                )}
+              >
+                {!props.loading ? formatUSD(props.total) : "$____.__"}
+              </div>
+            )
+      }
+      footer={
+        props.loading
+          ? SkeletonFooter
+          : () => (
+              <p
+                className={cn(
+                  "text-xs text-muted-foreground h-full",
+                  props.loading && "text-muted-foreground/90",
+                )}
+              >
+                {!props.loading ? props.count : "__"} {suffix}
+              </p>
+            )
+      }
     />
   );
 }
@@ -115,7 +142,7 @@ export function BalancesCard(props: BalancesCardProps) {
               <div className="flex justify-between items-center">
                 <span
                   className={cn(
-                    "text-sm text-foreground lowercase",
+                    "text-sm text-foreground lowercase truncate pr-2",
                     !props.balances.get(member.userId) &&
                       "text-muted-foreground",
                   )}
@@ -125,15 +152,10 @@ export function BalancesCard(props: BalancesCardProps) {
                 <span
                   className={cn(
                     "text-sm font-medium",
-                    compare(
-                      props.balances.get(member.userId),
-                      "text-rose-400",
-                      "text-muted-foreground",
-                      "text-blank-theme",
-                    ),
+                    getBalanceStyle(props.balances.get(member.userId)),
                   )}
                 >
-                  {`${compare(member.balance, "-", "", "+")} ${formatUSD(Math.abs(member.balance))}`}
+                  {getBalanceText(member.balance)}
                 </span>
               </div>
             </li>
@@ -187,14 +209,18 @@ export function ActionsCard(props: SuggestionsCardProps) {
         )
       }
       footer={() => (
-        <p className="text-xs text-muted-foreground lowercase">
-          {hasBalances
-            ? props.lastSettled
-              ? `last settled ${props.lastSettled.toLocaleDateString()}`
-              : "settle up for the first time"
-            : "No outstanding balances"}
-        </p>
+        <p className="text-xs text-muted-foreground lowercase">Get Settled</p>
       )}
+      // TODO: reimplement whenever we add db support
+      // footer={() => (
+      //   <p className="text-xs text-muted-foreground lowercase">
+      //     {hasBalances
+      //       ? props.lastSettled
+      //         ? `last settled ${props.lastSettled.toLocaleDateString()}`
+      //         : "settle up for the first time"
+      //       : "No outstanding balances"}
+      //   </p>
+      // )}
     />
   );
 }

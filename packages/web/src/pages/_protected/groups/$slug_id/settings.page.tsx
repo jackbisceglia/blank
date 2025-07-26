@@ -52,9 +52,7 @@ function SettingsRoute() {
           </SecondaryRow>
           <GroupBody className="space-y-0 grid grid-cols-1 xl:grid-cols-2 gap-6 items-start">
             <GroupSettingsCard group={data} />
-
             <InviteSettingsCard groupId={data.id} groupSlug={params.slug} />
-
             <DangerZoneCard groupId={data.id} />
           </GroupBody>
         </>

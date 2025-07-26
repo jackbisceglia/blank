@@ -59,7 +59,8 @@ export namespace members {
         requireSingleElement({
           empty: () => new MemberNotCreatedError("Member not created"),
           success: (row) => row,
-          dup: () => new DuplicateMemberError("Duplicate member found"),
+          dup: () =>
+            new DuplicateMemberError("Duplicate member found upon creation"),
         }),
       ),
       Effect.catchTag(

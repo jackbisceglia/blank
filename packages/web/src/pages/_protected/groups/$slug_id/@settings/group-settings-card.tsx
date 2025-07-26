@@ -75,7 +75,7 @@ export function GroupSettingsCard({ group }: GroupSettingsCardProps) {
   return (
     <div className="border p-4 flex flex-col gap-3 h-full">
       <div>
-        <h3 className="text-lg font-medium mb-1 uppercase">
+        <h3 className="text-base font-medium mb-1 uppercase">
           Group Information
         </h3>
         <p className="text-sm text-muted-foreground mb-2 lowercase">

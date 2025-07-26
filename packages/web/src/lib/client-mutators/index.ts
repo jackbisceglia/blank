@@ -7,6 +7,7 @@ import { OpenAuthToken } from "@blank/auth/subjects";
 import { mutators as expenseMutators } from "./expense-mutators";
 import { mutators as participantMutators } from "./participant-mutators";
 import { mutators as groupMutators } from "./group-mutators";
+import { mutators as memberMutators } from "./member-mutators";
 
 export type ZTransaction = TransactionInternal<typeof schema>;
 
@@ -28,5 +29,6 @@ export function createClientMutators(auth: OpenAuthToken | undefined) {
     expense: expenseMutators(auth),
     participant: participantMutators(auth),
     group: groupMutators(auth),
+    member: memberMutators(auth),
   } as const satisfies CreateMutators;
 }

@@ -3,8 +3,8 @@ import { Invite } from "@blank/core/modules/invite/schema";
 import { withToast } from "@/lib/toast";
 import { queryOptions, useQuery, useMutation } from "@tanstack/react-query";
 import {
-  getInvitesByGroupServerFn,
   createGroupInviteServerFn,
+  getInvitesByGroupServerFn,
   revokeInviteServerFn,
 } from "@/server/invite.route";
 import { useRouter } from "@tanstack/react-router";
@@ -112,10 +112,10 @@ function useInviteData(groupId: string, groupSlug: string) {
       },
     });
 
+    navigator.clipboard.writeText(`${window.location.origin}${to.href}`);
+
     withToast({
-      promise: Promise.resolve(() =>
-        navigator.clipboard.writeText(`${window.location.origin}${to.href}`),
-      ),
+      promise: Promise.resolve(),
       classNames: { success: "bg-muted! border-border!" },
       notify: {
         loading: "",
@@ -163,7 +163,7 @@ export function InviteSettingsCard({
   return (
     <div className="border rounded-md p-4 flex flex-col gap-2 h-full">
       <div>
-        <h3 className="text-lg font-medium mb-1 uppercase">Invite People</h3>
+        <h3 className="text-base font-medium mb-1 uppercase">Invite People</h3>
         <p className="text-sm text-muted-foreground mb-2 lowercase">
           Create links to add new members— active for 1 hour.
         </p>
