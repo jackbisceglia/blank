@@ -64,11 +64,21 @@ export function ActiveExpensesCard(props: ActiveExpensesCardProps) {
     all: "All Expenses",
   };
 
-  const trailing: Record<Status, (count: number) => string> = {
-    active: (count: number) => `${count.toString()} active expenses`,
-    settled: (count: number) => `${count.toString()} settled expenses`,
-    all: (count: number) => `${count.toString()} total expenses`,
-  };
+  const suffix = (
+    {
+      active: "active expenses",
+      settled: "settled expenses",
+      all: "total expenses",
+    } satisfies Record<Status, string>
+  )[props.status];
+
+  const SkeletonContent = () => (
+    <div className="text-lg text-muted-foreground/90 font-medium">$____.__</div>
+  );
+
+  const SkeletonFooter = () => (
+    <p className="text-xs text-muted-foreground/90 h-full">__ {suffix}</p>
+  );
 
   const suffix = (
     {
