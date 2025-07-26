@@ -50,7 +50,12 @@ export function GroupCard(props: CardsProps) {
   );
 }
 
-type ActiveExpensesCardProps = { total: number; count: number; status: Status };
+type ActiveExpensesCardProps = {
+  total: number;
+  count: number;
+  status: Status;
+  loading: boolean;
+};
 
 export function ActiveExpensesCard(props: ActiveExpensesCardProps) {
   const titles: Record<Status, string> = {
@@ -65,17 +70,53 @@ export function ActiveExpensesCard(props: ActiveExpensesCardProps) {
     all: (count: number) => `${count.toString()} total expenses`,
   };
 
+  const suffix = (
+    {
+      active: "active expenses",
+      settled: "settled expenses",
+      all: "total expenses",
+    } satisfies Record<Status, string>
+  )[props.status];
+
+  const SkeletonContent = () => (
+    <div className="text-lg text-muted-foreground/90 font-medium">$____.__</div>
+  );
+
+  const SkeletonFooter = () => (
+    <p className="text-xs text-muted-foreground/90 h-full">__ {suffix}</p>
+  );
+
   return (
     <GroupCard
       header={() => titles[props.status]}
-      content={() => (
-        <div className="text-lg font-semibold">{formatUSD(props.total)}</div>
-      )}
-      footer={() => (
-        <p className="text-xs text-muted-foreground h-full">
-          {trailing[props.status](props.count)}
-        </p>
-      )}
+      content={
+        props.loading
+          ? SkeletonContent
+          : () => (
+              <div
+                className={cn(
+                  "text-lg font-semibold",
+                  props.loading && "text-muted-foreground/90 font-medium",
+                )}
+              >
+                {!props.loading ? formatUSD(props.total) : "$____.__"}
+              </div>
+            )
+      }
+      footer={
+        props.loading
+          ? SkeletonFooter
+          : () => (
+              <p
+                className={cn(
+                  "text-xs text-muted-foreground h-full",
+                  props.loading && "text-muted-foreground/90",
+                )}
+              >
+                {!props.loading ? props.count : "__"} {suffix}
+              </p>
+            )
+      }
     />
   );
 }
@@ -101,7 +142,7 @@ export function BalancesCard(props: BalancesCardProps) {
               <div className="flex justify-between items-center">
                 <span
                   className={cn(
-                    "text-sm text-foreground lowercase",
+                    "text-sm text-foreground lowercase truncate pr-2",
                     !props.balances.get(member.userId) &&
                       "text-muted-foreground",
                   )}
@@ -168,14 +209,18 @@ export function ActionsCard(props: SuggestionsCardProps) {
         )
       }
       footer={() => (
-        <p className="text-xs text-muted-foreground lowercase">
-          {hasBalances
-            ? props.lastSettled
-              ? `last settled ${props.lastSettled.toLocaleDateString()}`
-              : "settle up for the first time"
-            : "No outstanding balances"}
-        </p>
+        <p className="text-xs text-muted-foreground lowercase">Get Settled</p>
       )}
+      // TODO: reimplement whenever we add db support
+      // footer={() => (
+      //   <p className="text-xs text-muted-foreground lowercase">
+      //     {hasBalances
+      //       ? props.lastSettled
+      //         ? `last settled ${props.lastSettled.toLocaleDateString()}`
+      //         : "settle up for the first time"
+      //       : "No outstanding balances"}
+      //   </p>
+      // )}
     />
   );
 }

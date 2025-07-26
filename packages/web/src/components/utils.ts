@@ -1,9 +1,12 @@
 import { formatUSD, matchSign } from "@/lib/utils";
 
 export function getBalanceStyle(balance: number) {
-  if (balance === 0) return "text-muted-foreground";
+  if (balance === 0) return "text-muted-foreground font-medium";
 
-  return balance > 0 ? "text-blank-theme" : "text-rose-400";
+  return [
+    "font-semibold",
+    balance > 0 ? "text-blank-theme" : "text-rose-400",
+  ].join(" ");
 }
 
 type GetBalanceDisplayOptions = { fallback?: string };
