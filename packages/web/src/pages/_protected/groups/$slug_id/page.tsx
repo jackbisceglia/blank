@@ -93,13 +93,8 @@ function GroupRoute() {
   const map = createBalanceMap(group.expenses as ExpenseWithParticipants[]);
   // add as property on db entity -> group.lastSettled
   const lastSettled =
-    group.expenses.filter((e) => e.status === "settled" && e.createdAt).at(0)
+    expenses?.filter((e) => e.status === "settled" && e.createdAt).at(0)
       ?.createdAt ?? undefined;
-
-  // TODO: we don't want to block the whole ui on the status fetching
-  // we can
-  //   a. let each component fetch its data, and show loading state. this solves everything
-  //   b. conditionally render each component with some skeleton
 
   return (
     <>
@@ -107,6 +102,7 @@ function GroupRoute() {
       <GroupBody>
         <CardsSection>
           <ActiveExpensesCard
+            loading={query.expenses.status === "loading"}
             total={sum}
             count={expenses?.length ?? 0}
             status={status.value}
