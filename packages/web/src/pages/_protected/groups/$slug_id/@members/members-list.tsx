@@ -217,6 +217,7 @@ export function MembersList(props: MemberManagementCardProps) {
   const editing = useEditState("read");
 
   const balances = createBalanceMap(props.expenses);
+
   const sortedMembers = props.members.toSorted(
     createCustomMemberSort(props.userId, props.group.ownerId),
   );

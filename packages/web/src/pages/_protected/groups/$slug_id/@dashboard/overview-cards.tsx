@@ -80,6 +80,22 @@ export function ActiveExpensesCard(props: ActiveExpensesCardProps) {
     <p className="text-xs text-muted-foreground/90 h-full">__ {suffix}</p>
   );
 
+  const suffix = (
+    {
+      active: "active expenses",
+      settled: "settled expenses",
+      all: "total expenses",
+    } satisfies Record<Status, string>
+  )[props.status];
+
+  const SkeletonContent = () => (
+    <div className="text-lg text-muted-foreground/90 font-medium">$____.__</div>
+  );
+
+  const SkeletonFooter = () => (
+    <p className="text-xs text-muted-foreground/90 h-full">__ {suffix}</p>
+  );
+
   return (
     <GroupCard
       header={() => titles[props.status]}
