@@ -159,12 +159,6 @@ function Groups(props: GroupsProps) {
     );
   }
 
-  console.log(
-    "default /",
-    props.defaultGroup,
-    "list /",
-    props.groups.map((g) => g.id),
-  );
   return (
     <>
       {props.groups.map((item, index) => (
@@ -199,7 +193,6 @@ export function GlobalSidebar(props: SideNavigationProps) {
 
   const groups = useGroupListByUserId(user.id);
   const prefs = useUserPreferences(user.id);
-  console.log("data: ", prefs.data);
 
   return (
     <Sidebar variant="inset" {...props} className="overflow-x-hidden">
