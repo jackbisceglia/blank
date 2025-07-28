@@ -83,6 +83,11 @@ const groupRelationships = relationships(group, ({ one, many }) => ({
     destSchema: member,
     destField: ["groupId", "userId"],
   }),
+  defaults: many({
+    sourceField: ["id"],
+    destSchema: preference,
+    destField: ["defaultGroupId"],
+  }),
 }));
 
 const memberRelationships = relationships(member, ({ one }) => ({
@@ -114,6 +119,14 @@ const participantRelationships = relationships(participant, ({ one }) => ({
   }),
 }));
 
+const preferencesRelationships = relationships(preference, ({ one }) => ({
+  defaultGroup: one({
+    sourceField: ["defaultGroupId"],
+    destSchema: group,
+    destField: ["id"],
+  }),
+}));
+
 // types
 export type Expense = Row<typeof schema.tables.expense>;
 export type Group = Row<typeof schema.tables.group>;
@@ -129,6 +142,7 @@ export const schema = createSchema({
     memberRelationships,
     expenseRelationships,
     participantRelationships,
+    preferencesRelationships,
   ],
 });
 

@@ -8,9 +8,10 @@ import { useGroupById } from "../../@data/groups";
 import { slugify } from "@blank/core/lib/utils/index";
 import { transformSlugAndId } from "@/lib/slug_id";
 import { useAuthentication } from "@/lib/authentication";
+import { Loading } from "@/components/loading";
 
 export const States = {
-  Loading: () => null,
+  Loading: () => <Loading title="getting things settled..." />,
   NotFound: (props: { title: string }) => (
     <PrimaryHeading className="mx-auto py-12">
       Group "{props.title}" not found

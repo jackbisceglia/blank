@@ -30,6 +30,9 @@ export function GlobalCommandBar() {
   const route = SearchRoute.useSearchRoute();
   const createExpenseRoute = CreateExpenseRoute.useSearchRoute();
 
+  type Commands = typeof commands;
+  type CommandKeys = keyof typeof commands;
+
   const commands = {
     home: evaluate(() => {
       const opts = {
@@ -78,19 +81,22 @@ export function GlobalCommandBar() {
     }),
   };
 
+  const keymap = new Map(
+    Object.values<Commands[CommandKeys]>(commands).map((cmd) => [
+      cmd.hotkey,
+      cmd.go,
+    ]),
+  );
+
   useEffect(() => {
     const actions = keyboard.register({
       when: route.view() === "open",
       fn: (e) => {
-        const keymap = new Map<string, () => void>([
-          [commands.home.hotkey, createPreventDefault(commands.home.go, e)],
-          [commands.groups.hotkey, createPreventDefault(commands.groups.go, e)],
-        ]);
-
         if (!e.metaKey && !e.ctrlKey) return;
-        if (!keymap.has(e.key)) return;
 
-        keymap.get(e.key)?.();
+        const fn = keymap.get(e.key);
+
+        if (fn) createPreventDefault(fn, e)();
       },
     });
 
@@ -132,13 +138,7 @@ export function GlobalCommandBar() {
         <CommandEmpty>No results found.</CommandEmpty>
         <CommandGroup heading="Quick Actions">
           {Object.values(commands).map((action) => (
-            <CommandItem
-              onSelect={() => {
-                action.go();
-              }}
-              asChild
-              key={action.title}
-            >
+            <CommandItem onSelect={action.go} asChild key={action.title}>
               <Link {...action.opts}>
                 <span>+</span>
                 <span className="mr-auto">{action.title}</span>
@@ -156,9 +156,9 @@ export function GlobalCommandBar() {
               asChild
               key={group.title}
             >
-              <Link {...group.opts}>
+              <Link className="lowercase" {...group.opts}>
                 <span>@</span>
-                <span>{group.title}</span>
+                {group.title}
               </Link>
             </CommandItem>
           ))}

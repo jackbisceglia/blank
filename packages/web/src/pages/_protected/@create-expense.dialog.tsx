@@ -13,6 +13,9 @@ import { prevented } from "@/lib/utils";
 import { withToast } from "@/lib/toast";
 import { PropsWithChildren } from "react";
 import { positions } from "@/components/form/fields";
+import { useAuthentication } from "@/lib/authentication";
+import { useUserDefaultGroup } from "./@data/users";
+import { useParams } from "@tanstack/react-router";
 
 const KEY = "action" as const;
 const ENTRY = "new-expense" as const;
@@ -22,13 +25,21 @@ export const SearchRouteSchema = v.object({
   action: v.literal(ENTRY),
 });
 
-const schema = v.object({
+export const schema = v.object({
   description: v.pipe(
     v.string("Description is required"),
     v.minLength(1, `Description is required`),
     v.maxLength(180, `Description must be at most 180 characters`),
   ),
 });
+
+function useGroupFromSearch() {
+  const params = useParams({ strict: false });
+
+  const isObject = typeof params.slug_id !== "string";
+
+  return isObject ? params.slug_id : undefined;
+}
 
 type UseFormOptions = {
   close: () => void;
@@ -71,7 +82,14 @@ function useForm(options: UseFormOptions) {
 }
 
 export function CreateExpenseDialog(props: PropsWithChildren) {
-  const create = useCreateExpense();
+  const authentication = useAuthentication();
+  const userDefaultGroup = useUserDefaultGroup(authentication.user.id);
+  const params = useGroupFromSearch();
+
+  const create = useCreateExpense(
+    userDefaultGroup.data?.id ?? params?.id ?? "",
+  );
+
   const route = SearchRoute.useSearchRoute({
     hooks: {
       onClose: () => {
@@ -129,7 +147,7 @@ export function CreateExpenseDialog(props: PropsWithChildren) {
             children={(fieldMeta) => (
               <FieldsErrors
                 id={fieldErrorsId}
-                className="col-span-full min-h-32 "
+                ul={{ className: "col-span-full min-h-32" }}
                 metas={fieldMeta}
               />
             )}

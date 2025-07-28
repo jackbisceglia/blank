@@ -1,5 +1,6 @@
 import { Participant } from "@blank/core/modules/participant/schema";
 import { clsx, type ClassValue } from "clsx";
+import { useEffect } from "react";
 import { twMerge } from "tailwind-merge";
 
 export function fraction(split: Participant["split"]) {
@@ -131,4 +132,12 @@ export function matchSign<T>(balance: number, neg: T, even: T, pos: T) {
   if (balance === 0) return even;
 
   return balance > 0 ? pos : neg;
+}
+
+export function useClientEffect(fn: () => void, deps?: unknown[]) {
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+
+    fn();
+  }, deps ?? []);
 }

@@ -42,6 +42,7 @@
     [ ] unify focus/hover/border styles in sheet (need to unify input/button/select styles as such)
     [x] sheet close ring style
     [x] table left/right padding consistency/fix
+    [ ] fix sidebar; push link from group label -> dedicated entry
 
 --DB--
     [x] no transactions causes layout shift on new expense entries

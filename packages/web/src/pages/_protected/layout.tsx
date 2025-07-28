@@ -32,6 +32,7 @@ import { SearchRouteSchema as GlobalSearchParams } from "./@command-bar.dialog";
 import { SearchRouteSchema as CreateExpenseSearchParams } from "./@create-expense.dialog";
 import { SearchRouteSchema as CreateGroupSearchParams } from "./groups/@create-group.dialog";
 import * as v from "valibot";
+import { Loading } from "@/components/loading";
 
 function getCookie(name: string, fallback: string) {
   const all = document.cookie.split(";").map((c) => c.trim().split("="));
@@ -174,4 +175,7 @@ export const Route = createFileRoute("/_protected")({
       ),
     ),
   }),
+  pendingComponent: () => (
+    <Loading className="min-h-screen" whatIsLoading="workspace" />
+  ),
 });

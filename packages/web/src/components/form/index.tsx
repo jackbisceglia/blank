@@ -18,7 +18,8 @@ import { metasToErrors } from "@/lib/validation-errors";
 type FieldsErrorsProps = {
   metas: Record<any, AnyFieldMeta>;
   id?: string;
-  className?: string;
+  ul?: { className?: string };
+  li?: { className?: string };
 };
 
 export const FieldsErrors = (props: FieldsErrorsProps) => {
@@ -27,14 +28,17 @@ export const FieldsErrors = (props: FieldsErrorsProps) => {
   return (
     <ul
       id={props.id}
-      className={cn("list-none p-0 m-0 py-2 uppercase", props.className)}
+      className={cn("list-none p-0 m-0 py-2 uppercase", props.ul?.className)}
       role="alert"
     >
       {errors.status === "errored" &&
         errors.values.map((error, index) => (
           <li
             key={index}
-            className="text-sm text-destructive w-full text-center"
+            className={cn(
+              "text-sm text-destructive w-full text-center",
+              props.li?.className,
+            )}
           >
             {error.message}
           </li>
