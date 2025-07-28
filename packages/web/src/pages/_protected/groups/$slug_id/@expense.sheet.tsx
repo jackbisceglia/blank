@@ -62,24 +62,22 @@ function useConfirmDeleteExpense(
   });
 }
 
-function useConfirmSettleExpense(
-  expense: ExpenseWithParticipants,
-  userId: string,
-  settleMutation: (opts: UpdateExpenseOptions) => Promise<void>,
-  leave: () => void,
-) {
-  const payer = getPayerFromParticipants(expense.participants);
-  if (!payer) {
-    throw new Error("Payer not found");
-  }
+type UseConfirmSettleExpense = {
+  expense: ExpenseWithParticipants;
+  payer: ParticipantWithMember | undefined;
+  userId: string;
+  settleMutation: (opts: UpdateExpenseOptions) => Promise<void>;
+  leave: () => void;
+};
 
+function useConfirmSettleExpense(opts: UseConfirmSettleExpense) {
   const getSettleUpSentence = (
     p1: ParticipantWithMember,
     p2: ParticipantWithMember,
     amount: number,
   ) => {
-    const payerIsCurrentUser = p1.userId === userId;
-    const payeeIsCurrentUser = p2.userId === userId;
+    const payerIsCurrentUser = p1.userId === opts.userId;
+    const payeeIsCurrentUser = p2.userId === opts.userId;
 
     return [
       payerIsCurrentUser ? "You" : p1.member?.nickname,
@@ -94,42 +92,60 @@ function useConfirmSettleExpense(
     subtitle: false,
     description: {
       type: "jsx",
-      value: () => (
-        <div className="space-y-4">
-          <DialogDescription>
-            This will settle and archive the expense. Be sure to settle up with
-            all participants. The following transaction must be made:
-          </DialogDescription>
-          <ul className="list-inside text-sm text-foreground space-y-1.5 mb-4">
-            {expense.participants
-              .filter((p) => p.role === "participant")
-              .map((p) => (
-                <li
-                  key={p.userId}
-                  className="flex items-center justify-between gap-2 mx-2 text-foreground lowercase"
-                >
+      value: () => {
+        const payer = opts.payer;
+
+        if (!payer) {
+          throw new Error("Can not settle expense without a payer");
+        }
+
+        return (
+          <div className="space-y-4">
+            <DialogDescription>
+              This will settle and archive the expense. Be sure to settle up
+              with all participants. The following transaction must be made:
+            </DialogDescription>
+            <ul className="list-inside text-sm text-foreground space-y-1.5 mb-4">
+              {opts.expense.participants.length > 1 ? (
+                opts.expense.participants
+                  .filter((p) => p.role === "participant")
+                  .map((p) => (
+                    <li
+                      key={p.userId}
+                      className="flex items-center justify-between gap-2 mx-2 text-foreground lowercase"
+                    >
+                      <ChevronRight className="size-3.5" />
+                      {getSettleUpSentence(
+                        p,
+                        payer,
+                        fraction(p.split).apply(opts.expense.amount),
+                      )}
+                      <span className="text-blank-theme ml-auto font-bold">
+                        [{Math.round(fraction(p.split).percent()).toString()}%]
+                      </span>
+                    </li>
+                  ))
+              ) : (
+                <div className="flex items-center gap-2 mx-2 text-foreground lowercase">
                   <ChevronRight className="size-3.5" />
-                  {getSettleUpSentence(
-                    p,
-                    payer,
-                    fraction(p.split).apply(expense.amount),
-                  )}
-                  <span className="text-blank-theme ml-auto font-bold">
-                    [{Math.round(fraction(p.split).percent()).toString()}%]
-                  </span>
-                </li>
-              ))}
-          </ul>
-        </div>
-      ),
+                  <p>
+                    {payer.member?.nickname} is the only participant, no
+                    payments required
+                  </p>
+                </div>
+              )}
+            </ul>
+          </div>
+        );
+      },
     },
     confirm: "Settle",
     confirmVariant: "theme",
     onConfirm: async () => {
       return withToast({
         promise: () => {
-          return settleMutation({
-            expenseId: expense.id,
+          return opts.settleMutation({
+            expenseId: opts.expense.id,
             updates: { expense: { status: "settled" } },
           });
         },
@@ -142,7 +158,7 @@ function useConfirmSettleExpense(
           success: "!bg-secondary !border-border",
         },
       }).then(() => {
-        leave();
+        opts.leave();
       });
     },
   });
@@ -270,6 +286,8 @@ export function ExpenseSheet(props: ExpenseSheetProps) {
   const route = SearchRoute.useSearchRoute();
   const active = props.expense;
 
+  const payer = getPayerFromParticipants(active.participants);
+
   const mutators = useMutators();
   const form = useForm(active, mutators.expense.update, route.close);
   const deleteExpense = useConfirmDeleteExpense(
@@ -277,12 +295,15 @@ export function ExpenseSheet(props: ExpenseSheetProps) {
     mutators.expense.delete,
     route.close,
   );
-  const settleExpense = useConfirmSettleExpense(
-    active,
-    auth.user.id,
-    mutators.expense.update,
-    route.close,
-  );
+
+  const settleExpense = useConfirmSettleExpense({
+    expense: active,
+    payer: payer,
+    userId: auth.user.id,
+    settleMutation: mutators.expense.update,
+    leave: route.close,
+  });
+
   const unsettleExpense = () => {
     route.close();
     void withToast({
@@ -420,6 +441,7 @@ export function ExpenseSheet(props: ExpenseSheetProps) {
                 {active.status === "active" ? (
                   <form.api.SettleButton
                     className="col-span-1 h-min"
+                    disabled={!payer}
                     onClick={settleExpense.confirm}
                   >
                     Settle
@@ -427,6 +449,7 @@ export function ExpenseSheet(props: ExpenseSheetProps) {
                 ) : (
                   <form.api.SettleButton
                     className="col-span-1 h-auto"
+                    disabled={!payer}
                     onClick={() => unsettleExpense()}
                   >
                     Unsettle

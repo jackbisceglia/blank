@@ -24,11 +24,28 @@ function SettlementRequiredAlert() {
       <h4 className="font-medium text-sm text-destructive uppercase">
         Important: Manual Settlement Required
       </h4>
-      <ul className="text-sm text-secondary-foreground space-y-1">
-        <li>copy down the payment amounts above</li>
-        <li>complete these transactions manually</li>
-        <li>only confirm settlement after all payments are made</li>
+      <ul className="text-sm text-secondary-foreground space-y-1 lowercase">
+        <li>Copy down the payment amounts above</li>
+        <li>Complete these transactions manually</li>
+        <li>Only confirm settlement after all payments are made</li>
       </ul>
+    </div>
+  );
+}
+
+function InvalidSettlementStateAlert() {
+  return (
+    <div className="bg-destructive/10 border border-destructive/20 p-4 rounded-lg space-y-2 mb-auto">
+      <h4 className="font-medium text-sm text-destructive uppercase">
+        Active Expense Mismatch
+      </h4>
+      <p className="text-sm text-secondary-foreground space-y-1 lowercase">
+        No settlements to be made
+      </p>
+      <p className="text-sm text-secondary-foreground space-y-1 lowercase">
+        This typically happens when some expenses are missing a 'paid by'
+        participant, or the splits do not sum to 100%.
+      </p>
     </div>
   );
 }
@@ -68,7 +85,7 @@ export function Step2(props: Step2Props) {
   const queries = useQueries(params.id);
   const bulkSettleMutation = useBulkSettleExpenses();
 
-  // leaving these separate to potentially handle cases differently in the future
+  // leaving th separate to potentially handle cases differently in the future
   if (queries.expenses.status === "loading") return null;
   if (queries.group.status === "loading") return null;
   if (queries.group.status === "not-found") return null;
@@ -104,11 +121,7 @@ export function Step2(props: Step2Props) {
     });
   };
 
-  if (route.view() === "open" && settlements.length === 0) {
-    throw new Error(
-      "Active expense mismatch, no settlements to be made. Please fix the expenses missing a debtor.",
-    );
-  }
+  const canSettleSelectedExpenses = settlements.length !== 0;
 
   return (
     <Dialog open={route.view() === "open"} onOpenChange={route.sync}>
@@ -119,40 +132,51 @@ export function Step2(props: Step2Props) {
             review payments and confirm settlement
           </DialogDescription>
         </DialogHeader>
+        {canSettleSelectedExpenses ? (
+          <>
+            <CollapsibleNotification
+              defaultExpanded
+              title="Settlement Overview"
+              content={(() => {
+                const count = props.selectedExpenseIds.length;
+                const unit = count === 1 ? "expense" : "expenses";
+                const total = selectedExpenses.reduce(
+                  (ct, e) => ct + e.amount,
+                  0,
+                );
 
-        <CollapsibleNotification
-          defaultExpanded
-          title="Settlement Overview"
-          content={(() => {
-            const count = props.selectedExpenseIds.length;
-            const unit = count === 1 ? "expense" : "expenses";
-            const total = selectedExpenses.reduce((ct, e) => ct + e.amount, 0);
+                return `Settling ${count.toString()} expense ${unit} totaling $${total.toFixed(2)}`;
+              })()}
+            />
 
-            return `Settling ${count.toString()} expense ${unit} totaling $${total.toFixed(2)}`;
-          })()}
-        />
-
-        <div className="space-y-3 flex-1 flex flex-col min-h-0 pt-4">
-          <div className="flex items-center justify-between flex-none h-7">
-            <h4 className="font-medium text-sm uppercase">Required Payments</h4>
-          </div>
-          <ul className="space-y-2 flex-1 overflow-y-auto min-h-0 p-0.5 [&::-webkit-scrollbar]:w-2 [&::-webkit-scrollbar-track]:bg-transparent [&::-webkit-scrollbar-thumb]:bg-muted-foreground/20 [&::-webkit-scrollbar-thumb]:rounded-full">
-            {settlements.map((payment, index) => (
-              <SettlementEntry key={index} amount={payment.amount}>
-                {payment.fromName} pays {payment.toName}
-              </SettlementEntry>
-            ))}
-          </ul>
-          <SettlementRequiredAlert />
-        </div>
-
-        <DialogFooter className="py-3 flex gap-2">
+            <div className="space-y-3 flex-1 flex flex-col min-h-0 pt-4">
+              <div className="flex items-center justify-between flex-none h-7">
+                <h4 className="font-medium text-sm uppercase">
+                  Required Payments
+                </h4>
+              </div>
+              <ul className="space-y-2 flex-1 overflow-y-auto min-h-0 p-0.5 [&::-webkit-scrollbar]:w-2 [&::-webkit-scrollbar-track]:bg-transparent [&::-webkit-scrollbar-thumb]:bg-muted-foreground/20 [&::-webkit-scrollbar-thumb]:rounded-full">
+                {settlements.map((payment, index) => (
+                  <SettlementEntry key={index} amount={payment.amount}>
+                    {payment.fromName} pays {payment.toName}
+                  </SettlementEntry>
+                ))}
+              </ul>
+              <SettlementRequiredAlert />
+            </div>
+          </>
+        ) : (
+          <InvalidSettlementStateAlert />
+        )}
+        <DialogFooter className="py-3 flex gap-2 mt-auto">
           <DialogButton variant="outline" onClick={() => props.previous()}>
             Go Back
           </DialogButton>
-          <DialogButton variant="default" onClick={() => handleSettlement()}>
-            Confirm Settlement
-          </DialogButton>
+          {canSettleSelectedExpenses && (
+            <DialogButton variant="default" onClick={() => handleSettlement()}>
+              Confirm Settlement
+            </DialogButton>
+          )}
         </DialogFooter>
       </DialogContent>
     </Dialog>

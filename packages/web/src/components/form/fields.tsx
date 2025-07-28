@@ -253,7 +253,7 @@ export const SheetDateField = (props: SheetDateFieldProps) => {
             disabled={rest.inputProps?.disabled ?? false}
             variant="secondary"
             className={cn(
-              "w-full justify-start text-left font-normal lowercase bg-accent/50 border border-border/50 text-foreground h-10",
+              "justify-start bg-accent/50 border-border/50 border-[1.5px] text-foreground hover:bg-secondary/80 placeholder:text-muted-foreground/60 h-10 w-full",
               !field.state.value && "text-muted-foreground",
             )}
           >

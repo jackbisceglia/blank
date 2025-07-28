@@ -7,6 +7,8 @@ import {
 } from ".";
 import { mutators as participantMutators } from "./participant-mutators";
 import { UpdateParticipant } from "./participant-mutators";
+import { ExpenseWithParticipants } from "@/pages/_protected/groups/$slug_id/page";
+import { checkExpenseSplitValidity } from "../balances";
 
 export type DeleteOptions = { expenseId: string };
 export type DeleteAllOptions = { groupId: string };
@@ -25,11 +27,21 @@ export type UpdateOptions = {
 };
 
 const assertExpenseExists = async (tx: ZTransaction, expenseId: string) => {
-  const expense = await tx.query.expense.where("id", expenseId).one().run();
+  const expense = await tx.query.expense
+    .where("id", expenseId)
+    .related("participants", (p) => p.related("member").related("member"))
+    .one()
+    .run();
 
   if (!expense) throw new Error("Expense not found");
 
   return expense;
+};
+
+const assertExpenseHasValidSplit = (expense: ExpenseWithParticipants) => {
+  if (!checkExpenseSplitValidity(expense.participants)) {
+    throw Error(`These splits do not sum to 100%`);
+  }
 };
 
 type Mutators = ClientMutatorGroup<{
@@ -43,7 +55,11 @@ export const mutators: Mutators = (auth) => ({
   update: async (tx, opts) => {
     assertIsAuthenticated(auth);
 
-    await assertExpenseExists(tx, opts.expenseId);
+    const expense = await assertExpenseExists(tx, opts.expenseId);
+
+    if (opts.updates.expense.status) {
+      assertExpenseHasValidSplit(expense as ExpenseWithParticipants);
+    }
 
     await tx.mutate.expense.update({
       id: opts.expenseId,
@@ -95,11 +111,16 @@ export const mutators: Mutators = (auth) => ({
 
     const expenses = await tx.query.expense
       .where("groupId", opts.groupId)
+      .related("participants", (p) => p.related("member").related("member"))
       .where("status", "active")
       .run();
 
     const expensesToSettle = expenses.filter((expense) =>
       opts.expenseIds.includes(expense.id),
+    );
+
+    expensesToSettle.forEach((expense) =>
+      assertExpenseHasValidSplit(expense as ExpenseWithParticipants),
     );
 
     for (const expense of expensesToSettle) {
