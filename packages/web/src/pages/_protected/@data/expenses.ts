@@ -6,10 +6,6 @@ import {
   BulkSettleOptions as BulkSettleExpensesOptions,
 } from "@/lib/client-mutators/expense-mutators";
 import { useZero } from "@/lib/zero";
-import { useAuthentication } from "@/lib/authentication";
-import { useParams } from "@tanstack/react-router";
-import { useGroupById } from "./groups";
-import { useUserPreferences } from "./users";
 import { createFromDescriptionServerFn } from "@/server/expense.route";
 import { Expense } from "@blank/zero";
 
@@ -30,26 +26,17 @@ export function useExpenseListByGroupId(
   return useListQuery(query, ZERO_CACHE_DEFAULT);
 }
 
-export function useCreateExpense() {
-  const auth = useAuthentication();
-  const params = useParams({ strict: false });
-  const group = useGroupById(
-    typeof params.slug_id !== "string" ? (params.slug_id?.id ?? "") : "",
-  );
-  const userPreferences = useUserPreferences(auth.user.id);
-  const groupId = group.data?.id ?? userPreferences.data?.defaultGroupId;
-
-  return (description: string) => {
+export function useCreateExpense(groupId: string | undefined) {
+  return async (description: string) => {
     if (!groupId) {
-      const message =
-        group.data?.id && userPreferences.data?.defaultGroupId
-          ? "No default group found"
-          : "Could not find group to insert";
-
-      throw new Error(message);
+      throw new Error("Could not find group to insert");
     }
 
-    return createFromDescriptionServerFn({ data: { description, groupId } });
+    const result = await createFromDescriptionServerFn({
+      data: { description, groupId: groupId },
+    });
+
+    return { ...result, group: { id: groupId } };
   };
 }
 

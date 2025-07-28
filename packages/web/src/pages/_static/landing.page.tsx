@@ -1,20 +1,13 @@
 import { Button } from "@/components/ui/button";
 import { Toaster } from "@/components/ui/sonner";
+import { useClientEffect } from "@/lib/utils";
 import { loginRPC } from "@/server/auth/route";
 import { snakeToCapitalized } from "@blank/core/lib/utils/index";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
-import { useEffect, useState, useRef } from "react";
+import { useState, useRef } from "react";
 import { toast } from "sonner";
 import * as v from "valibot";
-
-function useClientEffect(fn: () => void, deps?: unknown[]) {
-  useEffect(() => {
-    if (typeof window === "undefined") return;
-
-    fn();
-  }, deps ?? []);
-}
 
 function LandingRoute() {
   const login = useServerFn(loginRPC);
