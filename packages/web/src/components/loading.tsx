@@ -4,17 +4,16 @@ import { PropsWithChildren } from "react";
 type LoadingProps = PropsWithChildren<{
   omitBaseText?: boolean;
   whatIsLoading?: string;
+  title?: string;
   className?: string;
 }>;
 
 export function Loading(props: LoadingProps) {
-  const title = [
-    "loading",
-    props.whatIsLoading && ` ${props.whatIsLoading}`,
-    "...",
-  ]
-    .filter((entry) => !!entry)
-    .join("");
+  const title =
+    props.title ??
+    ["loading", props.whatIsLoading && ` ${props.whatIsLoading}`, "..."]
+      .filter((entry) => !!entry)
+      .join("");
 
   return (
     <div
