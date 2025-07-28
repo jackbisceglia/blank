@@ -87,7 +87,7 @@ export function CreateExpenseDialog(props: PropsWithChildren) {
   const params = useGroupFromSearch();
 
   const create = useCreateExpense(
-    userDefaultGroup.data?.id ?? params?.id ?? "",
+    params?.id ?? userDefaultGroup.data?.id ?? "",
   );
 
   const route = SearchRoute.useSearchRoute({

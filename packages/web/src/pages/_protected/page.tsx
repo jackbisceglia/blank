@@ -17,6 +17,7 @@ import { positions } from "@/components/form/fields";
 import { useUserDefaultGroup } from "./@data/users";
 import { TaggedError } from "@blank/core/lib/effect/index";
 import { Group } from "@blank/zero";
+import { useGroupListByUserId } from "./@data/groups";
 
 class DataFetchingError extends TaggedError("DataFetchingError") {}
 
@@ -204,12 +205,15 @@ function ExpenseForm(props: ExpenseFormProps) {
 
 function HomeRoute() {
   const authentication = useAuthentication();
-  const userDefaultGroup = useUserDefaultGroup(authentication.user.id);
-  console.log(userDefaultGroup.status);
+  const defaultGroup = useUserDefaultGroup(authentication.user.id);
+  const groupsList = useGroupListByUserId(authentication.user.id);
 
-  if (userDefaultGroup.status === "loading") return <States.Loading />;
-  if (userDefaultGroup.status === "not-found") {
-    throw new DataFetchingError("Could not load user preferences");
+  if (defaultGroup.status === "loading" || groupsList.status === "loading") {
+    return <States.Loading />;
+  }
+
+  if (groupsList.status === "empty") {
+    throw new DataFetchingError("Could not load you groups");
   }
 
   return (
@@ -236,7 +240,9 @@ function HomeRoute() {
           </h2>
 
           <div className="border-6 rounded-md border-background">
-            <ExpenseForm defaultGroup={userDefaultGroup.data} />
+            <ExpenseForm
+              defaultGroup={defaultGroup.data ?? groupsList.data[0]}
+            />
           </div>
         </div>
       </GroupBody>
