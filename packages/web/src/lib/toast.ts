@@ -41,7 +41,6 @@ export function withToast<T>(opts: WithToastOptions<T>): Promise<T> {
         description: e instanceof Error ? e.message : "Unknown error occurred",
       };
     },
-    duration: 10000,
   });
 
   return promise;
