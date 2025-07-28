@@ -407,7 +407,10 @@ export function ExpenseSheet(props: ExpenseSheetProps) {
               <form.api.Subscribe
                 selector={(state) => state.fieldMeta}
                 children={(fieldMeta) => (
-                  <FieldsErrors className="col-span-full" metas={fieldMeta} />
+                  <FieldsErrors
+                    ul={{ className: "col-span-full" }}
+                    metas={fieldMeta}
+                  />
                 )}
               ></form.api.Subscribe>
               <form.api.AppForm>

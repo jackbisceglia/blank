@@ -19,7 +19,7 @@ import { Group } from "@blank/zero";
 import { QueryStatus } from "@/lib/zero";
 import { useAuthentication, useLogout } from "@/lib/authentication";
 import { useGroupListByUserId } from "@/pages/_protected/@data/groups";
-import { useUserPreferences } from "@/pages/_protected/@data/users";
+import { useUserDefaultGroup } from "@/pages/_protected/@data/users";
 
 type SidebarItemChunk =
   | {
@@ -192,7 +192,7 @@ export function GlobalSidebar(props: SideNavigationProps) {
   const logout = useLogout();
 
   const groups = useGroupListByUserId(user.id);
-  const prefs = useUserPreferences(user.id);
+  const defaultGroup = useUserDefaultGroup(user.id);
 
   return (
     <Sidebar variant="inset" {...props} className="overflow-x-hidden">
@@ -242,7 +242,7 @@ export function GlobalSidebar(props: SideNavigationProps) {
             <Groups
               position={2}
               groups={groups.data ?? []}
-              defaultGroup={prefs.data?.defaultGroupId ?? ""}
+              defaultGroup={defaultGroup.data?.id ?? ""}
               status={groups.status}
             />
           </SidebarMenu>

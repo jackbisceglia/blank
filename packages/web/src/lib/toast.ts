@@ -1,4 +1,5 @@
-import { toast, ToastClassnames } from "sonner";
+import { ReactNode } from "react";
+import { Action, toast, ToastClassnames } from "sonner";
 
 type WithToastOptions<T> = {
   promise: Promise<T> | (() => Promise<T>);
@@ -9,6 +10,7 @@ type WithToastOptions<T> = {
   };
   classNames?: ToastClassnames;
   finally?: () => void;
+  action?: ReactNode | Action;
 };
 
 export function withToast<T>(opts: WithToastOptions<T>): Promise<T> {
@@ -29,6 +31,8 @@ export function withToast<T>(opts: WithToastOptions<T>): Promise<T> {
 
   toast.promise(promise, {
     ...(opts.classNames ? { classNames: opts.classNames } : {}),
+    ...(opts.finally ? { finally: opts.finally } : {}),
+    ...(opts.action ? { action: opts.action } : {}),
     loading: opts.notify.loading,
     success: opts.notify.success,
     error: (e) => {
@@ -37,7 +41,6 @@ export function withToast<T>(opts: WithToastOptions<T>): Promise<T> {
         description: e instanceof Error ? e.message : "Unknown error occurred",
       };
     },
-    ...(opts.finally ? { finally: opts.finally } : {}),
   });
 
   return promise;
