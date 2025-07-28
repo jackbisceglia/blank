@@ -105,7 +105,7 @@ function ExpenseForm(props: ExpenseFormProps) {
           <Button
             variant="link"
             size="xs"
-            className="ml-auto h-full py-0.5"
+            className="ml-auto h-full py-0.5 data-[status=active]:no-underline data-[status=active]:cursor-default"
             asChild
           >
             <Link
