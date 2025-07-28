@@ -54,7 +54,7 @@
   --accent: hsl(224 15% 15% / 0.5);
   --accent-foreground: hsl(225, 35%, 90%);
   --destructive: hsl(0, 61%, 56%);
-  --destructive-background: hsl(0, 61%, 9%);
+  --destructive-background: hsl(3, 26%, 14%);
   --destructive-foreground: hsl(225, 35%, 90%);
   --border: hsl(224 5% 40%);
   --input: hsl(224 3.7% 15.9%);

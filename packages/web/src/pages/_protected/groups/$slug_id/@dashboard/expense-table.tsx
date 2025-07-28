@@ -28,10 +28,15 @@ import { tableNavigationContext } from "@/lib/keyboard-nav";
 import { cn, flags } from "@/lib/utils";
 import { Link } from "@tanstack/react-router";
 import { ParticipantBadge, ParticipantBadgeList } from "./table-badges";
-import { ChevronDown, ChevronUp } from "lucide-react";
+import { ChevronDown, ChevronUp, AlertTriangle } from "lucide-react";
 import { useQueryFromSearch } from "./table-query";
 import { useFiltersFromSearch } from "./table-filters";
 import { Status, useStatusFromSearch } from "./table-status";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 
 type Payer = ParticipantWithMember | undefined;
 
@@ -39,6 +44,36 @@ const createGetPayer =
   (colId: string) =>
   (row: Row<ExpenseWithParticipants>): Payer =>
     row.getValue(colId);
+
+type WarningBadgeProps = {
+  message: string;
+};
+
+function WarningBadge(props: WarningBadgeProps) {
+  return (
+    <Tooltip>
+      <TooltipTrigger asChild>
+        <Badge
+          className="py-1.5 px-2 h-full bg-transparent border-destructive/0"
+          variant="destructive"
+        >
+          <AlertTriangle className="text-destructive" />
+        </Badge>
+      </TooltipTrigger>
+      <TooltipContent
+        arrowProps={{
+          className:
+            "bg-destructive-background fill-destructive-background border-destructive border-b border-r",
+        }}
+        className="bg-destructive-background border-destructive border text-destructive-foreground lowercase"
+        side="right"
+        align="center"
+      >
+        <p>{props.message}</p>
+      </TooltipContent>
+    </Tooltip>
+  );
+}
 
 type SortButtonProps = PropsWithChildren<{
   column: Column<ExpenseWithParticipants>;
@@ -131,13 +166,39 @@ const columns = [
     ),
     cell: (opts) => {
       const RANGE = 1000 * 60;
+      const ERROR_MARGIN = 1e-10;
 
       const isNew =
         (opts.row.original.createdAt ?? Number.NEGATIVE_INFINITY) >
         Date.now() - RANGE;
 
+      const [isValid, invalidMessage] = (() => {
+        const participants = opts.row
+          .getAllCells()
+          .filter((cell) => ["with", "paid-by"].includes(cell.column.id))
+          .flatMap(
+            (cell) => cell.getValue() as ParticipantWithMember | undefined,
+          )
+          .filter((participant) => !!participant);
+
+        const split = participants.reduce((sum, participant) => {
+          const [num, denom] = participant.split;
+
+          return sum + num / denom;
+        }, 0);
+
+        if (!participants.find((p) => p.role === "payer")) {
+          return [false, "Expense missing payer"] as const;
+        }
+        if (Math.abs(split - 1) > ERROR_MARGIN) {
+          return [false, "Split does not sum to 100%"] as const;
+        }
+
+        return [true, ""] as const;
+      })();
+
       return (
-        <p className="text-foreground font-medium lowercase w-full h-full flex gap-2">
+        <div className="flex gap-1.5 items-center flex-1">
           {isNew && (
             <Badge
               className="bg-teal-400/90 uppercase text-[9px] px-1 py-0 my-auto"
@@ -146,8 +207,11 @@ const columns = [
               New
             </Badge>
           )}
-          {opts.getValue().toString()}
-        </p>
+          <p className="text-foreground font-medium lowercase h-full flex gap-2">
+            {opts.getValue().toString()}
+          </p>
+          {!isValid && <WarningBadge message={invalidMessage} />}
+        </div>
       );
     },
   }),
