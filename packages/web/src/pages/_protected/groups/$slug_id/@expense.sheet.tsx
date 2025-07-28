@@ -94,7 +94,6 @@ function useConfirmSettleExpense(opts: UseConfirmSettleExpense) {
       type: "jsx",
       value: () => {
         const payer = opts.payer;
-        console.log("PAYER: ", payer);
 
         if (!payer) {
           throw new Error("Can not settle expense without a payer");
@@ -296,8 +295,6 @@ export function ExpenseSheet(props: ExpenseSheetProps) {
     mutators.expense.delete,
     route.close,
   );
-
-  console.log("[payer]", payer);
 
   const settleExpense = useConfirmSettleExpense({
     expense: active,
