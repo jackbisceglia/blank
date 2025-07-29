@@ -1,14 +1,44 @@
 import { cn } from "@/lib/utils";
-import { PropsWithChildren } from "react";
+import { PropsWithChildren, useEffect, useRef, useState } from "react";
+
+type DelayedProps = PropsWithChildren<{ delay?: number }>;
+
+export function Delayed(props: DelayedProps) {
+  const [show, setShow] = useState(false);
+  const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  useEffect(() => {
+    setShow(false);
+
+    if (timeoutRef.current) {
+      clearTimeout(timeoutRef.current);
+    }
+
+    timeoutRef.current = setTimeout(() => {
+      setShow(true);
+    }, props.delay ?? 100);
+
+    return () => {
+      if (timeoutRef.current) {
+        clearTimeout(timeoutRef.current);
+        timeoutRef.current = null;
+      }
+    };
+  }, [props.delay]);
+
+  if (!show) return null;
+  return <>{props.children}</>;
+}
 
 type LoadingProps = PropsWithChildren<{
+  useGuard?: boolean;
   omitBaseText?: boolean;
   whatIsLoading?: string;
   title?: string;
   className?: string;
 }>;
 
-export function Loading(props: LoadingProps) {
+export function LoadingInner(props: LoadingProps) {
   const title =
     props.title ??
     ["loading", props.whatIsLoading && ` ${props.whatIsLoading}`, "..."]
@@ -30,5 +60,15 @@ export function Loading(props: LoadingProps) {
           ))}
       </div>
     </div>
+  );
+}
+
+export function Loading(props: LoadingProps) {
+  if (!props.useGuard) return <LoadingInner {...props} />;
+
+  return (
+    <Delayed>
+      <LoadingInner {...props} />
+    </Delayed>
   );
 }

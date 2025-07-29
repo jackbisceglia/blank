@@ -11,7 +11,7 @@ import { useAuthentication } from "@/lib/authentication";
 import { Loading } from "@/components/loading";
 
 export const States = {
-  Loading: () => <Loading title="getting things settled..." />,
+  Loading: () => <Loading useGuard title="getting things settled..." />,
   NotFound: (props: { title: string }) => (
     <PrimaryHeading className="mx-auto py-12">
       Group "{props.title}" not found
@@ -133,8 +133,7 @@ function GroupLayout() {
         <PrimaryHeading>{title}</PrimaryHeading>
         <GroupNavigation {...params} />
       </PageHeaderRow>
-      {group.status === "loading" && <States.Loading />}
-      {group.status === "success" && <Outlet />}
+      <Outlet />
     </>
   );
 }
