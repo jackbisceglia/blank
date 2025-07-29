@@ -175,7 +175,4 @@ export const Route = createFileRoute("/_protected")({
       ),
     ),
   }),
-  pendingComponent: () => (
-    <Loading className="min-h-screen" whatIsLoading="workspace" />
-  ),
 });
