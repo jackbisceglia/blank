@@ -16,6 +16,12 @@ export const constants = {
   ),
 };
 
+export const getBaseUrl = () => {
+  const protocol = process.env.NODE_ENV === "development" ? "http" : "https";
+
+  return `${protocol}://${import.meta.env.VITE_APP_URL as string}`;
+};
+
 const tokenMessage = "token must be a string";
 
 const Tokens = v.object({
