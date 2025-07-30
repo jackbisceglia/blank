@@ -1,6 +1,9 @@
 import { openauth } from "@/server/auth/core";
 import { AuthTokens, getBaseUrl } from "@/server/utils";
-import { createServerFileRoute } from "@tanstack/react-start/server";
+import {
+  createServerFileRoute,
+  parseCookies,
+} from "@tanstack/react-start/server";
 import { Effect } from "effect";
 import { TaggedError } from "@blank/core/lib/effect/index";
 import { capitalizedToSnake } from "@blank/core/lib/utils/index";
@@ -32,7 +35,11 @@ export const ServerRoute = createServerFileRoute("/api/auth/callback").methods({
 
       AuthTokens.cookies.set(exchanged.tokens);
 
+      const cookies = parseCookies();
+
       return redirect({
+        headers: cookies,
+        reloadDocument: true,
         to: "/",
         statusCode: 302,
       });
