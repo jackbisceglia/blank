@@ -15,7 +15,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }
 
   if (query.status === "pending") {
-    return <Loading className="min-h-screen" whatIsLoading="workspace" />;
+    return (
+      <Loading className="min-h-screen" whatIsLoading="workspace" useGuard />
+    );
   }
 
   return children;
