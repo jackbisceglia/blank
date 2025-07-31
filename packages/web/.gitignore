@@ -17,6 +17,7 @@ yarn.lock
 /public/build
 .vinxi
 .tanstack
+.nitro
 # Sentry Config File
 .env.sentry-build-plugin
 /test-results/
