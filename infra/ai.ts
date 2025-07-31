@@ -7,7 +7,7 @@ export const AI = new sst.Linkable("AI", {
 
     // model providers
     openaiApiKey: SecretWithEnvFallback("OpenaiApiKey"),
-    googleGenerativeAiApiKey: SecretWithEnvFallback("googleGenerativeAiApiKey"),
-    groqApiKey: SecretWithEnvFallback("groqApiKey"),
+    googleGenerativeAiApiKey: SecretWithEnvFallback("GoogleGenerativeAiApiKey"),
+    groqApiKey: SecretWithEnvFallback("GroqApiKey"),
   },
 });

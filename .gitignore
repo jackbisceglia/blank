@@ -1,6 +1,7 @@
 # custom
 .opencode
 secrets.sst
+*.secrets.sst
 .cursorrules
 *.context.md
 AGENT.md

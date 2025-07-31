@@ -37,8 +37,20 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
           title: "withblank.com",
           description: `Expense Splitting Made Easy`,
         }),
+        {
+          name: "viewport",
+          content: "width=device-width, initial-scale=1",
+        },
       ],
-      links: [{ rel: "stylesheet", href: stylesUrl }],
+      links: [
+        { rel: "stylesheet", href: stylesUrl },
+        { rel: "preconnect", href: "https://fonts.googleapis.com" },
+        {
+          rel: "preconnect",
+          href: "https://fonts.gstatic.com",
+          crossOrigin: "anonymous",
+        },
+      ],
     }),
     ssr: true,
     component: () => <Document />,

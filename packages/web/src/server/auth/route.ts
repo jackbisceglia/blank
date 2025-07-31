@@ -1,9 +1,8 @@
-import { getHeader } from "@tanstack/react-start/server";
 import { subjects } from "@blank/auth/subjects";
 import { redirect } from "@tanstack/react-router";
 import { createServerFn } from "@tanstack/react-start";
 import { authenticate, openauth } from "@/server/auth/core";
-import { AuthTokens } from "@/server/utils";
+import { AuthTokens, getBaseUrl } from "@/server/utils";
 import { evaluate } from "@/lib/utils";
 import { optional } from "@blank/core/lib/utils/index";
 
@@ -26,10 +25,7 @@ export const loginRPC = createServerFn().handler(async function () {
   }
 
   const uri = evaluate(() => {
-    const host = getHeader("host");
-    const protocol = host?.includes("localhost") ? "http" : "https";
-
-    return host ? `${protocol}://${host}/api/auth/callback` : null;
+    return `${getBaseUrl()}/api/auth/callback`; // TODO: fix
   });
 
   if (!uri) throw new Error("Failed to get callback URL"); // should be a result eventually
@@ -41,5 +37,5 @@ export const loginRPC = createServerFn().handler(async function () {
 
 export const logoutRPC = createServerFn().handler(function () {
   AuthTokens.cookies.delete();
-  throw redirect({ to: "/landing" });
+  throw redirect({ to: "/landing", reloadDocument: true });
 });

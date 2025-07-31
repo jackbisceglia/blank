@@ -21,6 +21,33 @@ const inputs = {
 };
 
 export const meRPC = createServerFn().handler(async function () {
+  const handler = Effect.fn("updateUser")(function* () {
+    const auth = yield* requireUserAuthenticated(AuthTokens.cookies);
+
+    const user = yield* users.getById(auth.subject.properties.userID);
+
+    yield* requireValueExists({
+      error: () => new AuthenticationError("Could not fetch current user"),
+    })(user);
+
+    const token = yield* Effect.try(() => AuthTokens.cookies.get());
+
+    const access = yield* requireValueExists({
+      success: (value: string) => value, // have to pass this to get type inference
+      error: () => new AuthenticationError("Could not fetch access token"),
+    })(token.access);
+
+    return { user, token: access };
+  });
+
+  return pipe(
+    handler(),
+    Effect.catchTag("UserNotAuthenticatedError", () => Effect.succeed(null)),
+    Effect.runPromise,
+  );
+});
+
+export const meRPC2 = createServerFn().handler(async function () {
   const user = pipe(
     requireUserAuthenticated(AuthTokens.cookies),
     Effect.map((result) => result.subject.properties.userID),
@@ -30,6 +57,7 @@ export const meRPC = createServerFn().handler(async function () {
         error: () => new AuthenticationError("Could not fetch current user"),
       }),
     ),
+    Effect.catchTag("UserNotAuthenticatedError", () => Effect.succeed(null)),
   );
 
   const token = pipe(
@@ -45,6 +73,11 @@ export const meRPC = createServerFn().handler(async function () {
   const result = pipe(
     Effect.all([user, token]),
     Effect.map(([user, token]) => ({ user, token })),
+    Effect.tapError((error) => {
+      console.log("error in the result effect merge: ", error);
+
+      return Effect.fail(error);
+    }),
     Effect.mapError((e) =>
       e._tag === "UserNotFoundError" || e._tag === "AuthenticationError"
         ? notFound({ data: e.data })

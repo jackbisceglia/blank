@@ -1,44 +1,15 @@
 import { cn } from "@/lib/utils";
-import { PropsWithChildren, useEffect, useRef, useState } from "react";
-
-type DelayedProps = PropsWithChildren<{ delay?: number }>;
-
-export function Delayed(props: DelayedProps) {
-  const [show, setShow] = useState(false);
-  const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-
-  useEffect(() => {
-    setShow(false);
-
-    if (timeoutRef.current) {
-      clearTimeout(timeoutRef.current);
-    }
-
-    timeoutRef.current = setTimeout(() => {
-      setShow(true);
-    }, props.delay ?? 100);
-
-    return () => {
-      if (timeoutRef.current) {
-        clearTimeout(timeoutRef.current);
-        timeoutRef.current = null;
-      }
-    };
-  }, [props.delay]);
-
-  if (!show) return null;
-  return <>{props.children}</>;
-}
+import { PropsWithChildren } from "react";
+import { useSpinDelay } from "spin-delay";
 
 type LoadingProps = PropsWithChildren<{
-  useGuard?: boolean;
   omitBaseText?: boolean;
   whatIsLoading?: string;
   title?: string;
   className?: string;
 }>;
 
-export function LoadingInner(props: LoadingProps) {
+export function Loading(props: LoadingProps) {
   const title =
     props.title ??
     ["loading", props.whatIsLoading && ` ${props.whatIsLoading}`, "..."]
@@ -63,12 +34,16 @@ export function LoadingInner(props: LoadingProps) {
   );
 }
 
-export function Loading(props: LoadingProps) {
-  if (!props.useGuard) return <LoadingInner {...props} />;
+export type LoadingDelayedProps = LoadingProps & {
+  loading: boolean | undefined | null;
+};
 
-  return (
-    <Delayed>
-      <LoadingInner {...props} />
-    </Delayed>
-  );
+export function LoadingDelayed(props: LoadingDelayedProps) {
+  const { loading, ...restProps } = props;
+
+  const showSpinner = useSpinDelay(!!props.loading);
+
+  if (showSpinner) <Loading {...restProps} />;
+
+  return null;
 }

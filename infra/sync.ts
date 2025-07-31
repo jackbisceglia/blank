@@ -7,12 +7,15 @@ import { domains } from "./domain";
 
 const SyncReplicationBucket = new sst.aws.Bucket(`SyncReplicationBucket`);
 
-const getZeroSchemaRelativePath = () => "../packages/zero/src/schema.ts";
+const getZeroSchemaRelativePath = () => "../packages/zero/schema.ts";
 
-const getZeroVersion = () =>
-  execSync("npm list @rocicorp/zero | grep @rocicorp/zero | cut -f 3 -d @")
-    .toString()
-    .trim();
+const getZeroVersion = () => {
+  const pkg = "@rocicorp/zero";
+
+  const zero = JSON.parse(execSync(`npm list ${pkg} --json`).toString());
+
+  return zero.dependencies[pkg].version;
+};
 
 const getPushUrl = () => {
   const protocol = $dev ? "http://" : "https://";
@@ -22,8 +25,6 @@ const getPushUrl = () => {
 
 const commonEnvironmentVariables = {
   ZERO_UPSTREAM_DB: Database.properties.connection,
-  ZERO_CVR_DB: Database.properties.connection,
-  ZERO_CHANGE_DB: Database.properties.connection,
   ZERO_AUTH_JWKS_URL: getAuthJwksUrl(),
   ZERO_REPLICA_FILE: "sync-replica.db",
   ZERO_IMAGE_URL: `rocicorp/zero:${getZeroVersion()}`,
@@ -34,55 +35,6 @@ const commonEnvironmentVariables = {
     ZERO_LITESTREAM_BACKUP_URL: $interpolate`s3://${SyncReplicationBucket.name}/backup`,
   })),
 };
-
-export const SyncReplicationManager = NonDevelopmentOnly(
-  () =>
-    new sst.aws.Service(`SyncReplicationManager`, {
-      cluster: Cluster,
-      ...ProductionStageOnly(() => ({
-        cpu: "0.5 vCPU",
-        memory: "1 GB",
-      })),
-      architecture: "arm64",
-      image: commonEnvironmentVariables.ZERO_IMAGE_URL,
-      link: [SyncReplicationBucket, Database],
-      health: {
-        command: ["CMD-SHELL", "curl -f http://localhost:4849/ || exit 1"],
-        interval: "5 seconds",
-        retries: 3,
-        startPeriod: "300 seconds",
-      },
-      environment: {
-        ...commonEnvironmentVariables,
-        ZERO_CHANGE_MAX_CONNS: "3",
-        ZERO_NUM_SYNC_WORKERS: "0",
-      },
-      loadBalancer: {
-        public: false,
-        ports: [
-          {
-            listen: "80/http",
-            forward: "4849/http",
-          },
-        ],
-      },
-      transform: {
-        loadBalancer: {
-          idleTimeout: 3600,
-        },
-        target: {
-          healthCheck: {
-            enabled: true,
-            path: "/keepalive",
-            protocol: "HTTP",
-            interval: 5,
-            healthyThreshold: 2,
-            timeout: 3,
-          },
-        },
-      },
-    })
-);
 
 export const Sync = new sst.aws.Service(`SyncViewSyncer`, {
   cluster: Cluster,
@@ -101,9 +53,7 @@ export const Sync = new sst.aws.Service(`SyncViewSyncer`, {
   },
   environment: {
     ...commonEnvironmentVariables,
-    ...NonDevelopmentOnly(() => ({
-      ZERO_CHANGE_STREAMER_URI: SyncReplicationManager!.url,
-    })),
+    ...NonDevelopmentOnly(() => ({})),
   },
   logging: {
     retention: "1 month",
@@ -140,8 +90,7 @@ export const Sync = new sst.aws.Service(`SyncViewSyncer`, {
   },
 });
 
-if (SyncReplicationManager) {
-  // @ts-expect-error no clue why this is breaking
+if (!$dev) {
   new command.local.Command(
     "zero-deploy-permissions",
     {
@@ -155,6 +104,6 @@ if (SyncReplicationManager) {
         ZERO_UPSTREAM_DB: commonEnvironmentVariables.ZERO_UPSTREAM_DB,
       },
     },
-    { dependsOn: Sync }
+    { dependsOn: Sync },
   );
 }

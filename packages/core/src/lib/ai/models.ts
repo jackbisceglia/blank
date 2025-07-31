@@ -28,11 +28,6 @@ export const models = {
   "mini.gpt-4o-mini": () => providers.openai("gpt-4o-mini"),
   "mini.gpt-4.1-mini": () => providers.openai("gpt-4.1-mini"),
   "mini.gpt-4.1-nano": () => providers.openai("gpt-4.1-nano"),
-  // google
-  "pro.gemini-2.5-pro": () => providers.google("gemini-2.5-pro-exp-03-25"),
-  "mini.gemini-2.0-flash": () => providers.google("gemini-2.0-flash-001"),
-  "mini.gemini-2.0-flash-thinking": () =>
-    providers.google("gemini-2.0-flash-thinking-exp-01-21"),
 
   // qwen
   "reasoning.qwen-qwq": () => providers.groq("qwen-qwq-32b"),
