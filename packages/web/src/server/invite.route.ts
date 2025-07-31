@@ -153,10 +153,7 @@ export const createGroupInviteServerFn = createServerFn()
           yield* assertGroupHasInviteCapacity(data.groupId, tx);
           yield* assertGroupHasMemberCapacity(data.groupId, tx);
 
-          return yield* invites.create({
-            groupId: data.groupId,
-            expiresAt: invites.utils.computeExpiry(),
-          });
+          return yield* invites.create({ groupId: data.groupId });
         }),
       );
 
