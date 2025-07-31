@@ -5,6 +5,7 @@ import {
   getCookie,
   deleteCookie,
 } from "@tanstack/react-start/server";
+import * as cookie from "cookie";
 
 const normalizeServerUrl = (url: string) =>
   url.endsWith("/") ? url.slice(0, -1) : url;
@@ -87,10 +88,10 @@ export const AuthTokens = {
       );
 
       if (!shouldOmitAccess) {
-        deleteCookie(AuthTokens.keys.access);
+        deleteCookie(AuthTokens.keys.access, AuthTokens.opts);
       }
       if (!shouldOmitRefresh) {
-        deleteCookie(AuthTokens.keys.refresh);
+        deleteCookie(AuthTokens.keys.refresh, AuthTokens.opts);
       }
     },
   },

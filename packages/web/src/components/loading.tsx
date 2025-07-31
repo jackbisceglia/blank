@@ -16,7 +16,7 @@ export function Delayed(props: DelayedProps) {
 
     timeoutRef.current = setTimeout(() => {
       setShow(true);
-    }, props.delay ?? 100);
+    }, props.delay ?? 500);
 
     return () => {
       if (timeoutRef.current) {
