@@ -8,6 +8,7 @@ import { seo } from "@/lib/seo";
 import { QueryClient } from "@tanstack/react-query";
 // @ts-ignore
 import stylesUrl from "@/styles.css?url";
+import { authenticationQueryOptions } from "@/lib/authentication";
 
 function Document() {
   return (
