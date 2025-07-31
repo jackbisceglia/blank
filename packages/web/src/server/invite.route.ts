@@ -155,7 +155,7 @@ export const createGroupInviteServerFn = createServerFn()
 
           return yield* invites.create({
             groupId: data.groupId,
-            expiresAt: invites.utils.computeExpiry(),
+            expiresAt: invites.utils.computeExpiry("day"),
           });
         }),
       );
