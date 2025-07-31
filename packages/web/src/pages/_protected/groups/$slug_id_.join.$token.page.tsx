@@ -135,7 +135,9 @@ function JoinGroupPage() {
   const linkOpts = toGroupPageOpts(params.id, params.slug);
 
   // we're safe to navigate whenever the group reactively syncs (means we've joined it)
-  if (group.status === "loading") return <States.Loading />;
+  if (group.status === "loading")
+    return <States.Loading loading={group.status === "loading"} />;
+
   if (group.status === "success" && group.data) {
     if (form.api.state.isSubmitSuccessful) {
       return <Navigate {...linkOpts} />;
@@ -193,7 +195,7 @@ function JoinGroupPage() {
           children={(fieldMeta) => (
             <FieldsErrors
               id={fieldErrorId}
-              className="col-span-full min-h-9"
+              ul={{ className: "col-span-full min-h-9" }}
               metas={fieldMeta}
             />
           )}

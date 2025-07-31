@@ -22,7 +22,6 @@ import {
 import { Fragment } from "react/jsx-runtime";
 import { GlobalCommandBar } from "./@command-bar.dialog";
 import { ZeroProvider } from "@/lib/zero/zero-provider";
-import { authenticationQueryOptions } from "@/lib/authentication";
 import { AuthProvider } from "@/lib/authentication/auth-provider";
 import { PropsWithChildren } from "react";
 import { CreateExpenseDialog } from "./@create-expense.dialog";
@@ -32,7 +31,7 @@ import { SearchRouteSchema as GlobalSearchParams } from "./@command-bar.dialog";
 import { SearchRouteSchema as CreateExpenseSearchParams } from "./@create-expense.dialog";
 import { SearchRouteSchema as CreateGroupSearchParams } from "./groups/@create-group.dialog";
 import * as v from "valibot";
-import { Loading } from "@/components/loading";
+import { authenticationQueryOptions } from "@/lib/authentication";
 
 function getCookie(name: string, fallback: string) {
   const all = document.cookie.split(";").map((c) => c.trim().split("="));
@@ -154,15 +153,23 @@ function Providers(props: PropsWithChildren) {
   );
 }
 
-export const Route = createFileRoute("/_protected")({
-  loader: (opts) => {
-    void opts.context.queryClient.ensureQueryData(authenticationQueryOptions());
-  },
-  component: () => (
+function Component() {
+  return (
     <Providers>
       <ProtectedLayout />
     </Providers>
-  ),
+  );
+}
+
+export const Route = createFileRoute("/_protected")({
+  component: Component,
+  loader: async (opts) => {
+    await opts.context.queryClient.ensureQueryData({
+      ...authenticationQueryOptions(),
+    });
+  },
+  pendingMinMs: 0,
+  pendingMs: 0,
   validateSearch: v.object({
     // here we define search params for ui that can be shown globally
     action: v.optional(

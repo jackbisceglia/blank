@@ -32,7 +32,15 @@ declare module "sst" {
       "type": "sst.sst.Secret"
       "value": string
     }
+    "DatabaseName": {
+      "type": "sst.sst.Secret"
+      "value": string
+    }
     "DatabasePassword": {
+      "type": "sst.sst.Secret"
+      "value": string
+    }
+    "GoogleGenerativeAiApiKey": {
       "type": "sst.sst.Secret"
       "value": string
     }
@@ -46,6 +54,10 @@ declare module "sst" {
       "value": string
     }
     "GoogleOAuthClientSecret": {
+      "type": "sst.sst.Secret"
+      "value": string
+    }
+    "GroqApiKey": {
       "type": "sst.sst.Secret"
       "value": string
     }
@@ -68,14 +80,6 @@ declare module "sst" {
     "Web": {
       "type": "sst.aws.TanstackStart"
       "url": string
-    }
-    "googleGenerativeAiApiKey": {
-      "type": "sst.sst.Secret"
-      "value": string
-    }
-    "groqApiKey": {
-      "type": "sst.sst.Secret"
-      "value": string
     }
   }
 }

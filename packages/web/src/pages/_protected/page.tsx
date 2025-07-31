@@ -208,8 +208,11 @@ function HomeRoute() {
   const defaultGroup = useUserDefaultGroup(authentication.user.id);
   const groupsList = useGroupListByUserId(authentication.user.id);
 
-  if (defaultGroup.status === "loading" || groupsList.status === "loading") {
-    return <States.Loading />;
+  const isLoading =
+    defaultGroup.status === "loading" || groupsList.status === "loading";
+
+  if (isLoading) {
+    return <States.Loading loading={isLoading} />;
   }
 
   if (groupsList.status === "empty") {

@@ -24,7 +24,7 @@ export function createRouter() {
       defaultSsr: false,
       routeTree,
       context: { queryClient },
-      defaultPreload: "viewport",
+      defaultPreload: "intent",
       defaultErrorComponent: DefaultCatchBoundary,
       defaultNotFoundComponent: () => <NotFound />,
       defaultStructuralSharing: true,

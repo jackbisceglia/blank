@@ -79,7 +79,7 @@ function GroupRoute() {
   const mutate = useMutations();
 
   if (query.group.status === "loading") {
-    return <States.Loading />;
+    return <States.Loading loading={query.group.status === "loading"} />;
   }
 
   if (query.group.status === "not-found")

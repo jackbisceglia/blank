@@ -5,8 +5,8 @@ export const Database = new sst.Linkable("Database", {
     const properties = {
       host: SecretWithEnvFallback("DatabaseHost"),
       password: SecretWithEnvFallback("DatabasePassword"),
+      database: SecretWithEnvFallback("DatabaseName"),
       user: "neondb_owner",
-      database: "neondb",
     };
     return {
       ...properties,

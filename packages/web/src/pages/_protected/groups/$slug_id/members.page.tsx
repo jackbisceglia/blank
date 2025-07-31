@@ -44,7 +44,9 @@ function MembersRoute() {
   const authentication = useAuthentication();
   const group = useGroupById(params.id);
 
-  if (group.status === "loading") return <States.Loading />;
+  const isLoading = group.status === "loading";
+
+  if (isLoading) return <States.Loading loading={isLoading} />;
 
   if (group.status === "not-found") {
     return <States.NotFound title={slugify(params.slug).decode()} />;

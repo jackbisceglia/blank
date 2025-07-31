@@ -31,8 +31,8 @@ function SettingsRoute() {
   const group = useGroupById(params.id);
 
   return Match.value(group).pipe(
-    Match.when({ status: "loading" }, () => {
-      return <States.Loading />;
+    Match.when({ status: "loading" }, (group) => {
+      return <States.Loading loading={group.status === "loading"} />;
     }),
     Match.whenOr({ status: "not-found" }, { data: Match.undefined }, () => {
       const group = slugify(params.slug).decode();

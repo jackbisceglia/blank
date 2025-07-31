@@ -1,9 +1,13 @@
 import { openauth } from "@/server/auth/core";
-import { AuthTokens } from "@/server/utils";
-import { createServerFileRoute } from "@tanstack/react-start/server";
+import { AuthTokens, getBaseUrl } from "@/server/utils";
+import {
+  createServerFileRoute,
+  parseCookies,
+} from "@tanstack/react-start/server";
 import { Effect } from "effect";
 import { TaggedError } from "@blank/core/lib/effect/index";
 import { capitalizedToSnake } from "@blank/core/lib/utils/index";
+import { redirect } from "@tanstack/react-router";
 
 class NoCodeError extends TaggedError("NoCodeError") {}
 class TokenExchangeError extends TaggedError("TokenExchangeError") {}
@@ -19,7 +23,7 @@ export const ServerRoute = createServerFileRoute("/api/auth/callback").methods({
       }
 
       const exchanged = yield* Effect.tryPromise(() =>
-        openauth.exchange(code, `${url.origin}/api/auth/callback`),
+        openauth.exchange(code, `${getBaseUrl()}/api/auth/callback`),
       );
 
       if (exchanged.err) {
@@ -31,11 +35,13 @@ export const ServerRoute = createServerFileRoute("/api/auth/callback").methods({
 
       AuthTokens.cookies.set(exchanged.tokens);
 
-      return new Response(null, {
-        status: 302,
-        headers: {
-          Location: "/",
-        },
+      const cookies = parseCookies();
+
+      return redirect({
+        headers: cookies,
+        reloadDocument: true,
+        to: "/",
+        statusCode: 302,
       });
     }).pipe(
       Effect.tapError(Effect.logError),
@@ -43,8 +49,9 @@ export const ServerRoute = createServerFileRoute("/api/auth/callback").methods({
         const param = capitalizedToSnake(error.message);
 
         return Effect.succeed(
-          new Response(null, {
-            status: 302,
+          redirect({
+            to: "/",
+            statusCode: 302,
             headers: { Location: `/?auth_error=${param}` },
           }),
         );
