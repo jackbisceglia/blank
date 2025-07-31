@@ -48,10 +48,18 @@ export namespace invites {
     );
   }
 
-  export function create(invite: InviteInsert, tx?: Transaction) {
+  type CreateInvite = Omit<
+    InviteInsert,
+    "expiresAt" | "status" | "createdAt" | "acceptedAt"
+  >;
+
+  export function create(invite: CreateInvite, tx?: Transaction) {
     return pipe(
       Effect.tryPromise(() =>
-        (tx ?? db).insert(inviteTable).values(invite).returning(),
+        (tx ?? db)
+          .insert(inviteTable)
+          .values({ ...invite, expiresAt: utils.computeExpiry("day") })
+          .returning(),
       ),
       Effect.tap(Effect.logDebug),
       Effect.flatMap(
