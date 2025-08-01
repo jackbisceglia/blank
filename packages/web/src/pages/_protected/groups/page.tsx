@@ -54,7 +54,7 @@ function GroupsRoute() {
     <>
       <PageHeaderRow className="h-8">
         <PrimaryHeading>Your Groups</PrimaryHeading>
-        <Button asChild size="sm" variant="theme" className="ml-auto">
+        <Button asChild size="xs" variant="theme" className="ml-auto">
           <Link
             to="."
             search={(prev) => ({
