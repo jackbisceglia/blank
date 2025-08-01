@@ -23,7 +23,7 @@ export function build(delimiter: string) {
     args.filter((arg) => !!arg).join(delimiter);
 }
 
-export type PropsWithClassname<T> = T & {
+export type PropsWithClassname<T = {}> = T & {
   className?: string;
 };
 

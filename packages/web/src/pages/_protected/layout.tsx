@@ -11,7 +11,7 @@ import {
   SidebarTrigger,
   useIsMobile,
 } from "@/components/ui/sidebar";
-import { cn } from "@/lib/utils";
+import { cn, PropsWithClassname } from "@/lib/utils";
 import {
   createFileRoute,
   isMatch,
@@ -20,7 +20,7 @@ import {
   useMatches,
 } from "@tanstack/react-router";
 import { Fragment } from "react/jsx-runtime";
-import { GlobalCommandBar } from "./@command-bar.dialog";
+import { GlobalCommandBar, SearchRoute } from "./@command-bar.dialog";
 import { ZeroProvider } from "@/lib/zero/zero-provider";
 import { AuthProvider } from "@/lib/authentication/auth-provider";
 import { PropsWithChildren } from "react";
@@ -32,6 +32,8 @@ import { SearchRouteSchema as CreateExpenseSearchParams } from "./@create-expens
 import { SearchRouteSchema as CreateGroupSearchParams } from "./groups/@create-group.dialog";
 import * as v from "valibot";
 import { authenticationQueryOptions } from "@/lib/authentication";
+import { Button } from "@/components/ui/button";
+import { Loading } from "@/components/loading";
 
 function getCookie(name: string, fallback: string) {
   const all = document.cookie.split(";").map((c) => c.trim().split("="));
@@ -41,7 +43,7 @@ function getCookie(name: string, fallback: string) {
   return values?.at(1) ?? fallback;
 }
 
-function Breadcrumbs() {
+function Breadcrumbs(props: PropsWithClassname) {
   const isMobile = useIsMobile();
   const breadcrumbs = useMatches()
     .filter((match) => {
@@ -84,7 +86,7 @@ function Breadcrumbs() {
   }
 
   return (
-    <Breadcrumb>
+    <Breadcrumb className={cn(props.className)}>
       <BreadcrumbList>
         <BreadcrumbSeparator />
         {breadcrumbs.map((match, index) => (
@@ -119,14 +121,37 @@ function Breadcrumbs() {
   );
 }
 
+function ApplicationNavigation() {
+  const isMobile = useIsMobile();
+  const command = SearchRoute.useSearchRoute();
+
+  if (isMobile) return null;
+
+  return (
+    <div className="flex">
+      <Button
+        onClick={() => void command.open()}
+        size="xs"
+        variant="secondary"
+        className="text-muted-foreground h-min py-1 mb-auto"
+        aria-label="Open Command Palette"
+        title="Open Command Palette"
+      >
+        Cmd + K
+      </Button>
+    </div>
+  );
+}
+
 function ProtectedLayout() {
   return (
     <>
       <GlobalSidebar collapsible="icon" />
       <main className="flex-1 min-w-0 flex flex-col items-start gap-4 sm:gap-1 py-3 px-2.5 sm:px-6 lg:px-8 min-h-full relative">
-        <header className="flex justify-start items-center gap-0.5 sm:gap-2 text-sm w-full pb-1.5">
+        <header className="flex justify-start items-center gap-0.5 sm:gap-2 text-sm w-full pb-2">
           <SidebarTrigger />
-          <Breadcrumbs />
+          <Breadcrumbs className="mr-auto" />
+          <ApplicationNavigation />
         </header>
         <Outlet />
       </main>
@@ -164,12 +189,16 @@ function Component() {
 export const Route = createFileRoute("/_protected")({
   component: Component,
   loader: async (opts) => {
-    await opts.context.queryClient.ensureQueryData({
+    return await opts.context.queryClient.ensureQueryData({
       ...authenticationQueryOptions(),
     });
   },
-  pendingMinMs: 0,
-  pendingMs: 0,
+  ssr: "data-only",
+  pendingMs: 1000,
+  pendingMinMs: 300,
+  pendingComponent: () => (
+    <Loading whatIsLoading="workspace" className="h-screen m-auto" />
+  ),
   validateSearch: v.object({
     // here we define search params for ui that can be shown globally
     action: v.optional(

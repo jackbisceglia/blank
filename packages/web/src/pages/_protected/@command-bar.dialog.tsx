@@ -81,12 +81,30 @@ export function GlobalCommandBar() {
     }),
   };
 
-  const keymap = new Map(
-    Object.values<Commands[CommandKeys]>(commands).map((cmd) => [
-      cmd.hotkey,
-      cmd.go,
-    ]),
-  );
+  type GroupCommands = typeof groupCommands;
+  const groupCommands = (groups?.data ?? []).map((group, index) => {
+    const opts = {
+      to: `/groups/$slug_id`,
+      params: { slug_id: { slug: group.slug, id: group.id } },
+    } as const;
+
+    return {
+      hotkey: String(index + 1),
+      type: "link",
+      title: group.title,
+      opts: opts,
+      go: () => {
+        navigate(opts);
+      },
+    } as const;
+  });
+
+  const values = [
+    ...Object.values<Commands[CommandKeys]>(commands),
+    ...Object.values<GroupCommands[number]>(groupCommands),
+  ];
+
+  const keymap = new Map(values.map((cmd) => [cmd.hotkey, cmd.go]));
 
   useEffect(() => {
     const actions = keyboard.register({
@@ -115,18 +133,6 @@ export function GlobalCommandBar() {
     };
   }, [route.state()]);
 
-  const groupCommands = (groups?.data ?? []).map(
-    (group) =>
-      ({
-        type: "link",
-        title: group.title,
-        opts: {
-          to: `/groups/$slug_id`,
-          params: { slug_id: { slug: group.slug, id: group.id } },
-        },
-      }) as const,
-  );
-
   return (
     <CommandDialog
       omitCloseButton
@@ -141,24 +147,24 @@ export function GlobalCommandBar() {
             <CommandItem onSelect={action.go} asChild key={action.title}>
               <Link {...action.opts}>
                 <span>+</span>
-                <span className="mr-auto">{action.title}</span>
-                <span className="text-primary/50">[ctrl+{action.hotkey}]</span>
+                {action.title}
+                <span className="ml-auto text-primary/50">
+                  {" "}
+                  [ctrl+{action.hotkey}]{" "}
+                </span>
               </Link>
             </CommandItem>
           ))}
         </CommandGroup>
         <CommandGroup heading="Your Groups">
           {groupCommands.map((group) => (
-            <CommandItem
-              onSelect={() => {
-                void navigate(group.opts);
-              }}
-              asChild
-              key={group.title}
-            >
+            <CommandItem onSelect={group.go} asChild key={group.title}>
               <Link className="lowercase" {...group.opts}>
                 <span>@</span>
                 {group.title}
+                <span className="ml-auto text-primary/50">
+                  [ctrl+{group.hotkey}]
+                </span>
               </Link>
             </CommandItem>
           ))}

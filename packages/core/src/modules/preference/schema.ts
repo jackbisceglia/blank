@@ -17,7 +17,7 @@ export const preferenceTable = pgTable(
   "preference",
   {
     userId: uuid().notNull().unique(), // update to make into ulid
-    defaultGroupId: uuid(), // update to make into ulid
+    defaultGroupId: uuid().notNull(), // update to make into ulid
   },
   (table) => [primaryKey({ columns: [table.userId, table.defaultGroupId] })],
 );

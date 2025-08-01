@@ -108,7 +108,7 @@ export function TableFilterButton() {
     <DropdownMenuTrigger asChild>
       <Button
         size="xs"
-        className="w-24 bg-transparent border border-border py-1.5 pl-3 pr-2 hover:bg-secondary/25 text-foreground h-min "
+        className="w-24 bg-transparent border border-border py-1.5 pl-3 pr-2 hover:bg-secondary/25 text-foreground h-min"
       >
         <Plus className="size-2.5" />
         Filter
