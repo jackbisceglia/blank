@@ -21,30 +21,35 @@ const inputs = {
 };
 
 export const meRPC = createServerFn().handler(async function () {
-  const handler = Effect.fn("updateUser")(function* () {
-    const auth = yield* requireUserAuthenticated(AuthTokens.cookies);
+  const handler = Effect.fn("updateUser")(
+    function* () {
+      const auth = yield* requireUserAuthenticated(AuthTokens.cookies);
 
-    const user = yield* users.getById(auth.subject.properties.userID);
+      const user = yield* users.getById(auth.subject.properties.userID); // could set up a retry on Unknown Errors
 
-    yield* requireValueExists({
-      error: () => new AuthenticationError("Could not fetch current user"),
-    })(user);
+      const token = yield* Effect.try(() => AuthTokens.cookies.get());
 
-    const token = yield* Effect.try(() => AuthTokens.cookies.get());
+      const access = yield* requireValueExists({
+        success: (value: string) => value, // have to pass this to get type inference
+        error: () => new AuthenticationError("Could not fetch access token"),
+      })(token.access);
 
-    const access = yield* requireValueExists({
-      success: (value: string) => value, // have to pass this to get type inference
-      error: () => new AuthenticationError("Could not fetch access token"),
-    })(token.access);
-
-    return { user, token: access };
-  });
-
-  return pipe(
-    handler(),
-    Effect.catchTag("UserNotAuthenticatedError", () => Effect.succeed(null)),
-    Effect.runPromise,
+      return { user, token: access };
+    },
+    // issue authenticating/reading user
+    Effect.catchTag(
+      "UserNotAuthenticatedError",
+      "UserNotFoundError",
+      "AuthenticationError",
+      () => Effect.succeed(null),
+    ),
+    // unknown error
+    Effect.catchTag("UnknownException", "DatabaseReadError", () =>
+      Effect.succeed(null),
+    ),
   );
+
+  return pipe(handler(), Effect.runPromise);
 });
 
 export const meRPC2 = createServerFn().handler(async function () {
