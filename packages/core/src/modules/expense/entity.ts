@@ -124,6 +124,7 @@ export namespace expenses {
     userId: string;
     description: string;
     date?: Date;
+    images?: string[];
   };
 
   export function remove(id: string, tx?: Transaction) {
@@ -165,7 +166,13 @@ export namespace expenses {
       const members = yield* groups.getMembers(options.groupId);
 
       const generated = yield* Effect.tryPromise({
-        try: () => unwrapOrThrow(nl.expense.parse(options.description)), // TODO: remove after migrate
+        try: () =>
+          unwrapOrThrow(
+            nl.expense.parse(
+              options.description,
+              options.images ? { images: options.images } : {},
+            ),
+          ), // TODO: remove after migrate
         catch: (e) => new ExpenseParsingError("Failed parsing expense", e),
       });
 

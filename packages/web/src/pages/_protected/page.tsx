@@ -12,12 +12,12 @@ import { useCreateExpense } from "./@data/expenses";
 import { withToast } from "@/lib/toast";
 import { X } from "lucide-react";
 import { FieldsErrors, useAppForm } from "@/components/form";
-import { schema as createExpenseSchema } from "./@create-expense.dialog";
 import { positions } from "@/components/form/fields";
 import { useUserDefaultGroup } from "./@data/users";
 import { TaggedError } from "@blank/core/lib/effect/index";
 import { Group } from "@blank/zero";
 import { useGroupListByUserId } from "./@data/groups";
+import { Badge } from "@/components/ui/badge";
 
 class DataFetchingError extends TaggedError("DataFetchingError") {}
 
@@ -94,11 +94,38 @@ type ExpenseFormProps = { defaultGroup: Group };
 function ExpenseForm(props: ExpenseFormProps) {
   const createExpense = useCreateExpense(props.defaultGroup.id);
 
+  const init = {
+    description: "",
+    files: [] as { id: string; result: string }[],
+  };
+
   const form = useAppForm({
-    defaultValues: { description: "" },
-    validators: { onChange: createExpenseSchema },
+    defaultValues: init,
+    validators: {
+      onChange: v.object({
+        description: v.pipe(
+          v.string("Description is required"),
+          v.minLength(0),
+          v.maxLength(180, `Description must be at most 180 characters`),
+        ),
+        files: v.pipe(
+          v.array(
+            v.object({
+              id: v.pipe(v.string(), v.uuid()),
+              result: v.pipe(v.string(), v.minLength(1)),
+            }),
+          ),
+          v.maxLength(2),
+        ),
+      }),
+    },
     onSubmit: async (opts) => {
-      const promise = createExpense(opts.value.description);
+      if (!opts.value.description.length && !opts.value.files.length) return;
+
+      const promise = createExpense(
+        opts.value.description,
+        opts.value.files.map((f) => f.result),
+      );
 
       const result = await withToast({
         promise,
@@ -138,56 +165,161 @@ function ExpenseForm(props: ExpenseFormProps) {
 
   const fieldErrorsId = "create-expense-errors";
 
+  function isImage(file: File) {
+    return file && file.type && file.type.startsWith("image/");
+  }
+
+  function fileToBase64(file: File): Promise<string> {
+    return new Promise<string>((resolve, reject) => {
+      const reader = new FileReader();
+
+      reader.onload = (event: ProgressEvent<FileReader>) => {
+        const result = event.target?.result;
+        if (typeof result === "string") {
+          resolve(result);
+        } else {
+          reject(new Error("Failed to read file as string"));
+        }
+      };
+
+      reader.onerror = () => {
+        reject(new Error("File reading failed"));
+      };
+
+      reader.readAsDataURL(file);
+    });
+  }
+
+  async function handleFiles(files: File[]) {
+    if (form.state.values.files.length >= 2) {
+      return;
+    }
+    const list = Array.from(files).filter(isImage);
+    if (list.length === 0) return;
+
+    for (const file of list) {
+      try {
+        const result = await withToast<string>({
+          promise: fileToBase64(file),
+          notify: {
+            loading: "Uploading file",
+            success: `Image uploaded`,
+            error: "Failed to upload image",
+          },
+        });
+
+        const id = crypto.randomUUID();
+        form.setFieldValue("files", (prev) => [
+          ...prev,
+          { id, result } as const,
+        ]);
+
+        return result;
+      } catch (err) {
+        console.error("Failed to read file:", err);
+      }
+    }
+  }
+
   return (
     <>
-      <form
-        onSubmit={prevented(() => void form.handleSubmit())}
-        className="gap-2 border-[#8089BA] flex items-center border-2 rounded-md focus-within:border-[#B3BEF5] focus-within:ring-ring/20 focus-within:ring-[1.5px] p-1.5 bg-sidebar hover:border-[#B3BEF5] duration-300"
-      >
-        <form.AppField
-          name="description"
-          children={(field) => (
-            <field.TextField
-              errorPosition={positions.custom({ elementId: fieldErrorsId })}
-              inputProps={{
-                placeholder: "ordered dinner with...",
-                "aria-label": "Expense Description",
-                className:
-                  "bg-transparent flex-1 border-none text-left focus-visible:ring-0 focus-visible:ring-offset-0 px-1.5 py-1 placeholder:text-muted-foreground/90 rounded-none h-auto hover:bg-transparent",
-              }}
-            />
+      <div className="pb-4">
+        <form
+          onSubmit={prevented(() => void form.handleSubmit())}
+          className={cn(
+            "gap-2 border-[#8089BA] flex items-center border-2 rounded-md focus-within:border-[#B3BEF5] focus-within:ring-ring/20 focus-within:ring-[1.5px] p-1.5 bg-sidebar hover:border-[#B3BEF5] duration-300",
+            "data-dragging:border-blank-theme data-dragging:border-4",
           )}
-        />
-
-        <form.Subscribe
-          selector={(state) => state.values.description}
-          children={(value) =>
-            !!value.length && (
-              <Button
-                variant="ghost"
-                type="button"
-                size="xs"
-                className="self-stretch w-min px-6 hover:bg-secondary"
-                onClick={(e) => {
-                  form.resetField("description");
-                  (e.currentTarget.previousSibling as HTMLInputElement).focus();
+        >
+          <form.AppField
+            name="description"
+            children={(field) => (
+              <field.TextField
+                errorPosition={positions.custom({ elementId: fieldErrorsId })}
+                inputProps={{
+                  placeholder: "ordered dinner with...",
+                  "aria-label": "Expense Description",
+                  onPaste: (e) => {
+                    const items = e.clipboardData?.items || [];
+                    const files = [];
+                    for (const item of items) {
+                      if (item.kind === "file") {
+                        const f = item.getAsFile();
+                        if (f) files.push(f);
+                      }
+                    }
+                    if (files.length) {
+                      e.preventDefault(); // prevent image blob insertion
+                      handleFiles(files);
+                    }
+                  },
+                  className:
+                    "bg-transparent flex-1 border-none text-left focus-visible:ring-0 focus-visible:ring-offset-0 px-1.5 py-1 placeholder:text-muted-foreground/90 rounded-none h-auto hover:bg-transparent",
                 }}
-              >
-                <X className="size-3" />
-              </Button>
-            )
+              />
+            )}
+          />
+
+          <form.Subscribe
+            selector={(state) => state.values.description}
+            children={(value) =>
+              !!value.length && (
+                <Button
+                  variant="ghost"
+                  type="button"
+                  size="xs"
+                  className="self-stretch w-min px-6 hover:bg-secondary"
+                  onClick={(e) => {
+                    form.resetField("description");
+                    (
+                      e.currentTarget.previousSibling as HTMLInputElement
+                    ).focus();
+                  }}
+                >
+                  <X className="size-3" />
+                </Button>
+              )
+            }
+          />
+
+          <form.AppForm>
+            <form.SubmitButton
+              className="self-stretch w-min px-6"
+              dirty={{ disableForAria: true }}
+            >
+              Split
+            </form.SubmitButton>
+          </form.AppForm>
+        </form>
+      </div>
+
+      <div className="h-6.5 flex gap-2">
+        <form.Subscribe
+          selector={(state) => state.values.files}
+          children={(files) =>
+            files.map(({ id, result }) => {
+              if (!result) return;
+              return (
+                <Badge className="lowercase py-0 gap-1.5 pl-2 !pr-0 border border-foreground/40 bg-secondary text-foreground/80 text-xs font-medium max-w-48">
+                  <span className="truncate">Image {id.slice(-6)}</span>
+                  <Button
+                    onClick={() =>
+                      form.setFieldValue("files", (prev) =>
+                        prev.filter((p) => p.id !== id),
+                      )
+                    }
+                    variant="ghost"
+                    size="icon"
+                    className="h-min hover:bg-transparent py-[0.25rem] px-1 "
+                  >
+                    <X className="size-4" />
+                  </Button>
+                </Badge>
+              );
+            })
           }
         />
-
-        <form.AppForm>
-          <form.SubmitButton
-            className="self-stretch w-min px-6"
-            dirty={{ disableForAria: true }}
-          >
-            Split
-          </form.SubmitButton>
-        </form.AppForm>
-      </form>
+      </div>
       <form.Subscribe
         selector={(state) => state.fieldMeta}
         children={(fieldMeta) => (

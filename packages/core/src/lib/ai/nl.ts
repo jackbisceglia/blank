@@ -74,6 +74,8 @@ export namespace nl {
 
         You are an expert at parsing informal expense summaries into structured data for expense splitting applications.
 
+        You will also be given images of an expense potentially. You should heavily leverage this to extract things like total value and the description, as this is a good source of truth
+
         ## Input
         You'll receive natural language descriptions of expenses shared between multiple people.
 
@@ -117,7 +119,11 @@ export namespace nl {
     },
     parse: function (
       description: string,
-      opts?: { fastModel?: ModelKeys; qualityModel?: ModelKeys },
+      opts?: {
+        fastModel?: ModelKeys;
+        qualityModel?: ModelKeys;
+        images?: string[];
+      },
     ) {
       const fastModel = models[opts?.fastModel ?? DEFAULT_FAST]();
       const qualityModel = models[opts?.qualityModel ?? DEFAULT]();
@@ -127,11 +133,13 @@ export namespace nl {
         schema: valibotSchema(this.config.schema.llm),
         system: this.config.grounding,
         model: fastModel,
+        images: opts?.images ?? [],
       });
       const qualityLLMParser = createSafeGenerateObject({
         schema: valibotSchema(this.config.schema.llm),
         system: this.config.grounding,
         model: qualityModel,
+        images: opts?.images ?? [],
       });
 
       return ResultAsync.combine([
