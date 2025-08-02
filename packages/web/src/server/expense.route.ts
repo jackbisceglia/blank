@@ -26,10 +26,11 @@ export const createFromDescriptionServerFn = createServerFn({
 
       const user = yield* users.getById(auth.subject.properties.userID); // could set up a retry on Unknown Errors
 
-      if (
-        ctx.data.images.length > 0 &&
-        user.email !== "jackbisceglia2000@gmail.com"
-      ) {
+      const proPlanUsers = [
+        "jackbisceglia2000@gmail.com",
+        "jmjriley19@gmail.com",
+      ];
+      if (ctx.data.images.length > 0 && !proPlanUsers.includes(user.email)) {
         return yield* new UserAuthorizationError(
           "Upgrade to pro to parse images",
         );
