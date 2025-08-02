@@ -20,7 +20,7 @@ export const expenseTable = pgTable("expense", {
   groupId: uuid().notNull(), // update to make into ulid
   amount: integer().notNull(),
   date: timestamp().defaultNow().notNull(),
-  description: varchar({ length: 48 }).notNull(),
+  description: varchar({ length: 64 }).notNull(),
   status: text({ enum: ["active", "settled"] })
     .default("active")
     .notNull(),
