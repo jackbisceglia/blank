@@ -40,7 +40,6 @@ export const createFromDescriptionServerFn = createServerFn({
 
       const user = yield* users.getById(auth.subject.properties.userID);
 
-      console.log(ctx.data.images.length > 0, user.plan);
       if (ctx.data.images.length > 0) {
         yield* assertHasImageContextPerms(user);
       }
