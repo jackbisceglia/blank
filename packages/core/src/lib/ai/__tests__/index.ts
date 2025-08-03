@@ -7,8 +7,8 @@ import { data } from "./@nl.expense.dataset";
 
 type ModelDefintion = { fast: ModelKeys; quality: ModelKeys };
 export const MODELS: ModelDefintion = {
-  fast: "mini.llama-scout",
-  quality: "mini.gpt-4.1-mini",
+  fast: "pro.qwen3",
+  quality: "pro.qwen3",
 } as const;
 
 const PROJECT_BASE = "blank";
@@ -57,9 +57,9 @@ export function createExpenseEvalRunner(
     return await Eval(EXPENSE_EVAL_PROJECT, {
       data: dataset,
       async task(input) {
-        const res = await nl.expense.parse(input, {
-          fastModel: modelFast,
-          qualityModel: modelQuality,
+        const res = await nl.expense.parse({
+          description: input,
+          models: { fast: modelFast, quality: modelQuality },
         });
 
         if (res.isErr()) {

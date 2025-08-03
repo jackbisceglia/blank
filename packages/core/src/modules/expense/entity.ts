@@ -127,6 +127,7 @@ export namespace expenses {
     description: string;
     date?: Date;
     images?: ImageDataUrl[];
+    parser?: "base" | "pro";
   };
 
   export function remove(id: string, tx?: Transaction) {
@@ -167,12 +168,23 @@ export namespace expenses {
     const create = Effect.gen(function* () {
       const members = yield* groups.getMembers(options.groupId);
 
+      const shouldUseMultiModal =
+        options.parser === "pro" && (options.images ?? []).length > 0;
+
       const generated = yield* Effect.tryPromise({
         try: () =>
           unwrapOrThrow(
             nl.expense.parse({
               description: options.description,
               ...optional({ images: options.images }),
+              ...(shouldUseMultiModal
+                ? {
+                    models: {
+                      fast: "mini.gpt-4.1-mini",
+                      quality: "pro.gpt-4.1",
+                    },
+                  }
+                : {}),
             }),
           ), // TODO: remove after migrate
         catch: (e) => new ExpenseParsingError("Failed parsing expense", e),
