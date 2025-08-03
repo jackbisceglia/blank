@@ -1,7 +1,7 @@
 import { createSafeGenerateObject } from "./utils";
 import { valibotSchema } from "@ai-sdk/valibot";
 import * as v from "valibot";
-import { DEFAULT, DEFAULT_FAST, ModelKeys, models } from "./models";
+import { defaults, ModelKeys, models } from "./models";
 import { ResultAsync, err, ok } from "neverthrow";
 import { ExpenseInsert } from "../../modules/expense/schema";
 import { ParticipantInsert } from "../../modules/participant/schema";
@@ -31,6 +31,15 @@ function unindent(strings: TemplateStringsArray, ...values: unknown[]) {
 }
 
 export namespace nl {
+  type ParseOptions = {
+    description: string;
+    images?: string[];
+    models?: {
+      quality?: ModelKeys;
+      fast?: ModelKeys;
+    };
+  };
+
   const expenseSchema = v.omit(ExpenseInsert, [
     "groupId",
     "id",
@@ -77,14 +86,26 @@ export namespace nl {
         ## Input
         You'll receive natural language descriptions of expenses shared between multiple people.
 
+        ### Image Attachments
+        You will also potentially be given images of an expense. You should heavily leverage this to extract things like total value and the description, as this is a good source of truth. 
+
+
         ## Key Rules
 
-        ### Expense Description
+        ### Expense Description Part 1
         - Omit member names (those go in the members array)
           - Sometimes there is the name of a thing or person who is not a member, but part of the expense itself. These should be included in the description.
         - Omit dates and times (both absolute like "June 2nd" and relative like "yesterday")
         - Remove unnecessary verbs or actions
         - Keep only the core essence of what was purchased/paid for
+
+        ### Expense Description Part 2
+        - Images can be useful and contextual, but they can also sometimes be too detailed.
+
+        - It's important that you understand that your job is to distill the expense into a digestable description. This means that you should use signals/hints from images as a guide create a great description for the end user.
+          - If the image lists 3 items, we do not want a description: 'Item A, Item B, Item C'. Instead maybe you can do something like, 'Food from Walmart', or 'Home supplies from CVS', which is more useful
+        - Your responsibility is to be mindful about when to be specific and when that makes sense, and when not to be too specific. Remember descriptions should be a sentence or less ( < 64 chars )!
+
 
         ### Expense Amount
         - Always an integer in USD
@@ -115,28 +136,28 @@ export namespace nl {
       `,
       instruction: "Please parse the following summary into the given schema",
     },
-    parse: function (
-      description: string,
-      opts?: { fastModel?: ModelKeys; qualityModel?: ModelKeys },
-    ) {
-      const fastModel = models[opts?.fastModel ?? DEFAULT_FAST]();
-      const qualityModel = models[opts?.qualityModel ?? DEFAULT]();
+    parse: function (options: ParseOptions) {
+      const qualityModel =
+        models[options.models?.quality ?? defaults.quality]();
+      const fastModel = models[options.models?.fast ?? defaults.fast]();
 
       // TODO: split the context into two parts
       const fastLLMParser = createSafeGenerateObject({
         schema: valibotSchema(this.config.schema.llm),
         system: this.config.grounding,
         model: fastModel,
+        images: options.images ?? [],
       });
       const qualityLLMParser = createSafeGenerateObject({
         schema: valibotSchema(this.config.schema.llm),
         system: this.config.grounding,
         model: qualityModel,
+        images: options.images ?? [],
       });
 
       return ResultAsync.combine([
-        fastLLMParser(`${this.config.instruction}: ${description}`),
-        qualityLLMParser(`${this.config.instruction}: ${description}`),
+        fastLLMParser(`${this.config.instruction}: ${options.description}`),
+        qualityLLMParser(`${this.config.instruction}: ${options.description}`),
       ])
         .map(([fast, quality]) => {
           return {

@@ -26,6 +26,7 @@ export const createUsers = Effect.fn("createUsers")(function* () {
     email: yield* User.Email,
     name: yield* User.Name,
     image: placeholder,
+    plan: "pro",
   } satisfies UserInsert;
 
   const restInserts = handles.map(

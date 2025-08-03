@@ -1,5 +1,4 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
-import { cn, constants, prevented } from "@/lib/utils";
+import { createFileRoute } from "@tanstack/react-router";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { useAuthentication } from "@/lib/authentication";
 import { PrimaryHeading } from "@/components/prose";
@@ -7,17 +6,18 @@ import * as v from "valibot";
 import { GroupBody, States } from "./groups/$slug_id/layout";
 import { PageHeaderRow } from "@/components/layouts";
 import { ascii } from "@/lib/ascii";
-import { Button } from "@/components/ui/button";
-import { useCreateExpense } from "./@data/expenses";
-import { withToast } from "@/lib/toast";
-import { X } from "lucide-react";
-import { FieldsErrors, useAppForm } from "@/components/form";
-import { schema as createExpenseSchema } from "./@create-expense.dialog";
-import { positions } from "@/components/form/fields";
 import { useUserDefaultGroup } from "./@data/users";
 import { TaggedError } from "@blank/core/lib/effect/index";
-import { Group } from "@blank/zero";
 import { useGroupListByUserId } from "./@data/groups";
+import { ExpenseForm } from "./@dashboard/expense-form";
+import { cn, constants } from "@/lib/utils";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
+import { Info } from "lucide-react";
+import { PropsWithChildren } from "react";
 
 class DataFetchingError extends TaggedError("DataFetchingError") {}
 
@@ -67,7 +67,7 @@ function BackgroundStyles() {
       <pre
         className={cn(
           "-z-10 absolute inset-0 flex justify-center items-center overflow-clip select-none pointer-events-none",
-          "w-full h-full text-center pb-32",
+          "w-full h-full text-center pb-36",
           "text-blank-theme/20 font-medium",
           "text-xs leading-3.5 tracking-[0.00125rem]",
           "md:text-lg md:leading-6 md:tracking-[0.0575rem]",
@@ -89,117 +89,40 @@ function BackgroundStyles() {
   );
 }
 
-type ExpenseFormProps = { defaultGroup: Group };
-
-function ExpenseForm(props: ExpenseFormProps) {
-  const createExpense = useCreateExpense(props.defaultGroup.id);
-
-  const form = useAppForm({
-    defaultValues: { description: "" },
-    validators: { onChange: createExpenseSchema },
-    onSubmit: async (opts) => {
-      const promise = createExpense(opts.value.description);
-
-      const result = await withToast({
-        promise,
-        action: (
-          <Button
-            variant="link"
-            size="xs"
-            className="ml-auto h-full py-0.5 data-[status=active]:no-underline data-[status=active]:cursor-default"
-            asChild
-          >
-            <Link
-              to="/groups/$slug_id"
-              params={{
-                slug_id: {
-                  id: props.defaultGroup.id,
-                  slug: props.defaultGroup.slug,
-                },
-              }}
-              activeProps={{ "aria-disabled": true }}
-            >
-              View Group
-            </Link>
-          </Button>
-        ),
-        notify: {
-          loading: "Creating expense...",
-          success: "Expense created",
-          error: "Unable to create expense",
-        },
-      });
-
-      opts.formApi.reset();
-
-      return result;
-    },
-  });
-
-  const fieldErrorsId = "create-expense-errors";
+function FormDetailsTooltip(props: PropsWithChildren) {
+  const items = [
+    "Identifies splits, totals, and vendor information",
+    "Supports pasted images: jpeg, png, heic, svg",
+  ];
 
   return (
-    <>
-      <form
-        onSubmit={prevented(() => void form.handleSubmit())}
-        className="gap-2 border-[#8089BA] flex items-center border-2 rounded-md focus-within:border-[#B3BEF5] focus-within:ring-ring/20 focus-within:ring-[1.5px] p-1.5 bg-sidebar hover:border-[#B3BEF5] duration-300"
+    <Tooltip>
+      <TooltipTrigger asChild>
+        <button
+          className="p-1 my-auto h-min w-min ml-1 inline-flex items-center justify-center rounded-full hover:bg-blank-theme-text/20 transition-colors"
+          aria-label="More information about splitting"
+        >
+          {props.children}
+        </button>
+      </TooltipTrigger>
+      <TooltipContent
+        side="top"
+        align="center"
+        alignOffset={24}
+        className="space-y-0.5 max-w-lg lowercase text-xs bg-secondary text-foreground/95 py-2.5 px-2.5"
+        arrowProps={{
+          className:
+            "fill-blank-theme-background bg-blank-theme-background text-foreground",
+        }}
       >
-        <form.AppField
-          name="description"
-          children={(field) => (
-            <field.TextField
-              errorPosition={positions.custom({ elementId: fieldErrorsId })}
-              inputProps={{
-                placeholder: "ordered dinner with...",
-                "aria-label": "Expense Description",
-                className:
-                  "bg-transparent flex-1 border-none text-left focus-visible:ring-0 focus-visible:ring-offset-0 px-1.5 py-1 placeholder:text-muted-foreground/90 rounded-none h-auto hover:bg-transparent",
-              }}
-            />
-          )}
-        />
-
-        <form.Subscribe
-          selector={(state) => state.values.description}
-          children={(value) =>
-            !!value.length && (
-              <Button
-                variant="ghost"
-                type="button"
-                size="xs"
-                className="self-stretch w-min px-6 hover:bg-secondary"
-                onClick={(e) => {
-                  form.resetField("description");
-                  (e.currentTarget.previousSibling as HTMLInputElement).focus();
-                }}
-              >
-                <X className="size-3" />
-              </Button>
-            )
-          }
-        />
-
-        <form.AppForm>
-          <form.SubmitButton
-            className="self-stretch w-min px-6"
-            dirty={{ disableForAria: true }}
-          >
-            Split
-          </form.SubmitButton>
-        </form.AppForm>
-      </form>
-      <form.Subscribe
-        selector={(state) => state.fieldMeta}
-        children={(fieldMeta) => (
-          <FieldsErrors
-            id={fieldErrorsId}
-            ul={{ className: "col-span-full min-h-24" }}
-            li={{ className: "text-left w-auto" }}
-            metas={fieldMeta}
-          />
-        )}
-      />
-    </>
+        <p className="uppercase pb-1.5 font-medium">Submit Expense</p>
+        <ul className="space-y-0.5 mr-1">
+          {items.map((item) => (
+            <li key={item}>{item}</li>
+          ))}
+        </ul>
+      </TooltipContent>
+    </Tooltip>
   );
 }
 
@@ -238,15 +161,16 @@ function HomeRoute() {
       </PageHeaderRow>
       <GroupBody className="w-full h-full justify-center items-center pb-32">
         <div className="w-full max-w-3xl mx-auto space-y-2">
-          <h2 className="text-base text-left uppercase tracking-wider font-medium text-blank-theme-text ml-1.5">
-            splitting something?
-          </h2>
-
-          <div className="border-6 rounded-md border-background">
-            <ExpenseForm
-              defaultGroup={defaultGroup.data ?? groupsList.data[0]}
-            />
+          <div className="flex pb-1.5">
+            <h2 className="text-base text-left uppercase tracking-wider font-medium text-blank-theme-text ml-0.5">
+              splitting something?
+            </h2>
+            <FormDetailsTooltip>
+              <Info className="size-3.5 text-blank-theme-text" />
+            </FormDetailsTooltip>
           </div>
+
+          <ExpenseForm defaultGroup={defaultGroup.data ?? groupsList.data[0]} />
         </div>
       </GroupBody>
     </>

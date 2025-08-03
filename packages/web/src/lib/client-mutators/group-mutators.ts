@@ -7,6 +7,7 @@ import {
 } from ".";
 import { Prettify, slugify } from "@blank/core/lib/utils/index";
 
+// TODO: make custom server mutator logic to bump these limits based on user's plan
 const CONSTRAINTS = {
   GROUPS: {
     MAX_USER_CAN_OWN: 4,

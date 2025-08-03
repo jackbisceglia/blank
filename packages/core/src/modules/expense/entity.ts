@@ -19,6 +19,8 @@ import { unwrapOrThrow } from "../../lib/_legacy/neverthrow";
 import { participants } from "../participant/entity";
 import { Member } from "../member/schema";
 import { eq } from "drizzle-orm";
+import { optional } from "../../lib/utils";
+import { ImageDataUrl } from "../../lib/utils/images";
 
 const USER = "USER";
 
@@ -124,6 +126,7 @@ export namespace expenses {
     userId: string;
     description: string;
     date?: Date;
+    images?: ImageDataUrl[];
   };
 
   export function remove(id: string, tx?: Transaction) {
@@ -165,7 +168,13 @@ export namespace expenses {
       const members = yield* groups.getMembers(options.groupId);
 
       const generated = yield* Effect.tryPromise({
-        try: () => unwrapOrThrow(nl.expense.parse(options.description)), // TODO: remove after migrate
+        try: () =>
+          unwrapOrThrow(
+            nl.expense.parse({
+              description: options.description,
+              ...optional({ images: options.images }),
+            }),
+          ), // TODO: remove after migrate
         catch: (e) => new ExpenseParsingError("Failed parsing expense", e),
       });
 

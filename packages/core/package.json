@@ -14,7 +14,7 @@
     "db:seed:e2e": "pnpm dlx sst shell pnpm dlx tsx src/lib/drizzle/seed/e2e/index.ts",
     "db:seed:expenses": "pnpm dlx sst shell pnpm dlx tsx src/lib/drizzle/seed/expenses.ts",
     "ai:eval": "pnpm dlx sst shell braintrust eval ./src/ai/__tests__",
-    "test": "pnpm dlx sst shell pnpm test",
+    "test": "pnpm dlx sst shell -- bun test",
     "lint": "eslint .",
     "lint:fix": "eslint . --fix",
     "format": "prettier --write ."

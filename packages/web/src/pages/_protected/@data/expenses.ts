@@ -27,13 +27,13 @@ export function useExpenseListByGroupId(
 }
 
 export function useCreateExpense(groupId: string | undefined) {
-  return async (description: string) => {
+  return async (description: string, images?: string[]) => {
     if (!groupId) {
       throw new Error("Could not find group to insert");
     }
 
     const result = await createFromDescriptionServerFn({
-      data: { description, groupId: groupId },
+      data: { description, groupId: groupId, images: images ?? [] },
     });
 
     return { ...result, group: { id: groupId } };

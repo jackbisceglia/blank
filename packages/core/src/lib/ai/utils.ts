@@ -1,5 +1,6 @@
 import {
   AISDKError,
+  convertToCoreMessages,
   generateObject,
   JSONValue,
   LanguageModel,
@@ -31,17 +32,37 @@ type SafeGenerateOptions<TSchema> = {
   system?: string;
 };
 
+type GenerateCustomOptions = {
+  images?: string[];
+};
+
 export function createSafeGenerateObject<TSchema>(
-  opts: SafeGenerateOptions<TSchema>,
+  opts: SafeGenerateOptions<TSchema> & GenerateCustomOptions,
   errorHandler?: (error: unknown) => AISDKError,
 ) {
+  const { images, ...rest } = opts;
   const defaults = { output: "object", model: create() } as const;
 
   function query(prompt: string) {
+    // this needs a much more robust solution in the future
+    const attachments = (images ?? [])?.map((img, index) => ({
+      url: img,
+      name: "expense supplement " + index,
+      contentType: "image/",
+    }));
+
+    const messages = convertToCoreMessages([
+      {
+        role: "user",
+        content: prompt,
+        experimental_attachments: attachments,
+      },
+    ]);
+
     return generateObject({
       ...defaults,
-      ...opts,
-      prompt,
+      ...rest,
+      messages,
       experimental_telemetry: {
         isEnabled: true,
       },

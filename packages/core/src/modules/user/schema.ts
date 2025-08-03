@@ -12,6 +12,9 @@ export const userTable = pgTable("user", {
   email: text().notNull(),
   name: text().notNull(),
   image: text().notNull(),
+  plan: text({ enum: ["base", "pro"] })
+    .notNull()
+    .default("base"),
 });
 
 export const userRelation = relations(userTable, ({ many }) => ({
