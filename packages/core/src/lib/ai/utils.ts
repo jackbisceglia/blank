@@ -45,15 +45,7 @@ export function createSafeGenerateObject<TSchema>(
 
   function query(prompt: string) {
     // this needs a much more robust solution in the future
-    const validImages = (images ?? [])
-      .filter((i) => i !== "")
-      .filter((i) => {
-        if (!i.startsWith("data:image")) return false;
-        if (!i.includes(";base64,")) return false;
-        return true;
-      });
-
-    const attachments = validImages?.map((img, index) => ({
+    const attachments = (images ?? [])?.map((img, index) => ({
       url: img,
       name: "expense supplement " + index,
       contentType: "image/",

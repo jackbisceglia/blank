@@ -16,8 +16,11 @@ const providers = {
 } as const;
 
 // would like to use groq bc of inference speed, but gpt 4o/4.1 are performing vastly more consistently for now
-export const DEFAULT: ModelKeys = "pro.gpt-4.1";
-export const DEFAULT_FAST: ModelKeys = "mini.gpt-4.1-mini";
+
+export const defaults = {
+  quality: "pro.gpt-4.1",
+  fast: "mini.gpt-4.1-mini",
+} satisfies Record<string, ModelKeys>;
 
 export type ModelKeys = keyof typeof models;
 
@@ -45,4 +48,5 @@ export const models = {
     providers.groq("deepseek-r1-distill-llama-70b"),
 } as const;
 
-export const create = (model?: ModelKeys) => models[model ?? DEFAULT]();
+export const create = (model?: ModelKeys) =>
+  models[model ?? defaults.quality]();

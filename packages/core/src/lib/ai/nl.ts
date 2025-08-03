@@ -1,7 +1,7 @@
 import { createSafeGenerateObject } from "./utils";
 import { valibotSchema } from "@ai-sdk/valibot";
 import * as v from "valibot";
-import { DEFAULT, DEFAULT_FAST, ModelKeys, models } from "./models";
+import { defaults, ModelKeys, models } from "./models";
 import { ResultAsync, err, ok } from "neverthrow";
 import { ExpenseInsert } from "../../modules/expense/schema";
 import { ParticipantInsert } from "../../modules/participant/schema";
@@ -31,6 +31,15 @@ function unindent(strings: TemplateStringsArray, ...values: unknown[]) {
 }
 
 export namespace nl {
+  type ParseOptions = {
+    description: string;
+    images?: string[];
+    models?: {
+      quality?: ModelKeys;
+      fast?: ModelKeys;
+    };
+  };
+
   const expenseSchema = v.omit(ExpenseInsert, [
     "groupId",
     "id",
@@ -127,34 +136,28 @@ export namespace nl {
       `,
       instruction: "Please parse the following summary into the given schema",
     },
-    parse: function (
-      description: string,
-      opts?: {
-        fastModel?: ModelKeys;
-        qualityModel?: ModelKeys;
-        images?: string[];
-      },
-    ) {
-      const fastModel = models[opts?.fastModel ?? DEFAULT_FAST]();
-      const qualityModel = models[opts?.qualityModel ?? DEFAULT]();
+    parse: function (options: ParseOptions) {
+      const qualityModel =
+        models[options.models?.quality ?? defaults.quality]();
+      const fastModel = models[options.models?.fast ?? defaults.fast]();
 
       // TODO: split the context into two parts
       const fastLLMParser = createSafeGenerateObject({
         schema: valibotSchema(this.config.schema.llm),
         system: this.config.grounding,
         model: fastModel,
-        images: opts?.images ?? [],
+        images: options.images ?? [],
       });
       const qualityLLMParser = createSafeGenerateObject({
         schema: valibotSchema(this.config.schema.llm),
         system: this.config.grounding,
         model: qualityModel,
-        images: opts?.images ?? [],
+        images: options.images ?? [],
       });
 
       return ResultAsync.combine([
-        fastLLMParser(`${this.config.instruction}: ${description}`),
-        qualityLLMParser(`${this.config.instruction}: ${description}`),
+        fastLLMParser(`${this.config.instruction}: ${options.description}`),
+        qualityLLMParser(`${this.config.instruction}: ${options.description}`),
       ])
         .map(([fast, quality]) => {
           return {

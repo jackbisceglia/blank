@@ -7,14 +7,30 @@ import {
 import * as v from "valibot";
 import { AuthTokens } from "@/server/utils";
 import { Effect, pipe } from "effect";
+import { ImageDataUrlSchema, ImageDataUrl } from "@blank/core/lib/utils/images";
 
-const inputs = {
+export const inputs = {
   createFromDescription: v.object({
-    images: v.array(v.string()),
     description: v.string(),
     groupId: v.string(),
+    images: v.array(ImageDataUrlSchema),
   }),
 };
+
+const assertHasImageContextPerms = Effect.fn("assertHasImageContextPerms")(
+  function* (email: string) {
+    const proPlanUserEmails = [
+      "jackbisceglia2000@gmail.com",
+      "jmjriley19@gmail.com",
+    ];
+
+    if (!proPlanUserEmails.includes(email)) {
+      return yield* new UserAuthorizationError(
+        "Upgrade to pro to parse images",
+      );
+    }
+  },
+);
 
 export const createFromDescriptionServerFn = createServerFn({
   method: "POST",
@@ -24,23 +40,17 @@ export const createFromDescriptionServerFn = createServerFn({
     const handler = Effect.fn("createFromDescription")(function* () {
       const auth = yield* requireUserAuthenticated(AuthTokens.cookies);
 
-      const user = yield* users.getById(auth.subject.properties.userID); // could set up a retry on Unknown Errors
+      const user = yield* users.getById(auth.subject.properties.userID);
 
-      const proPlanUsers = [
-        "jackbisceglia2000@gmail.com",
-        "jmjriley19@gmail.com",
-      ];
-      if (ctx.data.images.length > 0 && !proPlanUsers.includes(user.email)) {
-        return yield* new UserAuthorizationError(
-          "Upgrade to pro to parse images",
-        );
+      if (ctx.data.images.length > 0) {
+        assertHasImageContextPerms(user.email);
       }
 
       const expense = yield* expenses.createFromDescription({
         userId: user.id,
         groupId: ctx.data.groupId,
         description: ctx.data.description,
-        images: ctx.data.images,
+        images: ctx.data.images as ImageDataUrl[],
       });
 
       return expense;
@@ -48,25 +58,3 @@ export const createFromDescriptionServerFn = createServerFn({
 
     return pipe(handler(), Effect.runPromise);
   });
-
-// export const createFromDescriptionServerFn = createServerFn({
-//   method: "POST",
-// })
-//   .validator(inputs.createFromDescription)
-//   .handler(async function (ctx) {
-//     const result = pipe(
-//       requireUserAuthenticated(AuthTokens.cookies),
-//       Effect.flatMap((result) => {
-//         const userId = result.subject.properties.userID;
-//
-//         return expenses.createFromDescription({
-//           userId: userId,
-//           groupId: ctx.data.groupId,
-//           description: ctx.data.description,
-//           images: ctx.data.images,
-//         });
-//       }),
-//     );
-//
-//     return Effect.runPromise(result);
-//   });
