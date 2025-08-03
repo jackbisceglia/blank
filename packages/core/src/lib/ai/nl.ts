@@ -143,8 +143,6 @@ export namespace nl {
         models[options.models?.quality ?? defaults.quality]();
       const fastModel = models[options.models?.fast ?? defaults.fast]();
 
-      console.log("[quality] ", qualityModel, "[fast] ", fastModel);
-
       // TODO: split the context into two parts
       const fastLLMParser = createSafeGenerateObject({
         schema: valibotSchema(this.config.schema.llm),
