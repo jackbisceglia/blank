@@ -11,6 +11,13 @@ import { TaggedError } from "@blank/core/lib/effect/index";
 import { useGroupListByUserId } from "./@data/groups";
 import { ExpenseForm } from "./@dashboard/expense-form";
 import { cn, constants } from "@/lib/utils";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
+import { Info } from "lucide-react";
+import { PropsWithChildren } from "react";
 
 class DataFetchingError extends TaggedError("DataFetchingError") {}
 
@@ -82,6 +89,43 @@ function BackgroundStyles() {
   );
 }
 
+function FormDetailsTooltip(props: PropsWithChildren) {
+  const items = [
+    "Identifies splits, totals, and vendor information",
+    "Supports pasted images: jpeg, png, heic, svg",
+  ];
+
+  return (
+    <Tooltip>
+      <TooltipTrigger asChild>
+        <button
+          className="p-1 my-auto h-min w-min ml-1 inline-flex items-center justify-center rounded-full hover:bg-blank-theme-text/20 transition-colors"
+          aria-label="More information about splitting"
+        >
+          {props.children}
+        </button>
+      </TooltipTrigger>
+      <TooltipContent
+        side="top"
+        align="center"
+        alignOffset={24}
+        className="space-y-0.5 max-w-lg lowercase text-xs bg-secondary text-foreground/95 py-2.5 px-2.5"
+        arrowProps={{
+          className:
+            "fill-blank-theme-background bg-blank-theme-background text-foreground",
+        }}
+      >
+        <p className="uppercase pb-1.5 font-medium">Submit Expense</p>
+        <ul className="space-y-0.5 mr-1">
+          {items.map((item) => (
+            <li key={item}>{item}</li>
+          ))}
+        </ul>
+      </TooltipContent>
+    </Tooltip>
+  );
+}
+
 function HomeRoute() {
   const authentication = useAuthentication();
   const defaultGroup = useUserDefaultGroup(authentication.user.id);
@@ -117,15 +161,16 @@ function HomeRoute() {
       </PageHeaderRow>
       <GroupBody className="w-full h-full justify-center items-center pb-32">
         <div className="w-full max-w-3xl mx-auto space-y-2">
-          <h2 className="text-base text-left uppercase tracking-wider font-medium text-blank-theme-text ml-1.5">
-            splitting something?
-          </h2>
-
-          <div className="border-6 rounded-md border-background">
-            <ExpenseForm
-              defaultGroup={defaultGroup.data ?? groupsList.data[0]}
-            />
+          <div className="flex">
+            <h2 className="text-base text-left uppercase tracking-wider font-medium text-blank-theme-text ml-0.5">
+              splitting something?
+            </h2>
+            <FormDetailsTooltip>
+              <Info className="size-3.5 text-blank-theme-text" />
+            </FormDetailsTooltip>
           </div>
+
+          <ExpenseForm defaultGroup={defaultGroup.data ?? groupsList.data[0]} />
         </div>
       </GroupBody>
     </>

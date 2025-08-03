@@ -9,10 +9,16 @@ import { useStore } from "@tanstack/react-form";
 import { Match } from "effect";
 import { cn, prevented } from "@/lib/utils";
 import { positions } from "@/components/form/fields";
-import { X } from "lucide-react";
+import { Paperclip, X } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { useMemo } from "react";
 import { toast } from "sonner";
+import { ImageDataUrlSchema } from "@blank/core/lib/utils/images";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 
 const constraints = {
   images: {
@@ -22,7 +28,7 @@ const constraints = {
         max: 2,
       },
       upload: {
-        max: 5,
+        max: 2,
       },
     },
   },
@@ -46,16 +52,7 @@ const schema = v.pipe(
       v.array(
         v.object({
           id: v.pipe(v.string(), v.uuid()),
-          result: v.pipe(
-            v.string("must be string"),
-            v.startsWith("data:image/", "File is not in image format"),
-            v.includes(";base64,", "Can not be decoded"),
-            v.transform((data) => {
-              return data.split(",").at(-1) ?? "";
-            }),
-            v.minLength(1),
-            v.base64(),
-          ),
+          result: ImageDataUrlSchema,
         }),
       ),
       v.maxLength(
@@ -241,65 +238,62 @@ export function ExpenseForm(props: ExpenseFormProps) {
 
   return (
     <>
-      <div className="pb-4">
-        <form
-          onSubmit={prevented(() => void form.handleSubmit())}
-          className={cn(
-            "gap-2 border-[#8089BA] flex items-center border-2 rounded-md focus-within:border-[#B3BEF5] focus-within:ring-ring/20 focus-within:ring-[1.5px] p-1.5 bg-sidebar hover:border-[#B3BEF5] duration-300",
-            "data-dragging:border-blank-theme data-dragging:border-4",
+      <form
+        onSubmit={prevented(() => void form.handleSubmit())}
+        className={cn(
+          "gap-2 border-[#8089BA] flex justify-center items-center border-2 rounded-md focus-within:border-[#B3BEF5] focus-within:ring-ring/20 focus-within:ring-[1.5px] p-1.5 bg-sidebar hover:border-[#B3BEF5] duration-300",
+          "data-dragging:border-blank-theme data-dragging:border-4",
+          "outline-8 outline-background",
+        )}
+      >
+        <form.AppField
+          name="description"
+          children={(field) => (
+            <field.TextField
+              errorPosition={positions.custom({ elementId: fieldErrorsId })}
+              inputProps={{
+                placeholder: "ordered dinner with...",
+                "aria-label": "Expense Description",
+                onPaste: images.handlePaste,
+                className:
+                  "bg-transparent flex-1 border-none text-left focus-visible:ring-0 focus-visible:ring-offset-0 px-1.5 py-1 placeholder:text-muted-foreground/90 rounded-none h-auto hover:bg-transparent",
+              }}
+            />
           )}
-        >
-          <form.AppField
-            name="description"
-            children={(field) => (
-              <field.TextField
-                errorPosition={positions.custom({ elementId: fieldErrorsId })}
-                inputProps={{
-                  placeholder: "ordered dinner with...",
-                  "aria-label": "Expense Description",
-                  onPaste: images.handlePaste,
-                  className:
-                    "bg-transparent flex-1 border-none text-left focus-visible:ring-0 focus-visible:ring-offset-0 px-1.5 py-1 placeholder:text-muted-foreground/90 rounded-none h-auto hover:bg-transparent",
+        />
+        <form.AppField name="files" children={() => null} />
+
+        <form.Subscribe
+          selector={(state) => state.values.description}
+          children={(value) =>
+            !!value.length && (
+              <Button
+                variant="ghost"
+                type="button"
+                size="xs"
+                className="self-stretch w-min px-6 hover:bg-secondary"
+                onClick={(e) => {
+                  form.resetField("description");
+                  (e.currentTarget.previousSibling as HTMLInputElement).focus();
                 }}
-              />
-            )}
-          />
-          <form.AppField name="files" children={() => null} />
+              >
+                <X className="size-3" />
+              </Button>
+            )
+          }
+        />
 
-          <form.Subscribe
-            selector={(state) => state.values.description}
-            children={(value) =>
-              !!value.length && (
-                <Button
-                  variant="ghost"
-                  type="button"
-                  size="xs"
-                  className="self-stretch w-min px-6 hover:bg-secondary"
-                  onClick={(e) => {
-                    form.resetField("description");
-                    (
-                      e.currentTarget.previousSibling as HTMLInputElement
-                    ).focus();
-                  }}
-                >
-                  <X className="size-3" />
-                </Button>
-              )
-            }
-          />
+        <form.AppForm>
+          <form.SubmitButton
+            className="self-stretch w-min px-6 my-auto"
+            dirty={{ disableForAria: true }}
+          >
+            Split
+          </form.SubmitButton>
+        </form.AppForm>
+      </form>
 
-          <form.AppForm>
-            <form.SubmitButton
-              className="self-stretch w-min px-6"
-              dirty={{ disableForAria: true }}
-            >
-              Split
-            </form.SubmitButton>
-          </form.AppForm>
-        </form>
-      </div>
-
-      <div className="h-6.5 flex gap-2">
+      <div className="h-8 flex gap-2">
         <form.Subscribe
           selector={(state) => state.values.files}
           children={(files) =>
@@ -308,7 +302,7 @@ export function ExpenseForm(props: ExpenseFormProps) {
               return (
                 <Badge
                   key={file.id}
-                  className="lowercase py-0 gap-1.5 pl-2 !pr-0 border border-foreground/40 bg-secondary text-foreground/80 text-xs font-medium max-w-48"
+                  className="h-fit my-auto uppercase py-0 gap-1.5 pl-2 !pr-0 border border-foreground/50 bg-secondary text-foreground/80 text-xs font-medium max-w-48"
                 >
                   <span className="truncate">img-{file.id.slice(-3)}</span>
                   <Button
@@ -317,7 +311,7 @@ export function ExpenseForm(props: ExpenseFormProps) {
                     }
                     variant="ghost"
                     size="icon"
-                    className="h-min hover:bg-transparent py-[0.25rem] px-1 "
+                    className="h-min hover:bg-transparent text-xs py-[0.2rem] px-1 "
                   >
                     <X className="size-4" />
                   </Button>
@@ -332,8 +326,13 @@ export function ExpenseForm(props: ExpenseFormProps) {
         children={(fieldMeta) => (
           <FieldsErrors
             id={fieldErrorsId}
-            ul={{ className: "col-span-full min-h-24" }}
-            li={{ className: "text-left w-auto" }}
+            ul={{
+              className: "col-span-full min-h-20 w-full py-4",
+            }}
+            li={{
+              className:
+                "text-center w-auto my-auto [text-shadow:_-2px_-2px_0_#141519,_2px_-2px_0_#141519,_-2px_2px_0_#141519,_2px_2px_0_#141519]",
+            }}
             metas={fieldMeta}
           />
         )}
