@@ -6,6 +6,7 @@ import { ResultAsync, err, ok } from "neverthrow";
 import { ExpenseInsert } from "../../modules/expense/schema";
 import { ParticipantInsert } from "../../modules/participant/schema";
 import { fromParsed } from "../_legacy/neverthrow";
+import { optional } from "../utils";
 
 const toDecimalSplit = (split: readonly [number, number]) =>
   split[0] / split[1];
@@ -45,6 +46,7 @@ export namespace nl {
     "id",
     "createdAt",
     "date",
+    "status",
   ]);
 
   const memberSchemaBase = v.object({
@@ -141,18 +143,20 @@ export namespace nl {
         models[options.models?.quality ?? defaults.quality]();
       const fastModel = models[options.models?.fast ?? defaults.fast]();
 
+      console.log("[quality] ", qualityModel, "[fast] ", fastModel);
+
       // TODO: split the context into two parts
       const fastLLMParser = createSafeGenerateObject({
         schema: valibotSchema(this.config.schema.llm),
         system: this.config.grounding,
         model: fastModel,
-        images: options.images ?? [],
+        ...optional({ images: options.images }),
       });
       const qualityLLMParser = createSafeGenerateObject({
         schema: valibotSchema(this.config.schema.llm),
         system: this.config.grounding,
         model: qualityModel,
-        images: options.images ?? [],
+        ...optional({ images: options.images }),
       });
 
       return ResultAsync.combine([

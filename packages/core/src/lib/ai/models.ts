@@ -17,9 +17,10 @@ const providers = {
 
 // would like to use groq bc of inference speed, but gpt 4o/4.1 are performing vastly more consistently for now
 
+// good, fast, cheap defaults when multi-modal is not needed
 export const defaults = {
-  quality: "pro.gpt-4.1",
-  fast: "mini.gpt-4.1-mini",
+  quality: "pro.qwen3",
+  fast: "pro.qwen3",
 } satisfies Record<string, ModelKeys>;
 
 export type ModelKeys = keyof typeof models;
@@ -32,9 +33,6 @@ export const models = {
   "mini.gpt-4.1-mini": () => providers.openai("gpt-4.1-mini"),
   "mini.gpt-4.1-nano": () => providers.openai("gpt-4.1-nano"),
 
-  // qwen
-  "reasoning.qwen-qwq": () => providers.groq("qwen-qwq-32b"),
-
   // llama
   "mini.llama-scout": () =>
     providers.groq("meta-llama/llama-4-scout-17b-16e-instruct"),
@@ -43,9 +41,11 @@ export const models = {
   "pro.llama-maverick": () =>
     providers.groq("meta-llama/llama-4-maverick-17b-128e-instruct"),
 
-  // deepseek
+  // groq other
   "reasoning.deepseek-r1-llama": () =>
     providers.groq("deepseek-r1-distill-llama-70b"),
+  "pro.qwen3": () => providers.groq("qwen/qwen3-32b"),
+  "pro.kimi-k2": () => providers.groq("moonshotai/kimi-k2-instruct"),
 } as const;
 
 export const create = (model?: ModelKeys) =>

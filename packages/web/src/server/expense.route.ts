@@ -49,6 +49,7 @@ export const createFromDescriptionServerFn = createServerFn({
         groupId: ctx.data.groupId,
         description: ctx.data.description,
         images: ctx.data.images as ImageDataUrl[],
+        parser: user.plan,
       });
 
       return expense;
