@@ -161,7 +161,7 @@ function HomeRoute() {
       </PageHeaderRow>
       <GroupBody className="w-full h-full justify-center items-center pb-32">
         <div className="w-full max-w-3xl mx-auto space-y-2">
-          <div className="flex">
+          <div className="flex pb-1.5">
             <h2 className="text-base text-left uppercase tracking-wider font-medium text-blank-theme-text ml-0.5">
               splitting something?
             </h2>

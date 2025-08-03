@@ -252,6 +252,7 @@ export function ExpenseForm(props: ExpenseFormProps) {
             <field.TextField
               errorPosition={positions.custom({ elementId: fieldErrorsId })}
               inputProps={{
+                autoFocus: true,
                 placeholder: "ordered dinner with...",
                 "aria-label": "Expense Description",
                 onPaste: images.handlePaste,
@@ -327,7 +328,7 @@ export function ExpenseForm(props: ExpenseFormProps) {
           <FieldsErrors
             id={fieldErrorsId}
             ul={{
-              className: "col-span-full min-h-20 w-full py-4",
+              className: "col-span-full min-h-16 w-full py-4",
             }}
             li={{
               className:
