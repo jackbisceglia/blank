@@ -67,7 +67,7 @@ function BackgroundStyles() {
       <pre
         className={cn(
           "-z-10 absolute inset-0 flex justify-center items-center overflow-clip select-none pointer-events-none",
-          "w-full h-full text-center pb-32",
+          "w-full h-full text-center pb-36",
           "text-blank-theme/20 font-medium",
           "text-xs leading-3.5 tracking-[0.00125rem]",
           "md:text-lg md:leading-6 md:tracking-[0.0575rem]",

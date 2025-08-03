@@ -328,7 +328,7 @@ export function ExpenseForm(props: ExpenseFormProps) {
           <FieldsErrors
             id={fieldErrorsId}
             ul={{
-              className: "col-span-full min-h-16 w-full py-4",
+              className: "col-span-full min-h-24 w-full py-4",
             }}
             li={{
               className:
