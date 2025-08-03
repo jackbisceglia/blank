@@ -39,6 +39,7 @@ export function withToast<T>(opts: WithToastOptions<T>): Promise<T> {
       return {
         message: opts.notify.error,
         description: e instanceof Error ? e.message : "Unknown error occurred",
+        action: null,
       };
     },
   });

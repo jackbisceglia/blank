@@ -8,6 +8,7 @@ import * as v from "valibot";
 import { AuthTokens } from "@/server/utils";
 import { Effect, pipe } from "effect";
 import { ImageDataUrlSchema, ImageDataUrl } from "@blank/core/lib/utils/images";
+import { User } from "@blank/core/modules/user/schema";
 
 export const inputs = {
   createFromDescription: v.object({
@@ -18,15 +19,12 @@ export const inputs = {
 };
 
 const assertHasImageContextPerms = Effect.fn("assertHasImageContextPerms")(
-  function* (email: string) {
-    const proPlanUserEmails = [
-      "jackbisceglia2000@gmail.com",
-      "jmjriley19@gmail.com",
-    ];
-
-    if (!proPlanUserEmails.includes(email)) {
+  function* (user: User) {
+    // TODO: in the future this should be delegated to a proper perm lookup
+    // where plan corresponds to a value that can be compared to the type of permission
+    if (user.plan === "base") {
       return yield* new UserAuthorizationError(
-        "Upgrade to pro to parse images",
+        "Images only supported for beta users",
       );
     }
   },
@@ -42,8 +40,9 @@ export const createFromDescriptionServerFn = createServerFn({
 
       const user = yield* users.getById(auth.subject.properties.userID);
 
+      console.log(ctx.data.images.length > 0, user.plan);
       if (ctx.data.images.length > 0) {
-        assertHasImageContextPerms(user.email);
+        yield* assertHasImageContextPerms(user);
       }
 
       const expense = yield* expenses.createFromDescription({

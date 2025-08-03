@@ -9,16 +9,11 @@ import { useStore } from "@tanstack/react-form";
 import { Match } from "effect";
 import { cn, prevented } from "@/lib/utils";
 import { positions } from "@/components/form/fields";
-import { Paperclip, X } from "lucide-react";
+import { X } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { useMemo } from "react";
 import { toast } from "sonner";
 import { ImageDataUrlSchema } from "@blank/core/lib/utils/images";
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipTrigger,
-} from "@/components/ui/tooltip";
 
 const constraints = {
   images: {
