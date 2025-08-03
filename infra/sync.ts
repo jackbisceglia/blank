@@ -38,6 +38,7 @@ const commonEnvironmentVariables = {
 
 export const Sync = new sst.aws.Service(`SyncViewSyncer`, {
   cluster: Cluster,
+  capacity: "spot",
   ...NonDevelopmentOnly(() => ({
     cpu: "1 vCPU",
     memory: "2 GB",

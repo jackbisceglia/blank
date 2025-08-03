@@ -61,7 +61,7 @@ export const getDomainConfig = (opts: MakeDomainConfigOpts) => {
 
   return {
     name,
-    dns: sst.cloudflare.dns(),
+    dns: sst.cloudflare.dns({ proxy: true }),
   };
 };
 
