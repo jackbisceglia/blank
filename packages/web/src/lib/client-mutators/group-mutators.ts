@@ -25,12 +25,8 @@ const assertUserCanCreateGroup = async (tx: ZTransaction, userId: string) => {
   }
 };
 
-const assertUserCanJoinGroup = async (tx: ZTransaction, userId: string) => {
-  const groupsUserBelongsTo = await tx.query.group
-    .whereExists("members", (member) => member.where("userId", userId))
-    .run();
-
-  if (groupsUserBelongsTo.length >= CONSTRAINTS.GROUPS.MAX_USER_CAN_OWN) {
+const assertUserCanJoinGroup = async (count: number) => {
+  if (count >= CONSTRAINTS.GROUPS.MAX_USER_CAN_OWN) {
     throw new Error(
       `User can not be a member of more than ${CONSTRAINTS.GROUPS.MAX_USER_CAN_BE_MEMBER_OF.toString()} groups`,
     );
@@ -66,12 +62,16 @@ type Mutators = ClientMutatorGroup<{
 
 export const mutators: Mutators = (auth) => ({
   create: async (tx, opts) => {
+    const { userId, nickname, ...rest } = opts;
+
     assertIsAuthenticated(auth);
 
-    await assertUserCanCreateGroup(tx, opts.userId);
-    await assertUserCanJoinGroup(tx, opts.userId);
+    const groupsUserBelongsTo = await tx.query.group
+      .whereExists("members", (member) => member.where("userId", userId))
+      .run();
 
-    const { userId, nickname, ...rest } = opts;
+    await assertUserCanCreateGroup(tx, opts.userId);
+    await assertUserCanJoinGroup(groupsUserBelongsTo.length);
 
     await tx.mutate.group.insert({
       ownerId: userId,
@@ -85,6 +85,13 @@ export const mutators: Mutators = (auth) => ({
       userId,
       nickname,
     });
+
+    if (groupsUserBelongsTo.length === 0) {
+      tx.mutate.preference.insert({
+        userId: userId,
+        defaultGroupId: rest.id,
+      });
+    }
   },
   update: async (tx, opts) => {
     assertIsAuthenticated(auth);
