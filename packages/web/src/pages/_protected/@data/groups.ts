@@ -59,7 +59,6 @@ export function useCreateGroup() {
       id,
       description,
       title,
-      userId: auth.user.id,
       nickname: auth.user.name,
     }).client;
   };

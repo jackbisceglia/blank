@@ -44,7 +44,6 @@ const assertGroupExists = async (tx: ZTransaction, groupId: string) => {
 type CreateOptions = Prettify<
   Pick<GroupInsert, "description" | "title"> & {
     id: string;
-    userId: string;
     nickname: string;
   }
 >;
@@ -62,19 +61,19 @@ type Mutators = ClientMutatorGroup<{
 
 export const mutators: Mutators = (auth) => ({
   create: async (tx, opts) => {
-    const { userId, nickname, ...rest } = opts;
+    const { nickname, ...rest } = opts;
 
-    assertIsAuthenticated(auth);
+    const authed = assertIsAuthenticated(auth);
 
     const groupsUserBelongsTo = await tx.query.group
-      .whereExists("members", (member) => member.where("userId", userId))
+      .whereExists("members", (member) => member.where("userId", authed.userID))
       .run();
 
-    await assertUserCanCreateGroup(tx, opts.userId);
+    await assertUserCanCreateGroup(tx, authed.userID);
     await assertUserCanJoinGroup(groupsUserBelongsTo.length);
 
     await tx.mutate.group.insert({
-      ownerId: userId,
+      ownerId: authed.userID,
       createdAt: Date.now(),
       slug: slugify(opts.title).encode(),
       ...rest,
@@ -82,13 +81,13 @@ export const mutators: Mutators = (auth) => ({
 
     await tx.mutate.member.insert({
       groupId: opts.id,
-      userId,
+      userId: authed.userID,
       nickname,
     });
 
     if (groupsUserBelongsTo.length === 0) {
-      tx.mutate.preference.insert({
-        userId: userId,
+      await tx.mutate.preference.upsert({
+        userId: authed.userID,
         defaultGroupId: rest.id,
       });
     }
@@ -105,7 +104,7 @@ export const mutators: Mutators = (auth) => ({
     });
   },
   delete: async (tx, opts) => {
-    assertIsAuthenticated(auth);
+    const authed = assertIsAuthenticated(auth);
 
     await assertGroupExists(tx, opts.groupId);
 
@@ -124,6 +123,18 @@ export const mutators: Mutators = (auth) => ({
 
     for (const expense of await expenses) {
       await tx.mutate.expense.delete({ id: expense.id });
+    }
+
+    const preference = await tx.query.preference
+      .where("userId", authed.userID)
+      .one()
+      .run();
+
+    if (preference?.defaultGroupId === opts.groupId) {
+      await tx.mutate.preference.delete({
+        defaultGroupId: opts.groupId,
+        userId: authed.userID,
+      });
     }
   },
 });
