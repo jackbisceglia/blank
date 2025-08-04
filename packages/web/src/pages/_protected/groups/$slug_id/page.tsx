@@ -159,8 +159,8 @@ export const Route = createFileRoute("/_protected/groups/$slug_id/")({
     ],
   },
   validateSearch: v.object({
-    ...ExpenseSheetSearchRouteSchema.entries, // good
-    ...SettleExpensesSearchRouteSchema.entries, // good
+    ...ExpenseSheetSearchRouteSchema.entries,
+    ...SettleExpensesSearchRouteSchema.entries,
     ...QuerySchema.entries,
     ...StatusSchema.entries,
     ...FiltersSchema.entries,
