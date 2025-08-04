@@ -90,7 +90,7 @@ export function CreateGroupDialog() {
     <Dialog
       open={route.view() === "open"}
       onOpenChange={(bool) => {
-        (bool ? route.open : route.close)({});
+        (bool ? route.open : route.close)();
         if (!bool) setError(null);
       }}
     >
