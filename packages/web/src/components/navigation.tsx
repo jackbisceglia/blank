@@ -45,6 +45,11 @@ type SidebarMenuItemChunkProps = PropsWithClassname<{
     | {
         label: string;
       };
+  disabled?:
+    | false
+    | {
+        message: string;
+      };
 }>;
 
 function SidebarMenuItemChunk(props: SidebarMenuItemChunkProps) {
@@ -71,6 +76,10 @@ function SidebarMenuItemChunk(props: SidebarMenuItemChunkProps) {
         >
           {props.item.type === "link" ? (
             <Link
+              aria-disabled={
+                (props.disabled && !!props.disabled.message) ?? false
+              }
+              title={props.disabled ? props.disabled.message : undefined}
               activeOptions={{
                 exact: false,
                 includeSearch: props.matchOnSearch ?? false,
@@ -103,17 +112,28 @@ function SidebarMenuItemChunk(props: SidebarMenuItemChunkProps) {
 
 type QuickActionsProps = {
   position: number;
+  userHasGroups: boolean;
 };
 
 function QuickActions(props: QuickActionsProps) {
   const quickActions: (SidebarItemChunk & {
     isSearchRelatedAction?: boolean;
+    disabled?:
+      | false
+      | {
+          message: string;
+        };
   })[] = [
     { type: "link", title: "Home", opts: { to: "/" } },
     {
       type: "link",
       title: "New Expense",
       isSearchRelatedAction: true,
+      disabled: props.userHasGroups
+        ? false
+        : {
+            message: "asdfas",
+          },
       opts: {
         to: ".",
         search: (prev) => ({
@@ -132,6 +152,7 @@ function QuickActions(props: QuickActionsProps) {
           item={item}
           index={props.position + index}
           matchOnSearch={item.isSearchRelatedAction ?? false}
+          disabled={item.disabled ?? false}
         />
       ))}
     </>
@@ -222,7 +243,10 @@ export function GlobalSidebar(props: SideNavigationProps) {
       <SidebarContent className="overflow-x-hidden">
         <SidebarGroup className="group-data-[collapsible=icon]:hidden">
           <SidebarMenu>
-            <QuickActions position={0} />
+            <QuickActions
+              userHasGroups={groups.status === "success"}
+              position={0}
+            />
           </SidebarMenu>
         </SidebarGroup>
         <SidebarGroup className="group-data-[collapsible=icon]:hidden">
