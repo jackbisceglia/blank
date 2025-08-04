@@ -2,16 +2,6 @@ import { createFileRoute } from "@tanstack/react-router";
 import { SubHeading } from "@/components/prose";
 import { GroupBody, States } from "./layout";
 import { DataTable } from "./@dashboard/expense-table";
-import {
-  ExpenseSheet,
-  SearchRoute as ExpenseSheetSearchRoute,
-  SearchRouteSchema as ExpenseSheetSearchRouteSchema,
-} from "./@expense.sheet";
-import {
-  SettleExpensesDialog,
-  SearchRouteStep1 as SettleExpensesSearchRoute,
-  SearchRouteSchema as SettleExpensesSearchRouteSchema,
-} from "./@settle-dialog";
 import { Expense, Member, Expense as ZeroExpense } from "@blank/zero";
 import { ParticipantWithMember } from "@/lib/participants";
 import * as v from "valibot";
@@ -33,6 +23,15 @@ import { QuerySchema, useQueryFromSearch } from "./@dashboard/table-query";
 import { StatusSchema, useStatusFromSearch } from "./@dashboard/table-status";
 import { createBalanceMap } from "@/lib/balances";
 import { slugify } from "@blank/core/lib/utils/index";
+import ExpenseSheetSearchRoute, {
+  ExpenseSheetSearchRouteSchema,
+} from "./@expense/route";
+import { ExpenseSheet } from "./@expense/sheet";
+import {
+  SearchRouteStep1 as SettleExpensesSearchRoute,
+  SearchRouteSchema as SettleExpensesSearchRouteSchema,
+} from "./@settle/route";
+import { SettleExpensesDialog } from "./@settle/dialog";
 
 export type ExpenseWithParticipants = ZeroExpense & {
   participants: ParticipantWithMember[];
@@ -160,8 +159,8 @@ export const Route = createFileRoute("/_protected/groups/$slug_id/")({
     ],
   },
   validateSearch: v.object({
-    ...ExpenseSheetSearchRouteSchema.entries,
-    ...SettleExpensesSearchRouteSchema.entries,
+    ...ExpenseSheetSearchRouteSchema.entries, // good
+    ...SettleExpensesSearchRouteSchema.entries, // good
     ...QuerySchema.entries,
     ...StatusSchema.entries,
     ...FiltersSchema.entries,
