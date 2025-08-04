@@ -1,4 +1,4 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { useAuthentication } from "@/lib/authentication";
 import { PrimaryHeading } from "@/components/prose";
@@ -7,7 +7,6 @@ import { GroupBody, States } from "./groups/$slug_id/layout";
 import { PageHeaderRow } from "@/components/layouts";
 import { ascii } from "@/lib/ascii";
 import { useUserDefaultGroup } from "./@data/users";
-import { TaggedError } from "@blank/core/lib/effect/index";
 import { useGroupListByUserId } from "./@data/groups";
 import { ExpenseForm } from "./@dashboard/expense-form";
 import { cn, constants } from "@/lib/utils";
@@ -18,8 +17,9 @@ import {
 } from "@/components/ui/tooltip";
 import { Info } from "lucide-react";
 import { PropsWithChildren } from "react";
-
-class DataFetchingError extends TaggedError("DataFetchingError") {}
+import { buttonVariants } from "@/components/ui/button";
+import { templates } from "./@create-group/templates";
+import GroupSearchRoute from "./@create-group/route";
 
 const schemas = {
   avatar: {
@@ -130,16 +130,13 @@ function HomeRoute() {
   const authentication = useAuthentication();
   const defaultGroup = useUserDefaultGroup(authentication.user.id);
   const groupsList = useGroupListByUserId(authentication.user.id);
+  const groupRoute = GroupSearchRoute.useSearchRoute();
 
   const isLoading =
     defaultGroup.status === "loading" || groupsList.status === "loading";
 
   if (isLoading) {
     return <States.Loading loading={isLoading} />;
-  }
-
-  if (groupsList.status === "empty") {
-    throw new DataFetchingError("Could not load you groups");
   }
 
   return (
@@ -160,18 +157,79 @@ function HomeRoute() {
         </PrimaryHeading>
       </PageHeaderRow>
       <GroupBody className="w-full h-full justify-center items-center pb-32">
-        <div className="w-full max-w-3xl mx-auto space-y-2">
-          <div className="flex pb-1.5">
-            <h2 className="text-base text-left uppercase tracking-wider font-medium text-blank-theme-text ml-0.5">
-              splitting something?
-            </h2>
-            <FormDetailsTooltip>
-              <Info className="size-3.5 text-blank-theme-text" />
-            </FormDetailsTooltip>
-          </div>
+        {groupsList.status === "success" ? (
+          <div className="w-full max-w-3xl mx-auto space-y-2">
+            <div className="flex pb-1.5">
+              <h2 className="text-base text-left uppercase tracking-wider font-medium text-blank-theme-text ml-0.5">
+                splitting something?
+              </h2>
+              <FormDetailsTooltip>
+                <Info className="size-3.5 text-blank-theme-text" />
+              </FormDetailsTooltip>
+            </div>
 
-          <ExpenseForm defaultGroup={defaultGroup.data ?? groupsList.data[0]} />
-        </div>
+            <ExpenseForm
+              defaultGroup={defaultGroup.data ?? groupsList.data[0]}
+            />
+          </div>
+        ) : (
+          <div className="w-full max-w-3xl mx-auto mt-6">
+            <div className="relative overflow-hidden border border-border/60 bg-background/50 backdrop-blur-[3px] shadow-[0_40px_160px_-60px_hsl(var(--border))]">
+              <div className="pointer-events-none absolute inset-0 ring-1 ring-inset ring-border/40" />
+              <div className="pointer-events-none absolute inset-0">
+                <div className="absolute inset-0 bg-gradient-to-b from-transparent via-black/10 to-transparent" />{" "}
+                <div className="absolute inset-x-0 -top-40 h-56 bg-gradient-to-bl from-blank-theme/30 to-transparent blur-3xl" />
+                <div className="absolute inset-x-0 -bottom-40 h-56 bg-gradient-to-tr from-blank-theme/10 to-transparent blur-2xl" />
+                <div className="absolute left-0 top-0 h-full w-px bg-gradient-to-b from-transparent via-blank-theme/40 to-transparent opacity-70" />
+                <div className="absolute right-0 top-0 h-full w-px bg-gradient-to-b from-transparent via-blank-theme/40 to-transparent opacity-70" />
+              </div>
+
+              <div className="relative p-6 sm:p-10 text-center">
+                <div className="mx-auto w-full max-w-xl">
+                  <h2 className="text-2xl font-semibold uppercase">
+                    get started by creating a group
+                  </h2>
+                  <p className="mt-2 text-sm text-muted-foreground lowercase">
+                    create a group to start adding expenses and splitting with
+                    others
+                  </p>
+
+                  <div className="mt-6 flex flex-wrap items-center justify-center gap-2">
+                    {" "}
+                    {[
+                      {
+                        title: "Default",
+                        description: "No preset options",
+                        template: false,
+                      } as const,
+                      ...Object.values(templates).map((t) => ({
+                        ...t,
+                        template: true,
+                      })),
+                    ].map((t) => (
+                      <Link
+                        key={t.title}
+                        className="group inline-flex items-center gap-2 px-4 py-2.5 text-xs uppercase text-foreground/90 bg-card/40 border border-border/60 hover:bg-card/60 transition-colors"
+                        {...groupRoute.openLinkOptions(
+                          t.template
+                            ? {
+                                withSiblings: { template: t.title },
+                              }
+                            : {},
+                        )}
+                      >
+                        <span className="text-xs">{t.title}</span>
+                        <span className="hidden sm:inline text-xs lowercase text-muted-foreground/90 group-hover:text-foreground/80">
+                          {t.description}
+                        </span>
+                      </Link>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
       </GroupBody>
     </>
   );
