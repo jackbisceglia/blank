@@ -17,7 +17,6 @@ import {
 } from "@/components/ui/tooltip";
 import { Info } from "lucide-react";
 import { PropsWithChildren } from "react";
-import { buttonVariants } from "@/components/ui/button";
 import { templates } from "./@create-group/templates";
 import GroupSearchRoute from "./@create-group/route";
 
