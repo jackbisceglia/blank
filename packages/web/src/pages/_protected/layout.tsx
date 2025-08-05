@@ -29,11 +29,20 @@ import { SearchRouteSchema as GlobalSearchParams } from "./@command-bar.dialog";
 import { CreateExpenseSearchRouteSchema } from "./@create-expense/route";
 import { CreateGroupSearchRouteSchema } from "./@create-group/route";
 import * as v from "valibot";
-import { authenticationQueryOptions } from "@/lib/authentication";
+import {
+  authenticationQueryOptions,
+  useAuthentication,
+} from "@/lib/authentication";
 import { Button } from "@/components/ui/button";
 import { Loading } from "@/components/loading";
 import { CreateExpenseDialog } from "./@create-expense/dialog";
 import { CreateGroupDialog } from "./@create-group/dialog";
+import { User } from "@blank/core/modules/user/schema";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 
 function getCookie(name: string, fallback: string) {
   const all = document.cookie.split(";").map((c) => c.trim().split("="));
@@ -121,14 +130,70 @@ function Breadcrumbs(props: PropsWithClassname) {
   );
 }
 
-function ApplicationNavigation() {
+type ApplicationNavigationProps = {
+  user: User;
+};
+
+function PlanBadge(props: PropsWithChildren<{ plan: User["plan"] }>) {
+  const details = (() => {
+    switch (props.plan) {
+      case "base":
+        return "We'll notify you when we launch plan-based pricing.";
+      case "pro":
+        return [
+          "Higher rate limits and image support.",
+          "Beta users are on blank pro plan until launch.",
+        ];
+      default:
+        return "";
+    }
+  })();
+
+  return (
+    <p className="text-muted-foreground uppercase text-xs">
+      Your Plan:{" "}
+      <Tooltip>
+        <TooltipTrigger asChild>
+          <span className="font-medium text-blank-theme-text uppercase">
+            {props.children}
+          </span>
+        </TooltipTrigger>
+        <TooltipContent
+          side="bottom"
+          sideOffset={8}
+          align="center"
+          className="space-y-0.5 mr-2 max-w-sm lowercase text-xs bg-secondary text-foreground/95 py-2 px-2.5"
+          arrowProps={{
+            className:
+              "fill-blank-theme-background bg-blank-theme-background text-foreground",
+          }}
+        >
+          {Array.isArray(details) ? (
+            <ul className="space-y-1.5 mr-1">
+              {details.map((item) => (
+                <li key={item}>{item}</li>
+              ))}
+            </ul>
+          ) : (
+            <p className="mr-1">{details}</p>
+          )}
+        </TooltipContent>
+      </Tooltip>
+    </p>
+  );
+}
+
+function ApplicationNavigation(props: ApplicationNavigationProps) {
   const isMobile = useIsMobile();
   const command = SearchRoute.useSearchRoute();
+  const planDisplayTitle =
+    props.user.plan === "pro" ? "Blank Pro" : props.user.plan;
 
   if (isMobile) return null;
 
   return (
-    <div className="flex">
+    <div className="flex items-center gap-5">
+      <PlanBadge plan={props.user.plan}>{planDisplayTitle}</PlanBadge>
       <Button
         onClick={() => void command.open()}
         size="xs"
@@ -144,6 +209,8 @@ function ApplicationNavigation() {
 }
 
 function ProtectedLayout() {
+  const auth = useAuthentication();
+
   return (
     <>
       <GlobalSidebar collapsible="icon" />
@@ -151,7 +218,7 @@ function ProtectedLayout() {
         <header className="flex justify-start items-center gap-0.5 sm:gap-2 text-sm w-full pb-2">
           <SidebarTrigger />
           <Breadcrumbs className="mr-auto" />
-          <ApplicationNavigation />
+          <ApplicationNavigation user={auth.user} />
         </header>
         <Outlet />
       </main>
