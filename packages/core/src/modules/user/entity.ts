@@ -9,9 +9,10 @@ import {
   requireValueExists,
   TaggedError,
 } from "../../lib/effect";
-import { UserInsert, userTable } from "./schema";
+import { User, UserInsert, userTable } from "./schema";
 import { eq } from "drizzle-orm/sql";
 import { db } from "../../lib/drizzle";
+import { organization } from "../organization/entity";
 
 class UserNotFoundError extends TaggedError("UserNotFoundError") {}
 class UserNotCreatedError extends TaggedError("UserNotCreatedError") {}
@@ -58,27 +59,41 @@ export namespace users {
     );
   }
 
-  export function create(user: UserInsert, tx?: Transaction) {
-    return pipe(
-      Effect.tryPromise(() =>
-        (tx ?? db)
-          .insert(userTable)
-          .values(user)
-          .returning({ id: userTable.id, name: userTable.name }),
+  export const create = Effect.fn("createUser")(function* (
+    user: UserInsert,
+    tx?: Transaction,
+  ) {
+    const plan = yield* Effect.fn("getTopPlan")(
+      function* () {
+        const orgs = yield* organization.belongsTo(user.email, tx);
+
+        const topPlan = yield* organization.prioritize(orgs);
+
+        return topPlan;
+      },
+      Effect.catchTag("OrganizationLookupError", () =>
+        Effect.succeed("base" as const),
       ),
-      Effect.flatMap(
-        requireSingleElement({
-          empty: () => new UserNotCreatedError("User not created"),
-          success: (row) => row,
-          dup: () => new DuplicateUserError("Duplicate user found"),
-        }),
-      ),
-      Effect.catchTag(
-        "UnknownException",
-        (e) => new DatabaseWriteError("Failed creating user", e),
-      ),
+    )();
+
+    const rows = yield* Effect.tryPromise(() =>
+      (tx ?? db)
+        .insert(userTable)
+        .values({
+          ...user,
+          plan,
+        })
+        .returning({ id: userTable.id, name: userTable.name }),
     );
-  }
+
+    const row = yield* requireSingleElement({
+      empty: () => new UserNotCreatedError("User not created"),
+      success: (row: Pick<User, "id" | "name">) => row,
+      dup: () => new DuplicateUserError("Duplicate user found"),
+    })(rows);
+
+    return row;
+  });
 
   export function remove(id: string, tx?: Transaction) {
     return pipe(
@@ -125,7 +140,11 @@ export namespace users {
           .update(userTable)
           .set(updates)
           .where(eq(userTable.id, id))
-          .returning({ id: userTable.id, name: userTable.name, image: userTable.image }),
+          .returning({
+            id: userTable.id,
+            name: userTable.name,
+            image: userTable.image,
+          }),
       ),
       Effect.flatMap(
         requireSingleElement({

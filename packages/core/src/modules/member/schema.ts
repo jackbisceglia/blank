@@ -1,7 +1,7 @@
 import { pgTable, primaryKey, text, uuid } from "drizzle-orm/pg-core";
 import { groupTable } from "../group/schema";
 import { DrizzleModelTypes } from "../../lib/drizzle/utils";
-import { createSelectSchema } from "drizzle-valibot";
+import { createInsertSchema, createSelectSchema } from "drizzle-valibot";
 import { relations } from "drizzle-orm/relations";
 
 export const memberTable = pgTable(
@@ -27,4 +27,4 @@ export type Member = MemberTypes["Select"];
 export const Member = createSelectSchema(memberTable);
 
 export type MemberInsert = MemberTypes["Insert"];
-export const MemberInsert = createSelectSchema(memberTable);
+export const MemberInsert = createInsertSchema(memberTable);

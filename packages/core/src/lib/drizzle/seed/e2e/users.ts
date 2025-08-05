@@ -3,7 +3,7 @@ import { users } from "../../../../modules/user/entity";
 import { UserInsert } from "../../schema";
 import _ from "./mock.json";
 
-const handles = _.users.handles as string[];
+const emails = _.users.emails as string[];
 const placeholder = _.users.image as string;
 
 const User = {
@@ -29,13 +29,15 @@ export const createUsers = Effect.fn("createUsers")(function* () {
     plan: "pro",
   } satisfies UserInsert;
 
-  const restInserts = handles.map(
-    (handle) =>
+  const restInserts = emails.map(
+    (email) =>
       ({
         image: placeholder,
-        email: `${handle}@gmail.com`,
+        email: email,
         name: pipe(
-          handle,
+          email,
+          String.split("@"),
+          ([handle]) => handle,
           String.split("_"),
           (arr) =>
             Array.map(

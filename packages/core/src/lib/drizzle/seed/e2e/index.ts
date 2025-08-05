@@ -5,6 +5,8 @@ import { expenses, groups, participants, users } from "../../../../modules";
 import { members } from "../../../../modules/member/entity";
 import { createExpenses } from "./expenses";
 import { preferences } from "../../../../modules/preference/entity";
+import { createOrganizations } from "./organizations";
+import { organization } from "../../../../modules/organization/entity";
 
 const clean = Effect.fn("clean")(function* () {
   for (const namespace of [
@@ -14,6 +16,7 @@ const clean = Effect.fn("clean")(function* () {
     participants,
     users,
     preferences,
+    organization,
   ]) {
     yield* namespace.removeAll();
   }
@@ -21,6 +24,9 @@ const clean = Effect.fn("clean")(function* () {
 
 const seed = Effect.fn("seed")(function* () {
   yield* clean();
+
+  const orgs = yield* createOrganizations();
+  yield* Console.info("\n\ncreated orgs: ", JSON.stringify(orgs));
 
   const [me, ...rest] = yield* createUsers();
   yield* Console.info("\n\ncreated users: ", JSON.stringify([me, ...rest]));
