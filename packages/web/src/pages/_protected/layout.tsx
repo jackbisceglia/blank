@@ -138,7 +138,7 @@ function PlanBadge(props: PropsWithChildren<{ plan: User["plan"] }>) {
   const details = (() => {
     switch (props.plan) {
       case "base":
-        return "We'll notify you when we launch plan-based pricing.";
+        return "We'll notify you when plans launch.";
       case "pro":
         return [
           "Higher rate limits and image support.",
