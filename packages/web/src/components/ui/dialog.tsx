@@ -1,6 +1,5 @@
 import * as React from "react";
 import * as DialogPrimitive from "@radix-ui/react-dialog";
-import { XIcon } from "lucide-react";
 
 import { cn } from "@/lib/utils";
 import { useRef } from "react";
@@ -59,10 +58,10 @@ function DialogContent({
     <DialogPortal data-slot="dialog-portal">
       <DialogOverlay />
       <DialogPrimitive.Content
-        onOpenAutoFocus={(e) => {
+        onOpenAutoFocus={(_e) => {
           previous.current = document.activeElement as HTMLElement;
         }}
-        onCloseAutoFocus={(e) => {
+        onCloseAutoFocus={(_e) => {
           if (document.activeElement !== document.body) return;
 
           previous.current?.focus();

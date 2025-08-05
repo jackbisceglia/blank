@@ -1,6 +1,6 @@
 import { Route } from "../page";
 import * as v from "valibot";
-import { KEY, PREFIX, SearchRouteStep1, SearchRouteStep2 } from ".";
+import { constants, SearchRouteStep1, SearchRouteStep2 } from "./route";
 
 export function useValidateDialogProgression(activeExpenseCount: number) {
   const routes = [
@@ -10,7 +10,7 @@ export function useValidateDialogProgression(activeExpenseCount: number) {
   const navigate = Route.useNavigate();
   const search = Route.useSearch({
     select(state) {
-      return state[KEY];
+      return state[constants.key];
     },
   });
 
@@ -22,7 +22,7 @@ export function useValidateDialogProgression(activeExpenseCount: number) {
       // parses the progression of steps, validates they're correctly in order, returns the current step
       v.pipe(
         v.array(v.string()),
-        v.everyItem((s) => s.startsWith(PREFIX)),
+        v.everyItem((s) => s.startsWith(constants.prefix)),
         v.transform((value) => value.map((s) => s.split("-").at(1))),
         v.nonNullable(v.array(v.string())),
         v.transform((value) => value.map((s) => parseInt(s))),
@@ -48,7 +48,7 @@ export function useValidateDialogProgression(activeExpenseCount: number) {
       to: ".",
       search: (previous) => ({
         ...previous,
-        [KEY]: undefined,
+        [constants.key]: undefined,
       }),
     });
   };

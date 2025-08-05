@@ -11,7 +11,7 @@ import {
   DialogDescription,
 } from "@/components/ui/dialog";
 import { PropsWithChildren } from "react";
-import { SearchRouteStep2 } from ".";
+import { SearchRouteStep2 } from "./route";
 import { ExpenseWithParticipants, Route } from "../page";
 import { calculateSettlements, createBalanceMap } from "@/lib/balances";
 import { useGroupById } from "@/pages/_protected/@data/groups";

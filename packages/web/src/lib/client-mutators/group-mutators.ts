@@ -25,12 +25,8 @@ const assertUserCanCreateGroup = async (tx: ZTransaction, userId: string) => {
   }
 };
 
-const assertUserCanJoinGroup = async (tx: ZTransaction, userId: string) => {
-  const groupsUserBelongsTo = await tx.query.group
-    .whereExists("members", (member) => member.where("userId", userId))
-    .run();
-
-  if (groupsUserBelongsTo.length >= CONSTRAINTS.GROUPS.MAX_USER_CAN_OWN) {
+const assertUserCanJoinGroup = async (count: number) => {
+  if (count >= CONSTRAINTS.GROUPS.MAX_USER_CAN_OWN) {
     throw new Error(
       `User can not be a member of more than ${CONSTRAINTS.GROUPS.MAX_USER_CAN_BE_MEMBER_OF.toString()} groups`,
     );
@@ -48,7 +44,6 @@ const assertGroupExists = async (tx: ZTransaction, groupId: string) => {
 type CreateOptions = Prettify<
   Pick<GroupInsert, "description" | "title"> & {
     id: string;
-    userId: string;
     nickname: string;
   }
 >;
@@ -66,15 +61,19 @@ type Mutators = ClientMutatorGroup<{
 
 export const mutators: Mutators = (auth) => ({
   create: async (tx, opts) => {
-    assertIsAuthenticated(auth);
+    const { nickname, ...rest } = opts;
 
-    await assertUserCanCreateGroup(tx, opts.userId);
-    await assertUserCanJoinGroup(tx, opts.userId);
+    const authed = assertIsAuthenticated(auth);
 
-    const { userId, nickname, ...rest } = opts;
+    const groupsUserBelongsTo = await tx.query.group
+      .whereExists("members", (member) => member.where("userId", authed.userID))
+      .run();
+
+    await assertUserCanCreateGroup(tx, authed.userID);
+    await assertUserCanJoinGroup(groupsUserBelongsTo.length);
 
     await tx.mutate.group.insert({
-      ownerId: userId,
+      ownerId: authed.userID,
       createdAt: Date.now(),
       slug: slugify(opts.title).encode(),
       ...rest,
@@ -82,9 +81,16 @@ export const mutators: Mutators = (auth) => ({
 
     await tx.mutate.member.insert({
       groupId: opts.id,
-      userId,
+      userId: authed.userID,
       nickname,
     });
+
+    if (groupsUserBelongsTo.length === 0) {
+      await tx.mutate.preference.upsert({
+        userId: authed.userID,
+        defaultGroupId: rest.id,
+      });
+    }
   },
   update: async (tx, opts) => {
     assertIsAuthenticated(auth);
@@ -98,7 +104,7 @@ export const mutators: Mutators = (auth) => ({
     });
   },
   delete: async (tx, opts) => {
-    assertIsAuthenticated(auth);
+    const authed = assertIsAuthenticated(auth);
 
     await assertGroupExists(tx, opts.groupId);
 
@@ -117,6 +123,18 @@ export const mutators: Mutators = (auth) => ({
 
     for (const expense of await expenses) {
       await tx.mutate.expense.delete({ id: expense.id });
+    }
+
+    const preference = await tx.query.preference
+      .where("userId", authed.userID)
+      .one()
+      .run();
+
+    if (preference?.defaultGroupId === opts.groupId) {
+      await tx.mutate.preference.delete({
+        defaultGroupId: opts.groupId,
+        userId: authed.userID,
+      });
     }
   },
 });

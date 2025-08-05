@@ -11,7 +11,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 
-import { SearchRouteStep1 } from ".";
+import { SearchRouteStep1 } from "./route";
 import { Route } from "../page";
 import { cn } from "@/lib/utils";
 import { CollapsibleNotification } from "@/components/collapsible-notification";

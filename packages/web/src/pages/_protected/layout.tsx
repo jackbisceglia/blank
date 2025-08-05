@@ -24,16 +24,16 @@ import { GlobalCommandBar, SearchRoute } from "./@command-bar.dialog";
 import { ZeroProvider } from "@/lib/zero/zero-provider";
 import { AuthProvider } from "@/lib/authentication/auth-provider";
 import { PropsWithChildren } from "react";
-import { CreateExpenseDialog } from "./@create-expense.dialog";
-import { CreateGroupDialog } from "./groups/@create-group.dialog";
 import { Toaster } from "@/components/ui/sonner";
 import { SearchRouteSchema as GlobalSearchParams } from "./@command-bar.dialog";
-import { SearchRouteSchema as CreateExpenseSearchParams } from "./@create-expense.dialog";
-import { SearchRouteSchema as CreateGroupSearchParams } from "./groups/@create-group.dialog";
+import { CreateExpenseSearchRouteSchema } from "./@create-expense/route";
+import { CreateGroupSearchRouteSchema } from "./@create-group/route";
 import * as v from "valibot";
 import { authenticationQueryOptions } from "@/lib/authentication";
 import { Button } from "@/components/ui/button";
 import { Loading } from "@/components/loading";
+import { CreateExpenseDialog } from "./@create-expense/dialog";
+import { CreateGroupDialog } from "./@create-group/dialog";
 
 function getCookie(name: string, fallback: string) {
   const all = document.cookie.split(";").map((c) => c.trim().split("="));
@@ -199,16 +199,19 @@ export const Route = createFileRoute("/_protected")({
   pendingComponent: () => (
     <Loading whatIsLoading="workspace" className="h-screen m-auto" />
   ),
+  // TODO: need to figure out how to tie down 'template' to 'new-group', otherwise there's no way to conveniently manage this
+  // another option is to update search routes to allow 'sibling keys' which they will handle cleanup for, but do not open
+  // or perhaps the opening could be a parameter as well
   validateSearch: v.object({
-    // here we define search params for ui that can be shown globally
     action: v.optional(
       v.array(
         v.union([
           GlobalSearchParams.entries.action,
-          CreateGroupSearchParams.entries.action,
-          CreateExpenseSearchParams.entries.action,
+          CreateExpenseSearchRouteSchema.entries.action,
+          CreateGroupSearchRouteSchema.entries.action,
         ]),
       ),
     ),
+    template: v.optional(CreateGroupSearchRouteSchema.entries.template),
   }),
 });

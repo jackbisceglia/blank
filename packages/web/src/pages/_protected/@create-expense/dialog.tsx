@@ -1,3 +1,10 @@
+import { useAuthentication } from "@/lib/authentication";
+import { PropsWithChildren } from "react";
+import { useUserDefaultGroup } from "../@data/users";
+import { useGroupListByUserId } from "../@data/groups";
+import { useNavigate, useParams } from "@tanstack/react-router";
+import { useCreateExpense } from "../@data/expenses";
+import { toast } from "sonner";
 import {
   Dialog,
   DialogContent,
@@ -5,25 +12,12 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
-import * as v from "valibot";
-import { useCreateExpense } from "./@data/expenses";
-import { FieldsErrors, useAppForm } from "@/components/form";
-import { createStackableSearchRoute } from "@/lib/search-route";
 import { prevented } from "@/lib/utils";
+import { FieldsErrors, useAppForm } from "@/components/form";
 import { withToast } from "@/lib/toast";
-import { PropsWithChildren } from "react";
+import * as v from "valibot";
+import SearchRoute from "./route";
 import { positions } from "@/components/form/fields";
-import { useAuthentication } from "@/lib/authentication";
-import { useUserDefaultGroup } from "./@data/users";
-import { useParams } from "@tanstack/react-router";
-
-const KEY = "action" as const;
-const ENTRY = "new-expense" as const;
-export const SearchRoute = createStackableSearchRoute(KEY, ENTRY);
-export type SearchRouteSchema = v.InferOutput<typeof SearchRouteSchema>;
-export const SearchRouteSchema = v.object({
-  action: v.literal(ENTRY),
-});
 
 export const schema = v.object({
   description: v.pipe(
@@ -81,19 +75,31 @@ function useForm(options: UseFormOptions) {
   return { api };
 }
 
-export function CreateExpenseDialog(props: PropsWithChildren) {
+function DialogInner(props: PropsWithChildren) {
   const authentication = useAuthentication();
-  const userDefaultGroup = useUserDefaultGroup(authentication.user.id);
-  const params = useGroupFromSearch();
-
+  const groupFromSearch = useGroupFromSearch();
+  const defaultGroup = useUserDefaultGroup(authentication.user.id);
+  const groupsList = useGroupListByUserId(authentication.user.id);
+  const navigate = useNavigate();
   const create = useCreateExpense(
-    params?.id ?? userDefaultGroup.data?.id ?? "",
+    (groupFromSearch ?? defaultGroup.data ?? groupsList.data?.at(0))?.id,
   );
-
   const route = SearchRoute.useSearchRoute({
     hooks: {
       onClose: () => {
         setTimeout(() => form.api.reset(), 0);
+      },
+      onOpen: async () => {
+        const defaultGroupMissing = defaultGroup.status === "not-found";
+        const groupListEmpty = groupsList.status === "empty";
+
+        if (defaultGroupMissing && groupListEmpty) {
+          toast.message("Cannot create expense until a group is created", {
+            id: "block-create-expense",
+          });
+
+          await navigate(route.closeLinkOptions());
+        }
       },
     },
   });
@@ -106,6 +112,8 @@ export function CreateExpenseDialog(props: PropsWithChildren) {
   });
 
   const fieldErrorsId = "create-expense-errors";
+
+  if (!route.hooksDidRun) return;
 
   return (
     <Dialog open={route.view() === "open"} onOpenChange={route.sync}>
@@ -156,4 +164,17 @@ export function CreateExpenseDialog(props: PropsWithChildren) {
       </DialogContent>
     </Dialog>
   );
+}
+
+export function CreateExpenseDialog(props: PropsWithChildren) {
+  const authentication = useAuthentication();
+  const defaultGroup = useUserDefaultGroup(authentication.user.id);
+  const groupsList = useGroupListByUserId(authentication.user.id);
+
+  const isLoading =
+    defaultGroup.status === "loading" || groupsList.status === "loading";
+
+  if (isLoading) return null;
+
+  return <DialogInner {...props} />;
 }

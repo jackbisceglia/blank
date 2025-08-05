@@ -1,5 +1,5 @@
-import { useNavigate, useSearch } from "@tanstack/react-router";
-import { useCallback, useEffect } from "react";
+import { LinkOptions, useNavigate, useSearch } from "@tanstack/react-router";
+import { useCallback, useEffect, useState } from "react";
 
 // haven't found a nice way to merge the two without it being a conditional mess
 // can probably wrap up things like open/close/sync to be re-used in the future
@@ -101,7 +101,7 @@ export function createSearchRoute(key: string): SearchRoute {
     });
 
     // nav utility for open/close to use
-    function go(k: string, v?: unknown) {
+    function go(key: string, v?: unknown) {
       return void navigate({
         to: ".",
         search: (prev) => ({ ...prev, [key]: v }),
@@ -163,6 +163,10 @@ export function createSearchRoute(key: string): SearchRoute {
   return { useSearchRoute };
 }
 
+type createStackableSearchRouteOptions = {
+  siblingKeys?: string[];
+};
+
 /**
  * Creates a stackable search route that manages multiple dialog states with the same key.
  *
@@ -199,13 +203,22 @@ export function createSearchRoute(key: string): SearchRoute {
  * }
  * ```
  */
-export function createStackableSearchRoute(key: string, value: string) {
+export function createStackableSearchRoute(
+  key: string,
+  value: string,
+  createOptions?: createStackableSearchRouteOptions,
+) {
   function assertAsArray(search: unknown) {
     if (search && !Array.isArray(search)) {
       throw new Error("Stackable search route requires an array schema");
     }
     return search as string[] | undefined;
   }
+
+  type RouteOpenerOptions = {
+    solo?: boolean;
+    withSiblings?: Record<string, unknown>;
+  };
 
   /**
    * Hook that provides state management for a stackable search route dialog.
@@ -243,6 +256,7 @@ export function createStackableSearchRoute(key: string, value: string) {
    * ```
    */
   function useSearchRoute(options?: UseSearchRouteOptions) {
+    const [hooksDidRun, setHooksDidRun] = useState(false);
     const navigate = useNavigate();
     const search = useSearch({
       strict: false,
@@ -252,11 +266,21 @@ export function createStackableSearchRoute(key: string, value: string) {
     const stack = assertAsArray(search);
 
     // nav utility for open/close to use
-    function go(k: string, v?: unknown) {
-      void navigate({
+    function constructLinkOptions(
+      k: string,
+      v?: unknown,
+      linked?: Record<string, unknown>,
+    ) {
+      const rest = linked ? linked : {};
+
+      return {
         to: ".",
-        search: (prev) => ({ ...prev, [k]: v }),
-      });
+        search: (prev) => ({ ...prev, ...rest, [k]: v }),
+      } satisfies LinkOptions;
+    }
+
+    function go(k: string, v?: unknown) {
+      void navigate(constructLinkOptions(k, v));
     }
 
     function state() {
@@ -267,28 +291,71 @@ export function createStackableSearchRoute(key: string, value: string) {
       return stack?.includes(value) ? "open" : "closed";
     }, [stack, value]);
 
-    const open = useCallback(
-      (solo?: boolean) => {
-        const current = !solo ? (stack ?? []) : [];
+    const routeOpener = useCallback(
+      (options?: RouteOpenerOptions) => {
+        const current = !options?.solo ? (stack ?? []) : [];
         const added = new Set([...current, value]);
-        go(key, Array.from(added));
+
+        const linkOptions = constructLinkOptions(
+          key,
+          Array.from(added),
+          options?.withSiblings,
+        );
+
+        return linkOptions;
       },
       [stack, value, go, key],
     );
 
-    const close = useCallback(() => {
+    const open = (options?: RouteOpenerOptions) => {
+      void navigate(routeOpener(options));
+    };
+
+    const routeCloser = useCallback(() => {
       const removed = stack?.filter((v) => v !== value) ?? [];
-      go(key, removed.length > 0 ? removed : undefined);
+
+      const closeSiblings = (() => {
+        if (!createOptions?.siblingKeys) return undefined;
+
+        return createOptions.siblingKeys.reduce<Record<string, undefined>>(
+          (record, sibling) => {
+            record[sibling] = undefined;
+
+            return record;
+          },
+          {},
+        );
+      })();
+
+      const linkOptions = constructLinkOptions(
+        key,
+        removed.length > 0 ? removed : undefined,
+        closeSiblings,
+      );
+
+      return linkOptions;
     }, [stack, go, key]);
+
+    const close = () => {
+      void navigate(routeCloser());
+    };
 
     const sync = (opening: boolean) => (opening ? open() : close());
 
     useEffect(() => {
-      if (view() === "open") {
-        options?.hooks?.onOpen?.();
-      } else {
-        options?.hooks?.onClose?.();
+      async function runHooks() {
+        setHooksDidRun(false);
+        if (view() === "open") {
+          options?.hooks?.onOpen?.();
+        } else {
+          options?.hooks?.onClose?.();
+        }
       }
+
+      (async () => {
+        await runHooks();
+        setHooksDidRun(true);
+      })();
     }, [view()]);
 
     // if the dialog is closed and the value is still in the stack close it
@@ -300,7 +367,16 @@ export function createStackableSearchRoute(key: string, value: string) {
       }
     }, [view(), stack]);
 
-    return { open, close, sync, view, state };
+    return {
+      open,
+      openLinkOptions: routeOpener,
+      closeLinkOptions: routeCloser,
+      close,
+      sync,
+      view,
+      state,
+      hooksDidRun,
+    };
   }
 
   return { useSearchRoute };

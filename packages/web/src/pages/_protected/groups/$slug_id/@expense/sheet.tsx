@@ -1,40 +1,37 @@
-import {
-  Sheet,
-  SheetContent,
-  SheetHeader,
-  SheetTitle,
-  SheetBody,
-  SheetFooter,
-} from "@/components/ui/sheet";
-import * as v from "valibot";
-import { ExpenseWithParticipants } from "./page";
-import { createSearchRoute } from "@/lib/search-route";
-import { useWithConfirmation } from "@/components/with-confirmation-dialog";
-import { FieldsErrors, useAppForm } from "@/components/form";
-import { fraction, prevented, timestampToDate } from "@/lib/utils";
-import {
-  DeleteOptions as DeleteExpenseOptions,
-  UpdateOptions as UpdateExpenseOptions,
-} from "@/lib/client-mutators/expense-mutators";
 import { PropsWithChildren } from "react";
-import { Separator } from "@/components/ui/separator";
+import { ExpenseWithParticipants } from "../page";
+import { useAuthentication } from "@/lib/authentication";
 import {
   getPayerFromParticipants,
   ParticipantWithMember,
 } from "@/lib/participants";
+import { useWithConfirmation } from "@/components/with-confirmation-dialog";
 import { withToast } from "@/lib/toast";
-import { Participant } from "@blank/zero";
-import { useDeleteOneExpense, useUpdateExpense } from "../../@data/expenses";
-import { optional } from "@blank/core/lib/utils/index";
-import { ChevronRight } from "lucide-react";
-import { useAuthentication } from "@/lib/authentication";
+import {
+  DeleteOptions as DeleteExpenseOptions,
+  UpdateOptions as UpdateExpenseOptions,
+} from "@/lib/client-mutators/expense-mutators";
 import { DialogDescription } from "@/components/ui/dialog";
-
-export const KEY = "expense" as const;
-export const SearchRouteSchema = v.object({
-  [KEY]: v.optional(v.string()),
-});
-export const SearchRoute = createSearchRoute(KEY);
+import { ChevronRight } from "lucide-react";
+import { fraction, prevented, timestampToDate } from "@/lib/utils";
+import {
+  useDeleteOneExpense,
+  useUpdateExpense,
+} from "@/pages/_protected/@data/expenses";
+import * as v from "valibot";
+import { FieldsErrors, useAppForm } from "@/components/form";
+import { Participant } from "@blank/zero";
+import { optional } from "@blank/core/lib/utils/index";
+import {
+  Sheet,
+  SheetBody,
+  SheetContent,
+  SheetFooter,
+  SheetHeader,
+  SheetTitle,
+} from "@/components/ui/sheet";
+import { Separator } from "@/components/ui/separator";
+import ExpenseSheetSearchRoute from "./route";
 
 function useConfirmDeleteExpense(
   expenseId: string,
@@ -283,7 +280,7 @@ type ExpenseSheetProps = PropsWithChildren<{
 
 export function ExpenseSheet(props: ExpenseSheetProps) {
   const auth = useAuthentication();
-  const route = SearchRoute.useSearchRoute();
+  const route = ExpenseSheetSearchRoute.useSearchRoute();
   const active = props.expense;
 
   const payer = getPayerFromParticipants(active.participants);

@@ -4,17 +4,20 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import * as v from "valibot";
+// import SearchRoute from "./route";
 import { ok, Result, ResultAsync } from "neverthrow";
-import { ValidationErrorLegacy } from "@blank/core/lib/effect/index";
-import { useState } from "react";
-import { slugify } from "@blank/core/lib/utils/index";
-import { Label } from "@/components/ui/label";
-import { useCreateGroup } from "../@data/groups";
-import { createStackableSearchRoute } from "@/lib/search-route";
 import { fromParsed } from "@blank/core/lib/_legacy/neverthrow";
+import { ValidationErrorLegacy } from "@blank/core/lib/effect/index";
+import { Label } from "@/components/ui/label";
+import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
+import { slugify } from "@blank/core/lib/utils/index";
+import { useCreateGroup } from "../@data/groups";
+import { useState } from "react";
+import { useSearch } from "@tanstack/react-router";
+import { templates } from "./templates";
+import SearchRoute from "./route";
 
 const invalidCharactersMessage =
   "Title must only contain letters, numbers, and spaces";
@@ -39,22 +42,19 @@ const schemas = {
   ),
 };
 
-const ENTRY = "new-group" as const;
-export const SearchRoute = createStackableSearchRoute("action", ENTRY);
-export type SearchRouteSchema = v.InferOutput<typeof SearchRouteSchema>;
-export const SearchRouteSchema = v.object({
-  action: v.literal(ENTRY),
-});
-
-export type CreateGroupDialogProps = {
-  searchValue: string[];
-  onSubmit: (title: string, description: string) => Promise<void>;
-};
-
 export function CreateGroupDialog() {
   const createGroup = useCreateGroup();
   const formKeys = { title: "group-title", description: "group-description" };
   const route = SearchRoute.useSearchRoute();
+
+  const templateKey = useSearch({
+    strict: false,
+    select: (state) => {
+      return state.template;
+    },
+  });
+
+  const template = new Map(Object.entries(templates)).get(templateKey ?? "");
 
   const [error, setError] = useState<string | null>(null);
 
@@ -124,6 +124,7 @@ export function CreateGroupDialog() {
               name={formKeys.title}
               className="bg-transparent border-0 p-0 focus-visible:ring-0 placeholder:text-muted-foreground/60 flex-1"
               placeholder="enter a group name"
+              defaultValue={template?.title}
             />
           </div>
           <div className="px-3 py-2 w-full bg-popover space-y-0.5 col-span-full">
@@ -141,6 +142,7 @@ export function CreateGroupDialog() {
               name={formKeys.description}
               className="bg-transparent border-0 p-0 focus-visible:ring-0 placeholder:text-muted-foreground/60 flex-1"
               placeholder="enter a group description"
+              defaultValue={template?.description}
             />
           </div>
           <Button

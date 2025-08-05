@@ -12,8 +12,8 @@ import { Link, LinkOptions, useNavigate } from "@tanstack/react-router";
 import { useAuthentication } from "@/lib/authentication";
 import * as v from "valibot";
 import { createStackableSearchRoute } from "@/lib/search-route";
-import { SearchRoute as CreateExpenseRoute } from "./@create-expense.dialog";
 import { useGroupListByUserId } from "./@data/groups";
+import CreateExpenseRoute from "./@create-expense/route";
 
 const KEY = "action";
 const ENTRY = "command" as const;
@@ -75,7 +75,7 @@ export function GlobalCommandBar() {
         opts,
         go: () => {
           route.close();
-          createExpenseRoute.open(true);
+          createExpenseRoute.open({ solo: true });
         },
       };
     }),
