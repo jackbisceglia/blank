@@ -31,27 +31,34 @@ export function useQueryClient() {
 
 export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
   {
-    head: () => ({
-      meta: [
-        ...seo({
-          title: "withblank.com",
-          description: `Expense Splitting Made Easy`,
-        }),
-        {
-          name: "viewport",
-          content: "width=device-width, initial-scale=1",
-        },
-      ],
-      links: [
-        { rel: "stylesheet", href: stylesUrl },
-        { rel: "preconnect", href: "https://fonts.googleapis.com" },
-        {
-          rel: "preconnect",
-          href: "https://fonts.gstatic.com",
-          crossOrigin: "anonymous",
-        },
-      ],
-    }),
+    head: () => {
+      const website =
+        process.env.NODE_ENV === "development"
+          ? "dev.withblank.com"
+          : "withblank.com";
+
+      return {
+        meta: [
+          ...seo({
+            title: website,
+            description: `Expense Splitting Made Easy`,
+          }),
+          {
+            name: "viewport",
+            content: "width=device-width, initial-scale=1",
+          },
+        ],
+        links: [
+          { rel: "stylesheet", href: stylesUrl },
+          { rel: "preconnect", href: "https://fonts.googleapis.com" },
+          {
+            rel: "preconnect",
+            href: "https://fonts.gstatic.com",
+            crossOrigin: "anonymous",
+          },
+        ],
+      };
+    },
     ssr: true,
     component: () => <Document />,
   },

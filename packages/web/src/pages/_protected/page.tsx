@@ -1,4 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
+import { useState } from "react";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { useAuthentication } from "@/lib/authentication";
 import { PrimaryHeading } from "@/components/prose";
@@ -131,6 +132,14 @@ function HomeRoute() {
   const groupsList = useGroupListByUserId(authentication.user.id);
   const groupRoute = GroupSearchRoute.useSearchRoute();
 
+  const presets = [
+    "lunch with ...",
+    "groceries with ...",
+    "uber to ...",
+    "coffee with ...",
+    "snacks for ...",
+  ].map((label) => ({ label, value: label.slice(0, -3) }));
+
   const isLoading =
     defaultGroup.status === "loading" || groupsList.status === "loading";
 
@@ -155,7 +164,7 @@ function HomeRoute() {
           Welcome Back, {authentication.user.name}
         </PrimaryHeading>
       </PageHeaderRow>
-      <GroupBody className="w-full h-full justify-center items-center pb-32">
+      <GroupBody className="w-full h-full justify-center items-center pb-8">
         {groupsList.status === "success" ? (
           <div className="w-full max-w-3xl mx-auto space-y-2">
             <div className="flex pb-1.5">
@@ -169,6 +178,7 @@ function HomeRoute() {
 
             <ExpenseForm
               defaultGroup={defaultGroup.data ?? groupsList.data[0]}
+              presets={presets}
             />
           </div>
         ) : (
@@ -194,7 +204,6 @@ function HomeRoute() {
                   </p>
 
                   <div className="mt-6 flex flex-wrap items-center justify-center gap-2">
-                    {" "}
                     {[
                       {
                         title: "Default",
