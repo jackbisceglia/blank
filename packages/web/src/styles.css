@@ -157,3 +157,23 @@
     scrollbar-color: hsl(224, 5%, 37.5%) hsl(224, 15%, 9%);
   }
 }
+
+@layer utilities {
+  @keyframes pill-bounce {
+    0%,
+    100% {
+      transform: translateY(0);
+    }
+    50% {
+      transform: translateY(-4px);
+    }
+  }
+  @keyframes pill-fade-in {
+    from {
+      opacity: 0;
+    }
+    to {
+      opacity: 1;
+    }
+  }
+}

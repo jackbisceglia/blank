@@ -10,8 +10,8 @@ import { Match } from "effect";
 import { cn, prevented } from "@/lib/utils";
 import { positions } from "@/components/form/fields";
 import { X } from "lucide-react";
-import { Badge } from "@/components/ui/badge";
-import { useMemo } from "react";
+import { Badge, badgeVariants } from "@/components/ui/badge";
+import { PropsWithChildren, useMemo, useRef } from "react";
 import { toast } from "sonner";
 import { ImageDataUrlSchema } from "@blank/core/lib/utils/images";
 
@@ -64,7 +64,40 @@ const schema = v.pipe(
   }),
 );
 
-type UsePasteImageOptions = {
+type PresetBadgeProps = PropsWithChildren<{
+  order: number;
+  length: number;
+  onClick: () => void;
+}>;
+
+function PresetBadge(props: PresetBadgeProps) {
+  const period = 6;
+  const phase = (props.order % props.length) * (period / props.length);
+
+  return (
+    <Button
+      type="button"
+      variant="ghost"
+      size="xs"
+      className={cn(
+        badgeVariants({ variant: "outline" }),
+        "[animation:pill-bounce_5.2s_ease-in-out_infinite,_pill-fade-in_400ms_ease_both] [animation-delay:var(--a),var(--b)]",
+        "border-border/60 bg-card/60 backdrop-blur px-3.5 py-1.5 text-foreground/90 hover:bg-card/80 hover:border-border hover:text-foreground/90",
+      )}
+      style={
+        {
+          "--a": `-${phase}s`,
+          "--b": `${props.order * 0.025}s`,
+        } as React.CSSProperties
+      }
+      onClick={() => props.onClick()}
+    >
+      {props.children}
+    </Button>
+  );
+}
+
+type UseImageFilesOptions = {
   dispatch: (
     options:
       | { _tag: "add"; payload: FileData[] }
@@ -73,7 +106,7 @@ type UsePasteImageOptions = {
   registered: number;
 };
 
-function useImageFiles(options: UsePasteImageOptions) {
+function useImageFiles(options: UseImageFilesOptions) {
   const isImage = (file: File) =>
     file && file.type && file.type.startsWith("image/");
 
@@ -157,7 +190,9 @@ function useImageFiles(options: UsePasteImageOptions) {
   return { handlePaste, handleSubmit, dispatch: options.dispatch };
 }
 
-type ExpenseFormProps = { defaultGroup: Group };
+type Preset = { label: string; value: string };
+
+type ExpenseFormProps = { defaultGroup: Group; presets?: Preset[] };
 
 export function ExpenseForm(props: ExpenseFormProps) {
   const fieldErrorsId = "create-expense-errors";
@@ -172,7 +207,6 @@ export function ExpenseForm(props: ExpenseFormProps) {
         opts.value.description,
         opts.value.files.map((f) => f.result),
       );
-
       const result = await withToast({
         promise,
         action: (
@@ -202,12 +236,13 @@ export function ExpenseForm(props: ExpenseFormProps) {
           error: "Unable to create expense",
         },
       });
-
       opts.formApi.reset();
 
       return result;
     },
   });
+
+  const inputRef = useRef<HTMLInputElement>(null);
 
   const registered = useStore(form.store, (store) => store.values.files);
   const num = useMemo(() => registered.length, [registered]);
@@ -247,10 +282,11 @@ export function ExpenseForm(props: ExpenseFormProps) {
             <field.TextField
               errorPosition={positions.custom({ elementId: fieldErrorsId })}
               inputProps={{
+                onPaste: images.handlePaste,
+                ref: inputRef,
                 autoFocus: true,
                 placeholder: "ordered dinner with...",
                 "aria-label": "Expense Description",
-                onPaste: images.handlePaste,
                 className:
                   "bg-transparent flex-1 border-none text-left focus-visible:ring-0 focus-visible:ring-offset-0 px-1.5 py-1 placeholder:text-muted-foreground/90 rounded-none h-auto hover:bg-transparent",
               }}
@@ -268,9 +304,9 @@ export function ExpenseForm(props: ExpenseFormProps) {
                 type="button"
                 size="xs"
                 className="self-stretch w-min px-6 hover:bg-secondary"
-                onClick={(e) => {
+                onClick={() => {
                   form.resetField("description");
-                  (e.currentTarget.previousSibling as HTMLInputElement).focus();
+                  inputRef.current?.focus();
                 }}
               >
                 <X className="size-3" />
@@ -317,6 +353,26 @@ export function ExpenseForm(props: ExpenseFormProps) {
           }
         />
       </div>
+
+      {props.presets && props.presets.length > 0 && (
+        <div className="mt-4 h-12 flex flex-wrap items-center justify-center gap-3.5">
+          {props.presets.map((preset, index, array) => (
+            <PresetBadge
+              key={preset.label}
+              length={array.length}
+              order={index}
+              onClick={() => {
+                form.setFieldValue("description", () => preset.value);
+                form.validate("change");
+                inputRef.current?.focus();
+              }}
+            >
+              {preset.label}
+            </PresetBadge>
+          ))}
+        </div>
+      )}
+
       <form.Subscribe
         selector={(state) => state.fieldMeta}
         children={(fieldMeta) => (
