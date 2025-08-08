@@ -82,7 +82,7 @@ function PresetBadge(props: PresetBadgeProps) {
       className={cn(
         badgeVariants({ variant: "outline" }),
         "[animation:pill-bounce_5.2s_ease-in-out_infinite,_pill-fade-in_400ms_ease_both] [animation-delay:var(--a),var(--b)]",
-        "border-border/60 bg-card/60 backdrop-blur px-3.5 py-1.5 text-foreground/90 hover:bg-card/80 hover:border-border hover:text-foreground/90",
+        "lowercase border-border/60 bg-card/60 backdrop-blur px-3.5 py-1.5 text-foreground/90 hover:bg-card/80 hover:border-border hover:text-foreground/90",
       )}
       style={
         {
