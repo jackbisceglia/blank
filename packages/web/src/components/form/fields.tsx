@@ -26,6 +26,7 @@ import { Number, Data, Match, Option, pipe, Schema } from "effect";
 import { useGroupListByUserId } from "@/pages/_protected/@data/groups";
 import { useAuthentication } from "@/lib/authentication";
 import { Link } from "@tanstack/react-router";
+import { fieldLevelError } from "./errors";
 
 export type ErrorPositions = Data.TaggedEnum<{
   inline: {};
@@ -34,6 +35,21 @@ export type ErrorPositions = Data.TaggedEnum<{
 
 export const positions = Data.taggedEnum<ErrorPositions>();
 const isInline = positions.$is("inline");
+
+function usePerFieldErrors<T>(
+  field: ReturnType<typeof useFieldContext<T>>,
+  position: ErrorPositions,
+) {
+  const errors = metaToErrors(field.state.meta);
+
+  const id = Match.value(position).pipe(
+    Match.tag("inline", () => `${field}-error`),
+    Match.tag("custom", (config) => config.elementId),
+    Match.exhaustive,
+  );
+
+  return { id, errors };
+}
 
 type TextFieldProps =
   | {
@@ -63,17 +79,11 @@ export const TextField = (props: TextFieldProps) => {
   const { className: errorClassName, ...restErrorProps } =
     rest.errorProps ?? {};
 
-  const errors = metaToErrors(field.state.meta);
+  const position = props.errorPosition ?? positions.inline();
 
-  const errorPosition = props.errorPosition ?? positions.inline();
+  const e = usePerFieldErrors(field, position);
 
-  const hasErrors = errors.status === "errored";
-
-  const errorId = Match.value(errorPosition).pipe(
-    Match.tag("inline", () => `${field}-error`),
-    Match.tag("custom", (config) => config.elementId),
-    Match.exhaustive,
-  );
+  const hasErrors = e.errors.status === "errored";
 
   return (
     <>
@@ -88,8 +98,8 @@ export const TextField = (props: TextFieldProps) => {
       )}
       <SharedInputFromField
         aria-invalid={hasErrors}
-        aria-errormessage={hasErrors ? errorId : undefined}
-        aria-describedby={hasErrors ? errorId : undefined}
+        aria-errormessage={hasErrors ? e.id : undefined}
+        aria-describedby={hasErrors ? e.id : undefined}
         type="text"
         field={field}
         className={cn(
@@ -99,9 +109,9 @@ export const TextField = (props: TextFieldProps) => {
         {...restInputProps}
       />
 
-      {isInline(errorPosition) && hasErrors && (
-        <SharedError id={errorId} {...restErrorProps}>
-          {errors.values[0]?.message}
+      {isInline(position) && hasErrors && (
+        <SharedError id={e.id} {...restErrorProps}>
+          {e.errors.values[0]?.message}
         </SharedError>
       )}
     </>
@@ -389,49 +399,47 @@ export const DefaultGroupSelectField = (
 };
 
 type SheetSplitFieldProps = {
-  splitView: "percent" | "amount";
+  view: "percent" | "amount";
   total: number;
-  totalB: number;
 } & TextFieldProps;
 
 export const SheetSplitField = (props: SheetSplitFieldProps) => {
   const field = useFieldContext<number>();
-  const { label, total, totalB, splitView, ...rest } = props;
+  const { label, total, view, ...rest } = props;
   const { className: labelClassName, ...restLabelProps } =
     rest.labelProps ?? {};
   const { className: inputClassName, ...restInputProps } =
     rest.inputProps ?? {};
+  const { className: errorClassName, ...restErrorProps } =
+    rest.errorProps ?? {};
 
-  const shouldTransform = splitView === "amount";
+  const position = props.errorPosition ?? positions.inline();
+
+  const e = usePerFieldErrors(field, position);
+  const hasErrors = e.errors.status === "errored";
+
+  const shouldTransform = view === "percent";
 
   const Transform = Schema.transform(Schema.String, Schema.Number, {
-    encode: (split) => {
-      // convert from percentage of total amount
-      const value = pipe(
-        split,
-        Number.multiply(total),
-        Number.divide(100),
-        Option.getOrThrow,
-        Number.round(2),
-        globalThis.String,
-      );
-
-      return value;
-    },
-    decode: (amount) => {
-      // convert from amount into percentage of total
-      const value = pipe(
+    encode: (amount) =>
+      pipe(
         amount,
-        Number.parse,
-        Option.getOrThrow,
         Number.divide(total),
         Option.getOrThrow,
         Number.multiply(100),
         Number.round(2),
-      );
-
-      return value;
-    },
+        globalThis.String,
+      ),
+    decode: (percent) =>
+      pipe(
+        percent,
+        Number.parse,
+        Option.getOrElse(() => 0),
+        Number.divide(100),
+        Option.getOrThrow,
+        Number.multiply(total),
+        Number.round(2),
+      ),
   });
 
   return (
@@ -447,27 +455,36 @@ export const SheetSplitField = (props: SheetSplitFieldProps) => {
       )}
       <div className="relative">
         <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground text-sm">
-          {splitView === "percent" ? "%" : "$"}
+          {view === "percent" ? "%" : "$"}
         </span>
         <SharedInputFromField
           type="number"
-          step="1.00"
+          step={view === "percent" ? 1.0 : 0.01}
           min={0}
-          max={splitView === "percent" ? 100 : total}
+          max={view === "percent" ? 100 : total}
           field={field}
           className={cn(
             inputClassName,
             "bg-accent/50 border-border/50 text-foreground placeholder:text-muted-foreground/60 h-10 pl-8",
           )}
           encode={
-            shouldTransform ? Schema.encodeSync(Transform) : (v) => v.toString()
+            shouldTransform
+              ? Schema.encodeSync(Transform)
+              : (value) => value.toString()
           }
           decode={
-            shouldTransform ? Schema.decodeSync(Transform) : (v) => parseInt(v)
+            shouldTransform
+              ? Schema.decodeSync(Transform)
+              : (value) => parseFloat(value)
           }
           {...restInputProps}
         />
       </div>
+      {isInline(position) && hasErrors && (
+        <SharedError id={e.id} {...restErrorProps}>
+          {fieldLevelError.extract(e.errors.values[0]?.message)}
+        </SharedError>
+      )}
     </>
   );
 };

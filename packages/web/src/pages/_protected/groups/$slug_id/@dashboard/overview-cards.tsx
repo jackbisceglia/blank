@@ -5,12 +5,13 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { cn, formatUSD } from "@/lib/utils";
+import { cn } from "@/lib/utils";
+import { formatUSDString } from "@/lib/monetary/currency";
 import { Member } from "@blank/zero";
 import { ComponentProps, PropsWithChildren } from "react";
 import { Button } from "@/components/ui/button";
 import { compareParticipantsCustomOrder } from "@/lib/participants";
-import { Balances, withBalance } from "@/lib/balances";
+import { Balances, withBalance } from "@/lib/monetary/balances";
 import { Status } from "./table-status";
 import { getBalanceStyle, getBalanceText } from "@/components/utils";
 
@@ -88,7 +89,7 @@ export function ActiveExpensesCard(props: ActiveExpensesCardProps) {
           ? SkeletonContent
           : () => (
               <div className="text-lg font-semibold">
-                {formatUSD(props.total)}
+                {formatUSDString(props.total)}
               </div>
             )
       }

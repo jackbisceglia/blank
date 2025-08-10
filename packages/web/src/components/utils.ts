@@ -1,4 +1,5 @@
-import { formatUSD, matchSign } from "@/lib/utils";
+import { matchSign } from "@/lib/utils";
+import { formatUSDString } from "@/lib/monetary/currency";
 
 export function getBalanceStyle(balance: number) {
   if (balance === 0) return "text-muted-foreground font-medium";
@@ -17,7 +18,7 @@ export function getBalanceText(
 ) {
   if (options?.fallback && balance === 0) return options?.fallback;
 
-  const formatted = formatUSD(Math.abs(balance));
+  const formatted = formatUSDString(Math.abs(balance));
   const prefix = matchSign(balance, "-", "", "+");
 
   return [prefix, formatted].join("");

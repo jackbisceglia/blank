@@ -13,7 +13,8 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import { prevented } from "@/lib/utils";
-import { FieldsErrors, useAppForm } from "@/components/form";
+import { useAppForm } from "@/components/form";
+import { FieldsErrors } from "@/components/form/errors";
 import { withToast } from "@/lib/toast";
 import * as v from "valibot";
 import SearchRoute from "./route";

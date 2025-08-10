@@ -1,8 +1,8 @@
 import { ExpenseWithParticipants } from "@/pages/_protected/groups/$slug_id/page";
 import { Member } from "@blank/zero";
 import { Match, Number, pipe } from "effect";
-import { ParticipantWithMember } from "./participants";
 import { fraction, PERCENTAGE_SUM_ERROR_MARGIN } from "./fractions";
+import { ParticipantWithMember } from "../participants";
 
 export type MemberWithBalance = Member & { balance: number };
 export type Balances = {

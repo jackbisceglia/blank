@@ -8,7 +8,7 @@ import {
 import { mutators as participantMutators } from "./participant-mutators";
 import { UpdateParticipant } from "./participant-mutators";
 import { ExpenseWithParticipants } from "@/pages/_protected/groups/$slug_id/page";
-import { checkExpenseSplitValidity } from "../balances";
+import { checkExpenseSplitValidity } from "../monetary/balances";
 
 export type DeleteOptions = { expenseId: string };
 export type DeleteAllOptions = { groupId: string };
