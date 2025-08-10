@@ -37,7 +37,7 @@ import {
   TooltipContent,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
-import { PERCENTAGE_SUM_ERROR_MARGIN } from "@/lib/fractions";
+import { PERCENTAGE_SUM_ERROR_MARGIN } from "@/lib/monetary/fractions";
 
 type Payer = ParticipantWithMember | undefined;
 

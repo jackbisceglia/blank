@@ -18,7 +18,7 @@ export function createBalanceMap(
 
     expenses.forEach((expense) => {
       expense.participants.forEach((p) => {
-        const s = fraction(p.split);
+        const s = fraction().from(...p.split);
         const balance = map.get(p.userId) ?? 0;
 
         // split: owed = (1 - split) * amount, owe = (split) * amount
