@@ -37,6 +37,7 @@ import {
   TooltipContent,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
+import { PERCENTAGE_SUM_ERROR_MARGIN } from "@/lib/fractions";
 
 type Payer = ParticipantWithMember | undefined;
 
@@ -166,7 +167,6 @@ const columns = [
     ),
     cell: (opts) => {
       const RANGE = 1000 * 60;
-      const ERROR_MARGIN = 1e-10;
 
       const isNew =
         (opts.row.original.createdAt ?? Number.NEGATIVE_INFINITY) >
@@ -190,7 +190,7 @@ const columns = [
         if (!participants.find((p) => p.role === "payer")) {
           return [false, "Expense missing payer"] as const;
         }
-        if (Math.abs(split - 1) > ERROR_MARGIN) {
+        if (Math.abs(split - 1) > PERCENTAGE_SUM_ERROR_MARGIN) {
           return [false, "Split does not sum to 100%"] as const;
         }
 

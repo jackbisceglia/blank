@@ -8,6 +8,7 @@ import {
   SheetCostField,
   SheetDateField,
   SheetPaidByField,
+  SheetSplitField,
   SheetTextField,
   TextField,
 } from "./fields";
@@ -58,6 +59,7 @@ export const { useAppForm } = createFormHook({
     SheetDateField,
     SheetPaidByField,
     DefaultGroupSelectField,
+    SheetSplitField,
   },
   formComponents: {
     SubmitButton,

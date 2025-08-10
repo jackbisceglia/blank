@@ -22,7 +22,7 @@ import { type ParticipantWithMember } from "@/lib/participants";
 import { useFieldContext } from ".";
 import { Member } from "@blank/zero";
 import { metaToErrors } from "@/lib/validation-errors";
-import { Data, Match } from "effect";
+import { Number, Data, Match, Option, pipe, Schema } from "effect";
 import { useGroupListByUserId } from "@/pages/_protected/@data/groups";
 import { useAuthentication } from "@/lib/authentication";
 import { Link } from "@tanstack/react-router";
@@ -166,7 +166,7 @@ export const SheetCostField = (props: SheetCostFieldProps) => {
           $
         </span>
         <SharedInputFromField
-          transform={Number}
+          decode={globalThis.Number}
           type="number"
           step="1.00"
           field={field}
@@ -384,6 +384,90 @@ export const DefaultGroupSelectField = (
           {errors.values[0]?.message}
         </SharedError>
       )}
+    </>
+  );
+};
+
+type SheetSplitFieldProps = {
+  splitView: "percent" | "amount";
+  total: number;
+  totalB: number;
+} & TextFieldProps;
+
+export const SheetSplitField = (props: SheetSplitFieldProps) => {
+  const field = useFieldContext<number>();
+  const { label, total, totalB, splitView, ...rest } = props;
+  const { className: labelClassName, ...restLabelProps } =
+    rest.labelProps ?? {};
+  const { className: inputClassName, ...restInputProps } =
+    rest.inputProps ?? {};
+
+  const shouldTransform = splitView === "amount";
+
+  const Transform = Schema.transform(Schema.String, Schema.Number, {
+    encode: (split) => {
+      // convert from percentage of total amount
+      const value = pipe(
+        split,
+        Number.multiply(total),
+        Number.divide(100),
+        Option.getOrThrow,
+        Number.round(2),
+        globalThis.String,
+      );
+
+      return value;
+    },
+    decode: (amount) => {
+      // convert from amount into percentage of total
+      const value = pipe(
+        amount,
+        Number.parse,
+        Option.getOrThrow,
+        Number.divide(total),
+        Option.getOrThrow,
+        Number.multiply(100),
+        Number.round(2),
+      );
+
+      return value;
+    },
+  });
+
+  return (
+    <>
+      {label && (
+        <SharedSheetLabel
+          className={labelClassName}
+          htmlFor={field.name}
+          {...restLabelProps}
+        >
+          {label}
+        </SharedSheetLabel>
+      )}
+      <div className="relative">
+        <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground text-sm">
+          {splitView === "percent" ? "%" : "$"}
+        </span>
+        <SharedInputFromField
+          type="number"
+          step="1.00"
+          min={0}
+          max={splitView === "percent" ? 100 : total}
+          field={field}
+          className={cn(
+            inputClassName,
+            "bg-accent/50 border-border/50 text-foreground placeholder:text-muted-foreground/60 h-10 pl-8",
+          )}
+          encode={
+            shouldTransform ? Schema.encodeSync(Transform) : (v) => v.toString()
+          }
+          decode={
+            shouldTransform ? Schema.decodeSync(Transform) : (v) => parseInt(v)
+          }
+          {...restInputProps}
+        />
+      </div>
     </>
   );
 };

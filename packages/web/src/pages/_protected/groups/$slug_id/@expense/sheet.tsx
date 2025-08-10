@@ -1,4 +1,4 @@
-import { PropsWithChildren } from "react";
+import { PropsWithChildren, useState } from "react";
 import { ExpenseWithParticipants } from "../page";
 import { useAuthentication } from "@/lib/authentication";
 import {
@@ -13,7 +13,7 @@ import {
 } from "@/lib/client-mutators/expense-mutators";
 import { DialogDescription } from "@/components/ui/dialog";
 import { ChevronRight } from "lucide-react";
-import { fraction, prevented, timestampToDate } from "@/lib/utils";
+import { cn, prevented, timestampToDate } from "@/lib/utils";
 import {
   useDeleteOneExpense,
   useUpdateExpense,
@@ -32,6 +32,11 @@ import {
 } from "@/components/ui/sheet";
 import { Separator } from "@/components/ui/separator";
 import ExpenseSheetSearchRoute from "./route";
+import { Number, String } from "effect";
+import { fraction } from "@/lib/fractions";
+import { Button } from "@/components/ui/button";
+import { underline_defaults } from "@/components/ui/utils";
+import { sharedSheetLabelClassNames } from "@/components/form/shared";
 
 function useConfirmDeleteExpense(
   expenseId: string,
@@ -178,7 +183,33 @@ function useForm(
   updateMutation: (opts: UpdateExpenseOptions) => Promise<void>,
   leave: () => void,
 ) {
-  const schema = v.pipe(
+  type Initial = typeof initial;
+
+  const initial = {
+    description: active.description,
+    amount: active.amount,
+    date: timestampToDate(active.date),
+    paidBy: getPayerFromParticipants(active.participants)?.userId ?? "",
+    splits: active.participants.map((p) => ({
+      split: fraction(p.split).percent(),
+      memberUserId: p.userId,
+      memberName: p.member?.nickname ?? "anon",
+    })),
+  };
+
+  const compareSplits = (a: Initial["splits"], b: Initial["splits"]) => {
+    const aIsSubsetOfB = a.reduce((acc, entry) => {
+      const match =
+        entry.split ===
+        b.find((s) => s.memberUserId === entry.memberUserId)?.split;
+
+      return acc && match;
+    }, true);
+
+    return a.length === b.length && aIsSubsetOfB;
+  };
+
+  const Schema = v.pipe(
     v.object({
       description: v.string(),
       amount: v.pipe(
@@ -191,26 +222,32 @@ function useForm(
         active.participants.map((p) => p.userId),
         "paidBy must be a valid member",
       ),
+      splits: v.array(
+        v.object({
+          split: v.pipe(v.number(), v.minValue(0), v.maxValue(100)),
+          memberUserId: v.union([
+            v.pipe(v.string(), v.uuid()),
+            v.literal("anon"),
+          ]),
+          memberName: v.pipe(v.string(), v.minLength(1), v.maxLength(64)),
+        }),
+      ),
     }),
     v.check((schema) => {
       return (
-        schema.amount !== active.amount ||
-        schema.description !== active.description ||
-        schema.date.getTime() !== active.date ||
-        schema.paidBy !== getPayerFromParticipants(active.participants)?.userId
+        schema.amount !== initial.amount ||
+        schema.description !== initial.description ||
+        schema.date.getTime() !== initial.date.getTime() ||
+        schema.paidBy !== initial.paidBy ||
+        !compareSplits(schema.splits, initial.splits)
       );
     }),
   );
 
   const api = useAppForm({
-    defaultValues: {
-      description: active.description,
-      amount: active.amount,
-      date: timestampToDate(active.date),
-      paidBy: getPayerFromParticipants(active.participants)?.userId ?? "",
-    },
+    defaultValues: initial,
     validators: {
-      onChange: schema,
+      onChange: Schema,
       onSubmit: (ctx) => {
         return ctx.formApi.state.isPristine
           ? "Fields must be updated"
@@ -271,20 +308,32 @@ function useForm(
     },
   });
 
-  return { api };
+  return { api, Schema };
 }
 
 type ExpenseSheetProps = PropsWithChildren<{
   expense: ExpenseWithParticipants;
 }>;
 
+export type SplitView = "percent" | "amount";
+
+export function useSplitView(initial: SplitView) {
+  const [view, setView] = useState<SplitView>(initial);
+
+  const toggle = () => setView((v) => (v === "percent" ? "amount" : "percent"));
+
+  return { view, toggle };
+}
+
 export function ExpenseSheet(props: ExpenseSheetProps) {
   const auth = useAuthentication();
   const route = ExpenseSheetSearchRoute.useSearchRoute();
   const active = props.expense;
+  const splitView = useSplitView("percent");
 
   const payer = getPayerFromParticipants(active.participants);
 
+  Number.parse;
   const mutators = useMutators();
   const form = useForm(active, mutators.expense.update, route.close);
   const deleteExpense = useConfirmDeleteExpense(
@@ -317,6 +366,8 @@ export function ExpenseSheet(props: ExpenseSheetProps) {
       },
     });
   };
+
+  //const amount = useStore(form.api.store, (s) => s.values.amount);
 
   return (
     <>
@@ -400,26 +451,76 @@ export function ExpenseSheet(props: ExpenseSheetProps) {
                   )}
                 />
               </div>
-              <Separator className="col-span-full my-4" />
-              <ul className="flex flex-col gap-2">
-                <p className="text-xs text-muted-foreground">
-                  just for debugging for now
+              <Separator className="col-span-full my-2" />
+              <div className="col-span-full flex justify-between items-center">
+                <p className={cn(sharedSheetLabelClassNames, "text-sm")}>
+                  Splits
                 </p>
-                {active.participants
-                  .map(
-                    (p) =>
-                      [
-                        p.member?.nickname,
-                        fraction(p.split).percent(),
-                      ] as const,
-                  )
-                  .filter((tuple): tuple is [string, number] => !!tuple[0])
-                  .map(([name, split]) => (
-                    <li key={name}>
-                      {name}: {split.toString()}%
-                    </li>
+                <ul className="flex">
+                  {(["percent", "amount"] as const).map((tab, index, array) => (
+                    <Button
+                      key={tab}
+                      onClick={splitView.toggle}
+                      type="button"
+                      variant="link"
+                      className={cn(
+                        sharedSheetLabelClassNames,
+                        "font-normal px-2",
+                        splitView.view === tab && "text-white font-medium",
+                        splitView.view === tab && underline_defaults,
+                        index === array.length - 1 && "pr-1",
+                        index === 0 && "pl-1",
+                      )}
+                    >
+                      {String.capitalize(tab)}
+                    </Button>
                   ))}
-              </ul>
+                </ul>
+              </div>
+              <form.api.AppField
+                name="splits"
+                mode="array"
+                validators={{
+                  onChangeListenTo: ["paidBy"],
+                  onChange: (opts) => {
+                    const paidBy = opts.fieldApi.form.getFieldValue("paidBy");
+                    const paidByCheck = (splits: typeof opts.value) =>
+                      splits.some((split) => split.memberUserId === paidBy);
+
+                    const SplitsLinked = v.pipe(
+                      form.Schema.entries.splits,
+                      v.check(
+                        paidByCheck,
+                        '"Paid By" member must be included in splits',
+                      ),
+                    );
+                    return opts.fieldApi.parseValueWithSchema(SplitsLinked);
+                  },
+                }}
+                children={(field) => (
+                  <>
+                    {field.state.value.map((value, index) => (
+                      <form.api.AppField
+                        key={value.memberUserId}
+                        name={`splits[${index}].split`}
+                        children={(element) => (
+                          <div className="space-y-2">
+                            <element.SheetSplitField
+                              inputProps={{
+                                disabled: active.status === "settled",
+                              }}
+                              label={value.memberName}
+                              splitView={splitView.view}
+                              total={form.api.getFieldValue("amount")}
+                              totalB={form.api.getFieldValue("amount")}
+                            />
+                          </div>
+                        )}
+                      />
+                    ))}
+                  </>
+                )}
+              />
             </SheetBody>
             <SheetFooter className="flex-col gap-2 mt-auto grid grid-cols-2">
               <form.api.Subscribe

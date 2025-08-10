@@ -20,39 +20,36 @@ export function SharedLabel(props: SharedLabelProps) {
 
 type SharedSheetLabelProps = React.ComponentProps<typeof Label>;
 
+export const sharedSheetLabelClassNames =
+  "uppercase font-medium text-xs text-muted-foreground";
+
 export function SharedSheetLabel(props: SharedSheetLabelProps) {
   const { className, ...rest } = props;
 
   return (
-    <Label
-      className={cn(
-        "uppercase font-medium text-xs text-muted-foreground",
-        className,
-      )}
-      {...rest}
-    />
+    <Label className={cn(sharedSheetLabelClassNames, className)} {...rest} />
   );
 }
 
 type SharedInputFromFieldProps<T extends string | number> = {
   field: ReturnType<typeof useFieldContext<T>>;
-  transform?: (value: string) => T;
+  encode?: (value: T) => string;
+  decode?: (value: string) => T;
 } & React.ComponentProps<typeof Input>;
 
 export function SharedInputFromField<T extends string | number>(
   props: SharedInputFromFieldProps<T>,
 ) {
-  const { className, field, transform, ...rest } = props;
+  const { className, field, encode, decode, ...rest } = props;
   return (
     <Input
       autoComplete="off"
       id={field.name}
       name={field.name}
-      value={field.state.value}
+      value={encode?.(field.state.value) ?? field.state.value}
       onChange={(e) => {
-        field.handleChange(
-          transform?.(e.target.value) ?? (e.target.value as T),
-        );
+        console.log("running on change with value: ", e.target.value);
+        field.handleChange(decode?.(e.target.value) ?? (e.target.value as T));
       }}
       onBlur={field.handleBlur}
       className={cn("hover:bg-secondary/80", className)}
