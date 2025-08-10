@@ -1,4 +1,4 @@
-import { PropsWithChildren, useState } from "react";
+import { PropsWithChildren, useEffect, useState } from "react";
 import { ExpenseWithParticipants } from "../page";
 import { useAuthentication } from "@/lib/authentication";
 import {
@@ -19,7 +19,7 @@ import {
   useUpdateExpense,
 } from "@/pages/_protected/@data/expenses";
 import * as v from "valibot";
-import { FieldsErrors, useAppForm } from "@/components/form";
+import { useAppForm } from "@/components/form";
 import { Participant } from "@blank/zero";
 import { optional } from "@blank/core/lib/utils/index";
 import {
@@ -32,11 +32,20 @@ import {
 } from "@/components/ui/sheet";
 import { Separator } from "@/components/ui/separator";
 import ExpenseSheetSearchRoute from "./route";
-import { Number, String } from "effect";
+import { String, Number, Match } from "effect";
 import { fraction } from "@/lib/fractions";
 import { Button } from "@/components/ui/button";
 import { underline_defaults } from "@/components/ui/utils";
 import { sharedSheetLabelClassNames } from "@/components/form/shared";
+import { positions } from "@/components/form/fields";
+import { fieldLevelError, FieldsErrors } from "@/components/form/errors";
+
+const sumMustMatchTotalErrorMessage = (view: SplitView, total: number) =>
+  Match.value(view).pipe(
+    Match.when("percent", () => "Splits must sum to 100%"),
+    Match.when("amount", () => `Splits must sum to $${total}`),
+    Match.orElseAbsurd,
+  );
 
 function useConfirmDeleteExpense(
   expenseId: string,
@@ -182,6 +191,7 @@ function useForm(
   active: ExpenseWithParticipants,
   updateMutation: (opts: UpdateExpenseOptions) => Promise<void>,
   leave: () => void,
+  view: SplitView,
 ) {
   type Initial = typeof initial;
 
@@ -191,7 +201,7 @@ function useForm(
     date: timestampToDate(active.date),
     paidBy: getPayerFromParticipants(active.participants)?.userId ?? "",
     splits: active.participants.map((p) => ({
-      split: fraction(p.split).percent(),
+      amount: fraction(p.split).apply(active.amount),
       memberUserId: p.userId,
       memberName: p.member?.nickname ?? "anon",
     })),
@@ -200,8 +210,8 @@ function useForm(
   const compareSplits = (a: Initial["splits"], b: Initial["splits"]) => {
     const aIsSubsetOfB = a.reduce((acc, entry) => {
       const match =
-        entry.split ===
-        b.find((s) => s.memberUserId === entry.memberUserId)?.split;
+        entry.amount ===
+        b.find((s) => s.memberUserId === entry.memberUserId)?.amount;
 
       return acc && match;
     }, true);
@@ -209,45 +219,67 @@ function useForm(
     return a.length === b.length && aIsSubsetOfB;
   };
 
-  const Schema = v.pipe(
-    v.object({
-      description: v.string(),
-      amount: v.pipe(
-        v.number(),
-        v.minValue(0.01, "Item must cost at least $0.01"),
-        v.maxValue(100_000, "Item must not exceed $100,000"),
-      ),
-      date: v.date(),
-      paidBy: v.picklist(
-        active.participants.map((p) => p.userId),
-        "paidBy must be a valid member",
-      ),
-      splits: v.array(
-        v.object({
-          split: v.pipe(v.number(), v.minValue(0), v.maxValue(100)),
-          memberUserId: v.union([
-            v.pipe(v.string(), v.uuid()),
-            v.literal("anon"),
-          ]),
-          memberName: v.pipe(v.string(), v.minLength(1), v.maxLength(64)),
-        }),
-      ),
-    }),
-    v.check((schema) => {
-      return (
-        schema.amount !== initial.amount ||
-        schema.description !== initial.description ||
-        schema.date.getTime() !== initial.date.getTime() ||
-        schema.paidBy !== initial.paidBy ||
-        !compareSplits(schema.splits, initial.splits)
-      );
-    }),
-  );
+  const checkSplitsSum = (total: number) => (splits: Initial["splits"]) =>
+    Number.sumAll(splits.map(({ amount }) => amount)) === total;
+
+  const Schema = (total: number) =>
+    v.pipe(
+      v.object({
+        description: v.string(),
+        amount: v.pipe(
+          v.number(),
+          v.minValue(0.01, "Item must cost at least $0.01"),
+          v.maxValue(100_000, "Item must not exceed $100,000"),
+        ),
+        date: v.date(),
+        paidBy: v.picklist(
+          active.participants.map((p) => p.userId),
+          "paidBy must be a valid member",
+        ),
+        splits: v.pipe(
+          v.array(
+            v.object({
+              amount: v.pipe(
+                v.number(),
+                v.gtValue(0, fieldLevelError.create("Must contribute > 0%")),
+                v.ltValue(
+                  total,
+                  fieldLevelError.create("Can't contribute >= 100%"),
+                ),
+              ),
+              memberUserId: v.union([
+                v.pipe(v.string(), v.uuid()),
+                v.literal("anon"),
+              ]),
+              memberName: v.pipe(v.string(), v.minLength(1), v.maxLength(64)),
+            }),
+          ),
+          v.check(
+            checkSplitsSum(total),
+            sumMustMatchTotalErrorMessage(view, total),
+          ),
+        ),
+      }),
+      v.check((schema) => {
+        const bool =
+          schema.amount !== initial.amount ||
+          schema.description !== initial.description ||
+          schema.date.getTime() !== initial.date.getTime() ||
+          schema.paidBy !== initial.paidBy ||
+          !compareSplits(schema.splits, initial.splits);
+
+        return bool;
+      }),
+    );
 
   const api = useAppForm({
     defaultValues: initial,
     validators: {
-      onChange: Schema,
+      onChange: (ctx) => {
+        const amount = ctx.formApi.getFieldValue("amount");
+
+        return ctx.formApi.parseValuesWithSchema(Schema(amount));
+      },
       onSubmit: (ctx) => {
         return ctx.formApi.state.isPristine
           ? "Fields must be updated"
@@ -308,6 +340,9 @@ function useForm(
     },
   });
 
+  useEffect(() => {
+    api.validate("change");
+  }, [view]);
   return { api, Schema };
 }
 
@@ -329,13 +364,12 @@ export function ExpenseSheet(props: ExpenseSheetProps) {
   const auth = useAuthentication();
   const route = ExpenseSheetSearchRoute.useSearchRoute();
   const active = props.expense;
-  const splitView = useSplitView("percent");
+  const mode = useSplitView("percent");
 
   const payer = getPayerFromParticipants(active.participants);
 
-  Number.parse;
   const mutators = useMutators();
-  const form = useForm(active, mutators.expense.update, route.close);
+  const form = useForm(active, mutators.expense.update, route.close, mode.view);
   const deleteExpense = useConfirmDeleteExpense(
     active.id,
     mutators.expense.delete,
@@ -366,8 +400,6 @@ export function ExpenseSheet(props: ExpenseSheetProps) {
       },
     });
   };
-
-  //const amount = useStore(form.api.store, (s) => s.values.amount);
 
   return (
     <>
@@ -460,14 +492,14 @@ export function ExpenseSheet(props: ExpenseSheetProps) {
                   {(["percent", "amount"] as const).map((tab, index, array) => (
                     <Button
                       key={tab}
-                      onClick={splitView.toggle}
+                      onClick={mode.toggle}
                       type="button"
                       variant="link"
                       className={cn(
                         sharedSheetLabelClassNames,
                         "font-normal px-2",
-                        splitView.view === tab && "text-white font-medium",
-                        splitView.view === tab && underline_defaults,
+                        mode.view === tab && "text-white font-medium",
+                        mode.view === tab && underline_defaults,
                         index === array.length - 1 && "pr-1",
                         index === 0 && "pl-1",
                       )}
@@ -484,16 +516,16 @@ export function ExpenseSheet(props: ExpenseSheetProps) {
                   onChangeListenTo: ["paidBy"],
                   onChange: (opts) => {
                     const paidBy = opts.fieldApi.form.getFieldValue("paidBy");
-                    const paidByCheck = (splits: typeof opts.value) =>
-                      splits.some((split) => split.memberUserId === paidBy);
+                    const total = opts.fieldApi.form.getFieldValue("amount");
 
                     const SplitsLinked = v.pipe(
-                      form.Schema.entries.splits,
+                      form.Schema(total).entries.splits,
                       v.check(
-                        paidByCheck,
+                        (value) => value.some((s) => s.memberUserId === paidBy),
                         '"Paid By" member must be included in splits',
                       ),
                     );
+
                     return opts.fieldApi.parseValueWithSchema(SplitsLinked);
                   },
                 }}
@@ -502,19 +534,23 @@ export function ExpenseSheet(props: ExpenseSheetProps) {
                     {field.state.value.map((value, index) => (
                       <form.api.AppField
                         key={value.memberUserId}
-                        name={`splits[${index}].split`}
+                        name={`splits[${index}].amount`}
                         children={(element) => (
-                          <div className="space-y-2">
-                            <element.SheetSplitField
-                              inputProps={{
-                                disabled: active.status === "settled",
-                              }}
-                              label={value.memberName}
-                              splitView={splitView.view}
-                              total={form.api.getFieldValue("amount")}
-                              totalB={form.api.getFieldValue("amount")}
-                            />
-                          </div>
+                          <form.api.Subscribe selector={(s) => s.values.amount}>
+                            {(subscription) => (
+                              <div className="space-y-2">
+                                <element.SheetSplitField
+                                  errorPosition={positions.inline()}
+                                  inputProps={{
+                                    disabled: active.status === "settled",
+                                  }}
+                                  label={value.memberName}
+                                  view={mode.view}
+                                  total={subscription}
+                                />
+                              </div>
+                            )}
+                          </form.api.Subscribe>
                         )}
                       />
                     ))}
@@ -533,7 +569,10 @@ export function ExpenseSheet(props: ExpenseSheetProps) {
                 )}
               ></form.api.Subscribe>
               <form.api.AppForm>
-                <form.api.SubmitButton className="col-start-1 col-end-3">
+                <form.api.SubmitButton
+                  className="col-start-1 col-end-3"
+                  dirty={{ disableForAria: true }}
+                >
                   Save
                 </form.api.SubmitButton>
                 {active.status === "active" ? (

@@ -48,7 +48,6 @@ export function SharedInputFromField<T extends string | number>(
       name={field.name}
       value={encode?.(field.state.value) ?? field.state.value}
       onChange={(e) => {
-        console.log("running on change with value: ", e.target.value);
         field.handleChange(decode?.(e.target.value) ?? (e.target.value as T));
       }}
       onBlur={field.handleBlur}
