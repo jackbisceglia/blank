@@ -2,13 +2,16 @@ import { AnyFieldMeta } from "@tanstack/react-form";
 import { metasToErrors } from "@/lib/validation-errors";
 import { cn } from "@/lib/utils";
 
-export const fieldLevelError = {
+export const local = {
   delimiter: "@",
-  suffix: () => [fieldLevelError.delimiter, "FieldLevel"].join(""),
-  create: (message: string) => [message, fieldLevelError.suffix()].join(""),
-  filter: (message: string) => !message.endsWith(fieldLevelError.suffix()),
+  suffix: () => [local.delimiter, "FieldLevel"].join(""),
+  create: (message: string) => [message, local.suffix()].join(""),
+  annotate: (message: string) => ({
+    message: () => local.create(message),
+  }),
+  filter: (message: string) => !message.endsWith(local.suffix()),
   extract: (message: string) => {
-    const [err, suffix] = message.split(fieldLevelError.delimiter);
+    const [err, suffix] = message.split(local.delimiter);
 
     if (!(suffix ?? "").length) return "";
 
@@ -34,7 +37,7 @@ export const FieldsErrors = (props: FieldsErrorsProps) => {
     >
       {errors.status === "errored" &&
         errors.values
-          .filter((err) => fieldLevelError.filter(err.message))
+          .filter((err) => local.filter(err.message))
           .map((error, index) => (
             <li
               key={index}

@@ -33,8 +33,8 @@ export function SharedSheetLabel(props: SharedSheetLabelProps) {
 
 type SharedInputFromFieldProps<T extends string | number> = {
   field: ReturnType<typeof useFieldContext<T>>;
-  encode?: (value: T) => string;
-  decode?: (value: string) => T;
+  encode?: undefined | ((value: T) => string);
+  decode?: undefined | ((value: string) => T);
 } & React.ComponentProps<typeof Input>;
 
 export function SharedInputFromField<T extends string | number>(

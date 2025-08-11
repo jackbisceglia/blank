@@ -18,7 +18,6 @@ import {
   useDeleteOneExpense,
   useUpdateExpense,
 } from "@/pages/_protected/@data/expenses";
-import * as v from "valibot";
 import { useAppForm } from "@/components/form";
 import { Participant } from "@blank/zero";
 import { optional } from "@blank/core/lib/utils/index";
@@ -32,20 +31,14 @@ import {
 } from "@/components/ui/sheet";
 import { Separator } from "@/components/ui/separator";
 import ExpenseSheetSearchRoute from "./route";
-import { String, Number, Match } from "effect";
-import { fraction } from "@/lib/fractions";
+import { String, Number, pipe, Schema as S, Match } from "effect";
+import { fraction } from "@/lib/monetary/fractions";
 import { Button } from "@/components/ui/button";
 import { underline_defaults } from "@/components/ui/utils";
 import { sharedSheetLabelClassNames } from "@/components/form/shared";
+import { FieldsErrors, local } from "@/components/form/errors";
+import { formatUSDFormField } from "@/lib/monetary/currency";
 import { positions } from "@/components/form/fields";
-import { fieldLevelError, FieldsErrors } from "@/components/form/errors";
-
-const sumMustMatchTotalErrorMessage = (view: SplitView, total: number) =>
-  Match.value(view).pipe(
-    Match.when("percent", () => "Splits must sum to 100%"),
-    Match.when("amount", () => `Splits must sum to $${total}`),
-    Match.orElseAbsurd,
-  );
 
 function useConfirmDeleteExpense(
   expenseId: string,
@@ -129,10 +122,18 @@ function useConfirmSettleExpense(opts: UseConfirmSettleExpense) {
                       {getSettleUpSentence(
                         p,
                         payer,
-                        fraction(p.split).apply(opts.expense.amount),
+                        fraction()
+                          .from(...p.split)
+                          .apply(opts.expense.amount),
                       )}
                       <span className="text-blank-theme ml-auto font-bold">
-                        [{Math.round(fraction(p.split).percent()).toString()}%]
+                        [
+                        {Math.round(
+                          fraction()
+                            .from(...p.split)
+                            .percent(),
+                        ).toString()}
+                        %]
                       </span>
                     </li>
                   ))
@@ -193,92 +194,82 @@ function useForm(
   leave: () => void,
   view: SplitView,
 ) {
-  type Initial = typeof initial;
+  type Encoded = ReturnType<typeof createSchema>["Encoded"];
 
-  const initial = {
+  const initial: Encoded = {
     description: active.description,
-    amount: active.amount,
+    amount: pipe(active.amount, (amount) => amount.toFixed(2)),
     date: timestampToDate(active.date),
     paidBy: getPayerFromParticipants(active.participants)?.userId ?? "",
     splits: active.participants.map((p) => ({
-      amount: fraction(p.split).apply(active.amount),
       memberUserId: p.userId,
+      amount: pipe(
+        fraction()
+          .from(...p.split)
+          .apply(active.amount),
+        (amount) => amount.toFixed(2),
+      ),
       memberName: p.member?.nickname ?? "anon",
     })),
   };
 
-  const compareSplits = (a: Initial["splits"], b: Initial["splits"]) => {
-    const aIsSubsetOfB = a.reduce((acc, entry) => {
-      const match =
-        entry.amount ===
-        b.find((s) => s.memberUserId === entry.memberUserId)?.amount;
+  const createSchema = (total: number) => {
+    const assertSumsToTotal = (items: number[]) =>
+      Number.sumAll(items) === total;
 
-      return acc && match;
-    }, true);
+    const participants = active.participants.map((p) => p.userId);
 
-    return a.length === b.length && aIsSubsetOfB;
-  };
+    const FormNumber = S.transform(S.String, S.Number, {
+      decode: (s) => (s.trim() === "" ? 0 : parseFloat(s.trim())),
+      encode: (n) => (n === 0 ? "" : n.toFixed(2)),
+    });
 
-  const checkSplitsSum = (total: number) => (splits: Initial["splits"]) =>
-    Number.sumAll(splits.map(({ amount }) => amount)) === total;
-
-  const Schema = (total: number) =>
-    v.pipe(
-      v.object({
-        description: v.string(),
-        amount: v.pipe(
-          v.number(),
-          v.minValue(0.01, "Item must cost at least $0.01"),
-          v.maxValue(100_000, "Item must not exceed $100,000"),
+    const SplitsSchema = S.Array(
+      S.Struct({
+        memberUserId: S.UUID,
+        amount: FormNumber.pipe(
+          S.positive(local.annotate("Must contribute > 0%")),
+          S.lessThan(total, local.annotate("Can't contribute > 100%")),
         ),
-        date: v.date(),
-        paidBy: v.picklist(
-          active.participants.map((p) => p.userId),
-          "paidBy must be a valid member",
-        ),
-        splits: v.pipe(
-          v.array(
-            v.object({
-              amount: v.pipe(
-                v.number(),
-                v.gtValue(0, fieldLevelError.create("Must contribute > 0%")),
-                v.ltValue(
-                  total,
-                  fieldLevelError.create("Can't contribute >= 100%"),
-                ),
-              ),
-              memberUserId: v.union([
-                v.pipe(v.string(), v.uuid()),
-                v.literal("anon"),
-              ]),
-              memberName: v.pipe(v.string(), v.minLength(1), v.maxLength(64)),
-            }),
-          ),
-          v.check(
-            checkSplitsSum(total),
-            sumMustMatchTotalErrorMessage(view, total),
-          ),
-        ),
+        memberName: S.Union(S.String, S.Literal("anon")),
       }),
-      v.check((schema) => {
-        const bool =
-          schema.amount !== initial.amount ||
-          schema.description !== initial.description ||
-          schema.date.getTime() !== initial.date.getTime() ||
-          schema.paidBy !== initial.paidBy ||
-          !compareSplits(schema.splits, initial.splits);
-
-        return bool;
+    ).pipe(
+      S.filter((splits) => assertSumsToTotal(splits.map((s) => s.amount)), {
+        message: () =>
+          Match.value(view).pipe(
+            Match.when("percent", () => "Splits must sum to 100%"),
+            Match.when("amount", () => `Splits must sum to $${total}`),
+            Match.orElseAbsurd,
+          ),
       }),
     );
+
+    const Schema = S.Struct({
+      description: S.String,
+      date: S.DateFromSelf,
+      amount: FormNumber.pipe(
+        S.int(local.annotate("Amount must be a whole number")),
+        S.positive(local.annotate("Item must cost at least $0.01")),
+        S.lessThan(100_000, local.annotate("Item must not exceed $100,000")),
+      ),
+      paidBy: S.Literal(...participants).pipe(
+        S.annotations(local.annotate("Paid By must be a valid member")),
+      ),
+      splits: SplitsSchema,
+    });
+
+    return Schema;
+  };
 
   const api = useAppForm({
     defaultValues: initial,
     validators: {
       onChange: (ctx) => {
-        const amount = ctx.formApi.getFieldValue("amount");
+        const total = parseFloat(ctx.value.amount);
 
-        return ctx.formApi.parseValuesWithSchema(Schema(amount));
+        return createSchema(total)
+          .pipe(S.standardSchemaV1)
+          .pipe(ctx.formApi.parseValuesWithSchema);
       },
       onSubmit: (ctx) => {
         return ctx.formApi.state.isPristine
@@ -287,11 +278,17 @@ function useForm(
       },
     },
     onSubmit: async (fields) => {
+      const total = parseFloat(fields.value.amount);
+
+      const parse = createSchema(total).pipe(S.decodeSync);
+
+      const value = parse(fields.value);
+
       function makeExpense() {
         return {
-          description: fields.value.description,
-          amount: fields.value.amount,
-          date: fields.value.date.getTime(),
+          description: value.description,
+          amount: value.amount,
+          date: value.date.getTime(),
         };
       }
 
@@ -302,11 +299,11 @@ function useForm(
 
         const payerId = getPayerFromParticipants(active.participants)?.userId;
 
-        if (payerId === fields.value.paidBy) return undefined;
+        if (payerId === value.paidBy) return undefined;
 
         const entries = [];
 
-        entries.push(entry(fields.value.paidBy, "payer"));
+        entries.push(entry(value.paidBy, "payer"));
 
         if (payerId) {
           entries.push(entry(payerId, "participant"));
@@ -343,7 +340,8 @@ function useForm(
   useEffect(() => {
     api.validate("change");
   }, [view]);
-  return { api, Schema };
+
+  return { api, createSchema };
 }
 
 type ExpenseSheetProps = PropsWithChildren<{
@@ -364,7 +362,7 @@ export function ExpenseSheet(props: ExpenseSheetProps) {
   const auth = useAuthentication();
   const route = ExpenseSheetSearchRoute.useSearchRoute();
   const active = props.expense;
-  const mode = useSplitView("percent");
+  const mode = useSplitView("amount");
 
   const payer = getPayerFromParticipants(active.participants);
 
@@ -400,6 +398,9 @@ export function ExpenseSheet(props: ExpenseSheetProps) {
       },
     });
   };
+
+  const formatCurrencyOnBlur = (value: string) =>
+    formatUSDFormField(value.length ? value : "0.00");
 
   return (
     <>
@@ -444,6 +445,10 @@ export function ExpenseSheet(props: ExpenseSheetProps) {
               </div>
               <div className="col-span-1 space-y-2">
                 <form.api.AppField
+                  listeners={{
+                    onBlur: (opts) =>
+                      opts.fieldApi.setValue(formatCurrencyOnBlur),
+                  }}
                   name="amount"
                   children={(field) => (
                     <field.SheetCostField
@@ -516,17 +521,27 @@ export function ExpenseSheet(props: ExpenseSheetProps) {
                   onChangeListenTo: ["paidBy"],
                   onChange: (opts) => {
                     const paidBy = opts.fieldApi.form.getFieldValue("paidBy");
-                    const total = opts.fieldApi.form.getFieldValue("amount");
-
-                    const SplitsLinked = v.pipe(
-                      form.Schema(total).entries.splits,
-                      v.check(
-                        (value) => value.some((s) => s.memberUserId === paidBy),
-                        '"Paid By" member must be included in splits',
-                      ),
+                    const total = pipe(
+                      "amount" as const,
+                      opts.fieldApi.form.getFieldValue,
+                      parseFloat,
                     );
 
-                    return opts.fieldApi.parseValueWithSchema(SplitsLinked);
+                    const FormSchema = form.createSchema(total);
+
+                    return FormSchema.fields.splits
+                      .pipe(S.asSchema)
+                      .pipe(
+                        S.filter((splits) =>
+                          splits.some((s) => s.memberUserId === paidBy),
+                        ),
+                      )
+                      .annotations({
+                        message: () =>
+                          '"Paid By" member must be included in splits',
+                      })
+                      .pipe(S.standardSchemaV1)
+                      .pipe(opts.fieldApi.parseValueWithSchema);
                   },
                 }}
                 children={(field) => (
@@ -534,6 +549,10 @@ export function ExpenseSheet(props: ExpenseSheetProps) {
                     {field.state.value.map((value, index) => (
                       <form.api.AppField
                         key={value.memberUserId}
+                        listeners={{
+                          onBlur: (opts) =>
+                            opts.fieldApi.setValue(formatCurrencyOnBlur),
+                        }}
                         name={`splits[${index}].amount`}
                         children={(element) => (
                           <form.api.Subscribe selector={(s) => s.values.amount}>
@@ -546,7 +565,7 @@ export function ExpenseSheet(props: ExpenseSheetProps) {
                                   }}
                                   label={value.memberName}
                                   view={mode.view}
-                                  total={subscription}
+                                  total={parseFloat(subscription)}
                                 />
                               </div>
                             )}

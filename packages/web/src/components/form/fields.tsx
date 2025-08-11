@@ -22,11 +22,11 @@ import { type ParticipantWithMember } from "@/lib/participants";
 import { useFieldContext } from ".";
 import { Member } from "@blank/zero";
 import { metaToErrors } from "@/lib/validation-errors";
-import { Number, Data, Match, Option, pipe, Schema } from "effect";
+import { Data, Number, Match, pipe, Option, Schema as S } from "effect";
 import { useGroupListByUserId } from "@/pages/_protected/@data/groups";
 import { useAuthentication } from "@/lib/authentication";
 import { Link } from "@tanstack/react-router";
-import { fieldLevelError } from "./errors";
+import { local } from "./errors";
 
 export type ErrorPositions = Data.TaggedEnum<{
   inline: {};
@@ -155,12 +155,20 @@ export const SheetTextField = (props: SheetTextFieldProps) => {
 type SheetCostFieldProps = TextFieldProps;
 
 export const SheetCostField = (props: SheetCostFieldProps) => {
-  const field = useFieldContext<number>();
+  const field = useFieldContext<string>();
   const { label, ...rest } = props;
   const { className: labelClassName, ...restLabelProps } =
     rest.labelProps ?? {};
   const { className: inputClassName, ...restInputProps } =
     rest.inputProps ?? {};
+
+  const { className: errorClassName, ...restErrorProps } =
+    rest.errorProps ?? {};
+
+  const position = props.errorPosition ?? positions.inline();
+
+  const e = usePerFieldErrors(field, position);
+  const hasErrors = e.errors.status === "errored";
 
   return (
     <>
@@ -176,10 +184,10 @@ export const SheetCostField = (props: SheetCostFieldProps) => {
           $
         </span>
         <SharedInputFromField
-          decode={globalThis.Number}
           type="number"
-          step="1.00"
+          step={1}
           field={field}
+          onChange={(e) => field.handleChange(e.target.value)}
           className={cn(
             inputClassName,
             "bg-accent/50 border-border/50 text-foreground placeholder:text-muted-foreground/60 h-10 pl-8",
@@ -187,6 +195,11 @@ export const SheetCostField = (props: SheetCostFieldProps) => {
           {...restInputProps}
         />
       </div>
+      {isInline(position) && hasErrors && (
+        <SharedError id={e.id} {...restErrorProps}>
+          {local.extract(e.errors.values[0]?.message)}
+        </SharedError>
+      )}
     </>
   );
 };
@@ -404,7 +417,7 @@ type SheetSplitFieldProps = {
 } & TextFieldProps;
 
 export const SheetSplitField = (props: SheetSplitFieldProps) => {
-  const field = useFieldContext<number>();
+  const field = useFieldContext<string>();
   const { label, total, view, ...rest } = props;
   const { className: labelClassName, ...restLabelProps } =
     rest.labelProps ?? {};
@@ -420,10 +433,11 @@ export const SheetSplitField = (props: SheetSplitFieldProps) => {
 
   const shouldTransform = view === "percent";
 
-  const Transform = Schema.transform(Schema.String, Schema.Number, {
+  const Transform = S.transform(S.String, S.String, {
     encode: (amount) =>
       pipe(
         amount,
+        parseFloat,
         Number.divide(total),
         Option.getOrThrow,
         Number.multiply(100),
@@ -439,6 +453,7 @@ export const SheetSplitField = (props: SheetSplitFieldProps) => {
         Option.getOrThrow,
         Number.multiply(total),
         Number.round(2),
+        globalThis.String,
       ),
   });
 
@@ -459,30 +474,22 @@ export const SheetSplitField = (props: SheetSplitFieldProps) => {
         </span>
         <SharedInputFromField
           type="number"
-          step={view === "percent" ? 1.0 : 0.01}
+          step={0.01}
           min={0}
-          max={view === "percent" ? 100 : total}
+          max={total}
           field={field}
           className={cn(
             inputClassName,
             "bg-accent/50 border-border/50 text-foreground placeholder:text-muted-foreground/60 h-10 pl-8",
           )}
-          encode={
-            shouldTransform
-              ? Schema.encodeSync(Transform)
-              : (value) => value.toString()
-          }
-          decode={
-            shouldTransform
-              ? Schema.decodeSync(Transform)
-              : (value) => parseFloat(value)
-          }
+          encode={view === "percent" ? S.encodeSync(Transform) : undefined}
+          decode={view === "percent" ? S.decodeSync(Transform) : undefined}
           {...restInputProps}
         />
       </div>
       {isInline(position) && hasErrors && (
         <SharedError id={e.id} {...restErrorProps}>
-          {fieldLevelError.extract(e.errors.values[0]?.message)}
+          {local.extract(e.errors.values[0]?.message)}
         </SharedError>
       )}
     </>
