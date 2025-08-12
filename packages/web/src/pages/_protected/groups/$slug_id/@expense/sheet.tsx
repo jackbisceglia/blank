@@ -37,8 +37,20 @@ import { Button } from "@/components/ui/button";
 import { underline_defaults } from "@/components/ui/utils";
 import { sharedSheetLabelClassNames } from "@/components/form/shared";
 import { FieldsErrors, local } from "@/components/form/errors";
-import { formatUSDFormField } from "@/lib/monetary/currency";
 import { positions } from "@/components/form/fields";
+
+function parseFloatCustom(total: string | undefined) {
+  const coerceEmptyStringToZero = (formValue: string) =>
+    pipe(
+      formValue,
+      (str) => str.trim(),
+      (trimmed) => (trimmed === "" ? "0" : trimmed),
+    );
+
+  const orEmptyString = (str: string | undefined) => str ?? "";
+
+  return pipe(total, orEmptyString, coerceEmptyStringToZero, parseFloat);
+}
 
 function useConfirmDeleteExpense(
   expenseId: string,
@@ -194,33 +206,32 @@ function useForm(
   leave: () => void,
   view: SplitView,
 ) {
-  type Encoded = ReturnType<typeof createSchema>["Encoded"];
+  const participants = active.participants.map((p) => p.userId);
 
-  const initial: Encoded = {
+  type Split = { memberUserId: string; amount: string; memberName: string };
+
+  const initialSplits: ReadonlyArray<Split> = active.participants.map((p) => ({
+    memberUserId: p.userId,
+    amount: pipe(
+      fraction()
+        .from(...p.split)
+        .apply(active.amount),
+      (amount) => amount.toFixed(2),
+    ),
+    memberName: p.member?.nickname ?? "anon",
+  }));
+
+  const initial = {
     description: active.description,
     amount: pipe(active.amount, (amount) => amount.toFixed(2)),
     date: timestampToDate(active.date),
     paidBy: getPayerFromParticipants(active.participants)?.userId ?? "",
-    splits: active.participants.map((p) => ({
-      memberUserId: p.userId,
-      amount: pipe(
-        fraction()
-          .from(...p.split)
-          .apply(active.amount),
-        (amount) => amount.toFixed(2),
-      ),
-      memberName: p.member?.nickname ?? "anon",
-    })),
-  };
+    splits: initialSplits,
+  } as const;
 
   const createSchema = (total: number) => {
-    const assertSumsToTotal = (items: number[]) =>
-      Number.sumAll(items) === total;
-
-    const participants = active.participants.map((p) => p.userId);
-
     const FormNumber = S.transform(S.String, S.Number, {
-      decode: (s) => (s.trim() === "" ? 0 : parseFloat(s.trim())),
+      decode: (s) => parseFloatCustom(s),
       encode: (n) => (n === 0 ? "" : n.toFixed(2)),
     });
 
@@ -234,14 +245,21 @@ function useForm(
         memberName: S.Union(S.String, S.Literal("anon")),
       }),
     ).pipe(
-      S.filter((splits) => assertSumsToTotal(splits.map((s) => s.amount)), {
-        message: () =>
-          Match.value(view).pipe(
-            Match.when("percent", () => "Splits must sum to 100%"),
-            Match.when("amount", () => `Splits must sum to $${total}`),
-            Match.orElseAbsurd,
-          ),
-      }),
+      S.filter(
+        (splits) => {
+          const splitsSum = Number.sumAll(splits.map((s) => s.amount));
+
+          return total === splitsSum;
+        },
+        {
+          message: () =>
+            Match.value(view).pipe(
+              Match.when("percent", () => "Splits must sum to 100%"),
+              Match.when("amount", () => `Splits must sum to $${total}`),
+              Match.orElseAbsurd,
+            ),
+        },
+      ),
     );
 
     const Schema = S.Struct({
@@ -256,7 +274,23 @@ function useForm(
         S.annotations(local.annotate("Paid By must be a valid member")),
       ),
       splits: SplitsSchema,
-    });
+    }).pipe(
+      S.filter(
+        (schema) =>
+          schema.amount !== parseFloatCustom(initial.amount) ||
+          schema.paidBy !== initial.paidBy ||
+          schema.description !== initial.description ||
+          schema.date.getTime() !== initial.date.getTime() ||
+          !schema.splits.reduce((bool, split) => {
+            const match = initial.splits.find(
+              (s) => s.memberUserId === split.memberUserId,
+            );
+
+            return bool && split.amount === parseFloatCustom(match?.amount);
+          }, schema.splits.length === initial.splits.length),
+        { message: () => "" },
+      ),
+    );
 
     return Schema;
   };
@@ -265,11 +299,11 @@ function useForm(
     defaultValues: initial,
     validators: {
       onChange: (ctx) => {
-        const total = parseFloat(ctx.value.amount);
+        const total = parseFloatCustom(ctx.value.amount);
+        const Schema = createSchema(total);
+        const Standard = S.standardSchemaV1(Schema);
 
-        return createSchema(total)
-          .pipe(S.standardSchemaV1)
-          .pipe(ctx.formApi.parseValuesWithSchema);
+        return ctx.formApi.parseValuesWithSchema(Standard);
       },
       onSubmit: (ctx) => {
         return ctx.formApi.state.isPristine
@@ -278,7 +312,7 @@ function useForm(
       },
     },
     onSubmit: async (fields) => {
-      const total = parseFloat(fields.value.amount);
+      const total = parseFloatCustom(fields.value.amount);
 
       const parse = createSchema(total).pipe(S.decodeSync);
 
@@ -400,7 +434,7 @@ export function ExpenseSheet(props: ExpenseSheetProps) {
   };
 
   const formatCurrencyOnBlur = (value: string) =>
-    formatUSDFormField(value.length ? value : "0.00");
+    parseFloatCustom(value).toFixed(2);
 
   return (
     <>
@@ -445,11 +479,14 @@ export function ExpenseSheet(props: ExpenseSheetProps) {
               </div>
               <div className="col-span-1 space-y-2">
                 <form.api.AppField
-                  listeners={{
-                    onBlur: (opts) =>
-                      opts.fieldApi.setValue(formatCurrencyOnBlur),
-                  }}
                   name="amount"
+                  listeners={{
+                    onBlur: (opts) => {
+                      opts.fieldApi.setValue(formatCurrencyOnBlur(opts.value), {
+                        dontUpdateMeta: true,
+                      });
+                    },
+                  }}
                   children={(field) => (
                     <field.SheetCostField
                       inputProps={{
@@ -517,59 +554,36 @@ export function ExpenseSheet(props: ExpenseSheetProps) {
               <form.api.AppField
                 name="splits"
                 mode="array"
-                validators={{
-                  onChangeListenTo: ["paidBy"],
-                  onChange: (opts) => {
-                    const paidBy = opts.fieldApi.form.getFieldValue("paidBy");
-                    const total = pipe(
-                      "amount" as const,
-                      opts.fieldApi.form.getFieldValue,
-                      parseFloat,
-                    );
-
-                    const FormSchema = form.createSchema(total);
-
-                    return FormSchema.fields.splits
-                      .pipe(S.asSchema)
-                      .pipe(
-                        S.filter((splits) =>
-                          splits.some((s) => s.memberUserId === paidBy),
-                        ),
-                      )
-                      .annotations({
-                        message: () =>
-                          '"Paid By" member must be included in splits',
-                      })
-                      .pipe(S.standardSchemaV1)
-                      .pipe(opts.fieldApi.parseValueWithSchema);
-                  },
-                }}
                 children={(field) => (
                   <>
                     {field.state.value.map((value, index) => (
                       <form.api.AppField
                         key={value.memberUserId}
-                        listeners={{
-                          onBlur: (opts) =>
-                            opts.fieldApi.setValue(formatCurrencyOnBlur),
-                        }}
                         name={`splits[${index}].amount`}
+                        listeners={{
+                          onBlur: (opts) => {
+                            opts.fieldApi.setValue(
+                              formatCurrencyOnBlur(opts.value),
+                              {
+                                dontUpdateMeta: true,
+                              },
+                            );
+                          },
+                        }}
                         children={(element) => (
-                          <form.api.Subscribe selector={(s) => s.values.amount}>
-                            {(subscription) => (
-                              <div className="space-y-2">
-                                <element.SheetSplitField
-                                  errorPosition={positions.inline()}
-                                  inputProps={{
-                                    disabled: active.status === "settled",
-                                  }}
-                                  label={value.memberName}
-                                  view={mode.view}
-                                  total={parseFloat(subscription)}
-                                />
-                              </div>
-                            )}
-                          </form.api.Subscribe>
+                          <div className="space-y-2">
+                            <element.SheetSplitField
+                              errorPosition={positions.inline()}
+                              inputProps={{
+                                disabled: active.status === "settled",
+                              }}
+                              label={value.memberName}
+                              view={mode.view}
+                              total={parseFloatCustom(
+                                field.form.state.values.amount,
+                              )}
+                            />
+                          </div>
                         )}
                       />
                     ))}
@@ -590,7 +604,7 @@ export function ExpenseSheet(props: ExpenseSheetProps) {
               <form.api.AppForm>
                 <form.api.SubmitButton
                   className="col-start-1 col-end-3"
-                  dirty={{ disableForAria: true }}
+                  dirty={{ disableForAria: true, checkDefaults: true }}
                 >
                   Save
                 </form.api.SubmitButton>
