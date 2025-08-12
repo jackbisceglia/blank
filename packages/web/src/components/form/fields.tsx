@@ -441,16 +441,25 @@ export const SheetSplitField = (props: SheetSplitFieldProps) => {
   const e = usePerFieldErrors(field, position);
 
   const Transform = S.transform(S.String, S.String, {
-    encode: (amount) =>
-      pipe(
-        amount,
-        parseFloat,
+    encode: (amount) => {
+      const value = parseFloat(amount);
+
+      return pipe(
+        value,
         Number.divide(total),
-        Option.getOrThrow,
+        Option.getOrElse(() => 0),
         Number.multiply(100),
         Number.round(2),
+        (percent) => (isNaN(percent) ? 0 : percent),
+        (percent) => {
+          const shouldClamp = value < total && value > 0;
+          const clamp = Number.clamp({ minimum: 0.01, maximum: 99.9 });
+
+          return shouldClamp ? clamp(percent) : percent;
+        },
         globalThis.String,
-      ),
+      );
+    },
     decode: (percent) =>
       pipe(
         percent,
@@ -460,6 +469,7 @@ export const SheetSplitField = (props: SheetSplitFieldProps) => {
         Option.getOrThrow,
         Number.multiply(total),
         Number.round(2),
+        (number) => number.toFixed(2),
         globalThis.String,
       ),
   });
@@ -467,13 +477,31 @@ export const SheetSplitField = (props: SheetSplitFieldProps) => {
   return (
     <>
       {label && (
-        <SharedSheetLabel
-          className={labelClassName}
-          htmlFor={field.name}
-          {...restLabelProps}
-        >
-          {label}
-        </SharedSheetLabel>
+        <div className="flex justify-between">
+          <SharedSheetLabel
+            className={labelClassName}
+            htmlFor={field.name}
+            {...restLabelProps}
+          >
+            {label}
+          </SharedSheetLabel>
+          <span className="text-xs text-muted-foreground/75">
+            {Match.value(view).pipe(
+              Match.when("amount", () => {
+                const transform = Transform.pipe(S.encodeSync);
+                const percent = transform(field.state.value);
+
+                return `${percent}%`;
+              }),
+              Match.when("percent", () => {
+                const value = field.state.value;
+
+                return `$${value}`;
+              }),
+              Match.orElseAbsurd,
+            )}
+          </span>
+        </div>
       )}
       <div className="relative">
         <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground text-sm">
@@ -486,7 +514,7 @@ export const SheetSplitField = (props: SheetSplitFieldProps) => {
           field={field}
           className={cn(
             inputClassName,
-            "bg-accent/50 border-border/50 text-foreground placeholder:text-muted-foreground/60 h-10 pl-8",
+            "bg-accent/50 font-medium border-border/50 text-foreground placeholder:text-muted-foreground/60 h-10 pl-8",
           )}
           encode={view === "percent" ? S.encodeSync(Transform) : undefined}
           decode={view === "percent" ? S.decodeSync(Transform) : undefined}
@@ -501,22 +529,3 @@ export const SheetSplitField = (props: SheetSplitFieldProps) => {
     </>
   );
 };
-
-/*
-const Amount = v.string()
-
-AmountDecode => Amount.toNumber().minValue(x).maxValue(y)
-AmountEncode => AmountDecode.toString()
-
-Schema = {
-  amount: AmountEncode,
-}
-
-SchemaOnSubmit = {
-  amount: AmountDecode,
-}
-
-onChange: Schema // this will do the checks and then reconvert
-onSubmit: SchemaDecode // this will do the checks w/o the serialization
-
-*/
