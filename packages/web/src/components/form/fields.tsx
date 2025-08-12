@@ -27,6 +27,7 @@ import { useGroupListByUserId } from "@/pages/_protected/@data/groups";
 import { useAuthentication } from "@/lib/authentication";
 import { Link } from "@tanstack/react-router";
 import { local } from "./errors";
+import { useStore } from "@tanstack/react-form";
 
 export type ErrorPositions = Data.TaggedEnum<{
   inline: {};
@@ -40,15 +41,27 @@ function usePerFieldErrors<T>(
   field: ReturnType<typeof useFieldContext<T>>,
   position: ErrorPositions,
 ) {
-  const errors = metaToErrors(field.state.meta);
+  const meta = useStore(field.store, (s) => s.meta);
+  const errors = metaToErrors(meta);
 
   const id = Match.value(position).pipe(
-    Match.tag("inline", () => `${field}-error`),
-    Match.tag("custom", (config) => config.elementId),
+    Match.tags({
+      inline: () => `${field}-error`,
+      custom: (config) => config.elementId,
+    }),
     Match.exhaustive,
   );
 
-  return { id, errors };
+  const isErrored = Match.value(position).pipe(
+    Match.tags({
+      inline: () =>
+        errors.values.filter((e) => !local.filter(e.message)).length > 0,
+      custom: () => errors.status === "errored",
+    }),
+    Match.exhaustive,
+  );
+
+  return { id, errors, isErrored };
 }
 
 type TextFieldProps =
@@ -83,8 +96,6 @@ export const TextField = (props: TextFieldProps) => {
 
   const e = usePerFieldErrors(field, position);
 
-  const hasErrors = e.errors.status === "errored";
-
   return (
     <>
       {label && (
@@ -97,9 +108,9 @@ export const TextField = (props: TextFieldProps) => {
         </SharedLabel>
       )}
       <SharedInputFromField
-        aria-invalid={hasErrors}
-        aria-errormessage={hasErrors ? e.id : undefined}
-        aria-describedby={hasErrors ? e.id : undefined}
+        aria-invalid={e.isErrored}
+        aria-errormessage={e.isErrored ? e.id : undefined}
+        aria-describedby={e.isErrored ? e.id : undefined}
         type="text"
         field={field}
         className={cn(
@@ -109,7 +120,7 @@ export const TextField = (props: TextFieldProps) => {
         {...restInputProps}
       />
 
-      {isInline(position) && hasErrors && (
+      {isInline(position) && e.isErrored && (
         <SharedError id={e.id} {...restErrorProps}>
           {e.errors.values[0]?.message}
         </SharedError>
@@ -168,7 +179,6 @@ export const SheetCostField = (props: SheetCostFieldProps) => {
   const position = props.errorPosition ?? positions.inline();
 
   const e = usePerFieldErrors(field, position);
-  const hasErrors = e.errors.status === "errored";
 
   return (
     <>
@@ -195,7 +205,7 @@ export const SheetCostField = (props: SheetCostFieldProps) => {
           {...restInputProps}
         />
       </div>
-      {isInline(position) && hasErrors && (
+      {isInline(position) && e.isErrored && (
         <SharedError id={e.id} {...restErrorProps}>
           {local.extract(e.errors.values[0]?.message)}
         </SharedError>
@@ -331,11 +341,11 @@ export const DefaultGroupSelectField = (
   const groups = useGroupListByUserId(auth.user.id);
   const field = useFieldContext<string>();
 
-  const errors = metaToErrors(field.state.meta);
-  const errorPosition = props.errorPosition ?? positions.inline();
-  const hasErrors = errors.status === "errored";
+  const position = props.errorPosition ?? positions.inline();
 
-  const errorId = Match.value(errorPosition).pipe(
+  const e = usePerFieldErrors(field, position);
+
+  const errorId = Match.value(position).pipe(
     Match.tag("inline", () => `${field.name}-error`),
     Match.tag("custom", (config) => config.elementId),
     Match.exhaustive,
@@ -378,12 +388,12 @@ export const DefaultGroupSelectField = (
         <SelectTrigger
           className={cn(
             "bg-transparent border border-border hover:bg-secondary/25 text-foreground placeholder:text-foreground/40",
-            hasErrors && "border-destructive",
+            e.isErrored && "border-destructive",
             triggerClassName,
           )}
-          aria-invalid={hasErrors}
-          aria-errormessage={hasErrors ? errorId : undefined}
-          aria-describedby={hasErrors ? errorId : undefined}
+          aria-invalid={e.isErrored}
+          aria-errormessage={e.isErrored ? errorId : undefined}
+          aria-describedby={e.isErrored ? errorId : undefined}
           {...restTriggerProps}
         >
           <SelectValue placeholder="Select default group" />
@@ -402,9 +412,9 @@ export const DefaultGroupSelectField = (
         </SelectContent>
       </Select>
 
-      {isInline(errorPosition) && hasErrors && (
+      {isInline(position) && e.isErrored && (
         <SharedError id={errorId} {...rest.errorProps}>
-          {errors.values[0]?.message}
+          {e.errors.values[0]?.message}
         </SharedError>
       )}
     </>
@@ -429,9 +439,6 @@ export const SheetSplitField = (props: SheetSplitFieldProps) => {
   const position = props.errorPosition ?? positions.inline();
 
   const e = usePerFieldErrors(field, position);
-  const hasErrors = e.errors.status === "errored";
-
-  const shouldTransform = view === "percent";
 
   const Transform = S.transform(S.String, S.String, {
     encode: (amount) =>
@@ -476,7 +483,6 @@ export const SheetSplitField = (props: SheetSplitFieldProps) => {
           type="number"
           step={0.01}
           min={0}
-          max={total}
           field={field}
           className={cn(
             inputClassName,
@@ -487,7 +493,7 @@ export const SheetSplitField = (props: SheetSplitFieldProps) => {
           {...restInputProps}
         />
       </div>
-      {isInline(position) && hasErrors && (
+      {isInline(position) && e.isErrored && (
         <SharedError id={e.id} {...restErrorProps}>
           {local.extract(e.errors.values[0]?.message)}
         </SharedError>
@@ -495,3 +501,22 @@ export const SheetSplitField = (props: SheetSplitFieldProps) => {
     </>
   );
 };
+
+/*
+const Amount = v.string()
+
+AmountDecode => Amount.toNumber().minValue(x).maxValue(y)
+AmountEncode => AmountDecode.toString()
+
+Schema = {
+  amount: AmountEncode,
+}
+
+SchemaOnSubmit = {
+  amount: AmountDecode,
+}
+
+onChange: Schema // this will do the checks and then reconvert
+onSubmit: SchemaDecode // this will do the checks w/o the serialization
+
+*/

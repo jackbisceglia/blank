@@ -1,6 +1,7 @@
 import { AnyFieldMeta } from "@tanstack/react-form";
 import { metasToErrors } from "@/lib/validation-errors";
 import { cn } from "@/lib/utils";
+import { pipe } from "effect";
 
 export const local = {
   delimiter: "@",
@@ -10,13 +11,13 @@ export const local = {
     message: () => local.create(message),
   }),
   filter: (message: string) => !message.endsWith(local.suffix()),
-  extract: (message: string) => {
-    const [err, suffix] = message.split(local.delimiter);
-
-    if (!(suffix ?? "").length) return "";
-
-    return err;
-  },
+  extract: (annotation: string | undefined) =>
+    pipe(
+      annotation,
+      (annotation) => annotation ?? "",
+      (annotation) => annotation.split(local.delimiter),
+      ([message, scope]) => (scope?.length ? message : ""),
+    ),
 };
 
 type FieldsErrorsProps = {
