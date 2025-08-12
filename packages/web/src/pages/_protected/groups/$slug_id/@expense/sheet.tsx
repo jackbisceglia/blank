@@ -10,6 +10,7 @@ import { withToast } from "@/lib/toast";
 import {
   DeleteOptions as DeleteExpenseOptions,
   UpdateOptions as UpdateExpenseOptions,
+  UpdateOptions,
 } from "@/lib/client-mutators/expense-mutators";
 import { DialogDescription } from "@/components/ui/dialog";
 import { ChevronRight } from "lucide-react";
@@ -19,7 +20,6 @@ import {
   useUpdateExpense,
 } from "@/pages/_protected/@data/expenses";
 import { useAppForm } from "@/components/form";
-import { Participant } from "@blank/zero";
 import { optional } from "@blank/core/lib/utils/index";
 import {
   Sheet,
@@ -38,6 +38,18 @@ import { underline_defaults } from "@/components/ui/utils";
 import { sharedSheetLabelClassNames } from "@/components/form/shared";
 import { FieldsErrors, local } from "@/components/form/errors";
 import { positions } from "@/components/form/fields";
+import { formatUSDString } from "@/lib/monetary/currency";
+
+type Split = {
+  memberUserId: string;
+  amount: string;
+  memberName: string;
+};
+type SplitDecoded = {
+  memberUserId: string;
+  amount: number;
+  memberName: string;
+};
 
 function parseFloatCustom(total: string | undefined) {
   const coerceEmptyStringToZero = (formValue: string) =>
@@ -50,6 +62,20 @@ function parseFloatCustom(total: string | undefined) {
   const orEmptyString = (str: string | undefined) => str ?? "";
 
   return pipe(total, orEmptyString, coerceEmptyStringToZero, parseFloat);
+}
+
+const formatCurrencyOnBlur = (value: string) =>
+  parseFloatCustom(value).toFixed(2);
+
+function checkSplitsEqual(
+  a: ReadonlyArray<SplitDecoded>,
+  b: ReadonlyArray<Split>,
+) {
+  return a.reduce((bool, split) => {
+    const match = b.find((s) => s.memberUserId === split.memberUserId);
+
+    return bool && split.amount === parseFloatCustom(match?.amount);
+  }, a.length === b.length);
 }
 
 function useConfirmDeleteExpense(
@@ -208,8 +234,6 @@ function useForm(
 ) {
   const participants = active.participants.map((p) => p.userId);
 
-  type Split = { memberUserId: string; amount: string; memberName: string };
-
   const initialSplits: ReadonlyArray<Split> = active.participants.map((p) => ({
     memberUserId: p.userId,
     amount: pipe(
@@ -245,21 +269,62 @@ function useForm(
         memberName: S.Union(S.String, S.Literal("anon")),
       }),
     ).pipe(
-      S.filter(
-        (splits) => {
-          const splitsSum = Number.sumAll(splits.map((s) => s.amount));
+      S.filter((splits) => {
+        const splitsSum = Number.sumAll(splits.map((s) => s.amount));
+        const offset = splitsSum - total;
 
-          return total === splitsSum;
-        },
-        {
-          message: () =>
+        const remaining = Match.value(view).pipe(
+          Match.when("percent", function () {
+            const asPercent = pipe(
+              fraction().from(splitsSum, total).inverse().percent(),
+              Math.abs,
+              (percent) => percent.toFixed(2),
+              (percent) => `${percent}%`,
+            );
+
+            return Match.value(offset).pipe(
+              Match.when(Number.greaterThan(0), function () {
+                return `${asPercent} over`;
+              }),
+              Match.when(Number.lessThan(0), function () {
+                return `${asPercent} short`;
+              }),
+              Match.orElse(() => ""),
+            );
+          }),
+          Match.when("amount", function () {
+            const asAmount = formatUSDString(offset);
+
+            return Match.value(offset).pipe(
+              Match.when(Number.greaterThan(0), function () {
+                return `${asAmount} over`;
+              }),
+              Match.when(Number.lessThan(0), function () {
+                return `${asAmount} short`;
+              }),
+              Match.orElse(() => ""),
+            );
+          }),
+          Match.orElseAbsurd,
+        );
+
+        return Match.value(splitsSum).pipe(
+          Match.when(total, () => true),
+          Match.orElse(() =>
             Match.value(view).pipe(
-              Match.when("percent", () => "Splits must sum to 100%"),
-              Match.when("amount", () => `Splits must sum to $${total}`),
+              Match.when(
+                "percent",
+                () => `Splits must sum to 100% (${remaining})`,
+              ),
+              Match.when(
+                "amount",
+                () => `Splits must sum to $${total} (${remaining})`,
+              ),
               Match.orElseAbsurd,
             ),
-        },
-      ),
+          ),
+        );
+      }),
     );
 
     const Schema = S.Struct({
@@ -281,13 +346,7 @@ function useForm(
           schema.paidBy !== initial.paidBy ||
           schema.description !== initial.description ||
           schema.date.getTime() !== initial.date.getTime() ||
-          !schema.splits.reduce((bool, split) => {
-            const match = initial.splits.find(
-              (s) => s.memberUserId === split.memberUserId,
-            );
-
-            return bool && split.amount === parseFloatCustom(match?.amount);
-          }, schema.splits.length === initial.splits.length),
+          !checkSplitsEqual(schema.splits, initial.splits),
         { message: () => "" },
       ),
     );
@@ -327,23 +386,27 @@ function useForm(
       }
 
       function makeParticipants() {
-        function entry(userId: string, role: Participant["role"]) {
-          return { userId, role };
-        }
+        type ParticipantUpdate = NonNullable<
+          UpdateOptions["updates"]["participants"]
+        >[number];
 
-        const payerId = getPayerFromParticipants(active.participants)?.userId;
+        const splitsEqual = checkSplitsEqual(value.splits, initial.splits);
+        const paidByAltered = value.paidBy === initial.paidBy;
 
-        if (payerId === value.paidBy) return undefined;
+        if (splitsEqual && paidByAltered) return;
 
-        const entries = [];
+        const participants = value.splits.map((split) => {
+          return {
+            userId: split.memberUserId,
+            split: fraction().from(split.amount, value.amount).get(),
+            role: Match.value(split.memberUserId).pipe(
+              Match.when(value.paidBy, () => "payer" as const),
+              Match.orElse(() => "participant" as const),
+            ),
+          } satisfies ParticipantUpdate;
+        });
 
-        entries.push(entry(value.paidBy, "payer"));
-
-        if (payerId) {
-          entries.push(entry(payerId, "participant"));
-        }
-
-        return entries;
+        return participants;
       }
 
       leave();
@@ -396,7 +459,7 @@ export function ExpenseSheet(props: ExpenseSheetProps) {
   const auth = useAuthentication();
   const route = ExpenseSheetSearchRoute.useSearchRoute();
   const active = props.expense;
-  const mode = useSplitView("amount");
+  const mode = useSplitView("percent");
 
   const payer = getPayerFromParticipants(active.participants);
 
@@ -432,9 +495,6 @@ export function ExpenseSheet(props: ExpenseSheetProps) {
       },
     });
   };
-
-  const formatCurrencyOnBlur = (value: string) =>
-    parseFloatCustom(value).toFixed(2);
 
   return (
     <>
