@@ -122,7 +122,7 @@ export const TextField = (props: TextFieldProps) => {
 
       {isInline(position) && e.isErrored && (
         <SharedError id={e.id} {...restErrorProps}>
-          {e.errors.values[0]?.message}
+          {local.extract(e.errors.values[0]?.message)}
         </SharedError>
       )}
     </>
