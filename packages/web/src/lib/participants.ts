@@ -1,6 +1,6 @@
 import { Participant } from "@blank/zero";
 import { Member } from "@blank/core/modules/member/schema";
-import { Balances } from "./balances";
+import { Balances } from "./monetary/balances";
 
 export type ParticipantWithMember = Participant & {
   member: Member | undefined;

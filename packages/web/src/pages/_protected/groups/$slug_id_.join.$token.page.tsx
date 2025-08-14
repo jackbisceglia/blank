@@ -14,7 +14,8 @@ import {
   isTaggedError,
   TaggedError,
 } from "@blank/core/lib/effect/index";
-import { FieldsErrors, useAppForm } from "@/components/form";
+import { useAppForm } from "@/components/form";
+import { FieldsErrors } from "@/components/form/errors";
 import { prevented } from "@/lib/utils";
 import { Effect, Exit, Match, pipe } from "effect";
 import { Button } from "@/components/ui/button";
