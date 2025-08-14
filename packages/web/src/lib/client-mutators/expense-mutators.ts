@@ -1,4 +1,3 @@
-import { Expense } from "@blank/zero";
 import {
   assertIsAuthenticated,
   ClientMutator,
@@ -6,25 +5,46 @@ import {
   ZTransaction,
 } from ".";
 import { mutators as participantMutators } from "./participant-mutators";
-import { UpdateParticipant } from "./participant-mutators";
 import { ExpenseWithParticipants } from "@/pages/_protected/groups/$slug_id/page";
 import { checkExpenseSplitValidity } from "../monetary/balances";
+import { Option, Schema as S } from "effect";
 
-export type DeleteOptions = { expenseId: string };
-export type DeleteAllOptions = { groupId: string };
-export type BulkSettleOptions = { groupId: string; expenseIds: string[] };
-export type UpdateOptions = {
-  expenseId: string;
-  updates: {
-    expense: {
-      amount?: Expense["amount"];
-      date?: Expense["date"];
-      description?: Expense["description"];
-      status?: Expense["status"];
-    };
-    participants?: Omit<UpdateParticipant, "expenseId">[];
-  };
-};
+export type DeleteOptions = typeof DeleteOptions.Type;
+export type DeleteAllOptions = typeof DeleteAllOptions.Type;
+export type BulkSettleOptions = typeof BulkSettleOptions.Type;
+export type UpdateOptions = typeof UpdateOptions.Type;
+
+const DeleteOptions = S.Struct({ expenseId: S.String });
+
+const DeleteAllOptions = S.Struct({ groupId: S.String });
+
+const BulkSettleOptions = S.Struct({
+  groupId: S.String,
+  expenseIds: S.String.pipe(S.Array),
+});
+
+const UpdateOptions = S.Struct({
+  expenseId: S.UUID,
+  updates: S.Struct({
+    expense: S.Struct({
+      amount: S.Int.pipe(S.optionalWith({ exact: true })),
+      date: S.Number.pipe(S.optionalWith({ exact: true })),
+      description: S.String.pipe(S.optionalWith({ exact: true })),
+      status: S.Literal("active", "settled").pipe(
+        S.optionalWith({ exact: true }),
+      ),
+    }).pipe(S.optionalWith({ exact: true })),
+    participants: S.Struct({
+      userId: S.String,
+      role: S.Literal("payer", "participant").pipe(
+        S.optionalWith({ exact: true }),
+      ),
+      split: S.Tuple(S.Number, S.Number).pipe(S.optionalWith({ exact: true })),
+    })
+      .pipe(S.Array)
+      .pipe(S.optionalWith({ exact: true })),
+  }),
+});
 
 const assertExpenseExists = async (tx: ZTransaction, expenseId: string) => {
   const expense = await tx.query.expense
@@ -52,12 +72,14 @@ type Mutators = ClientMutatorGroup<{
 }>;
 
 export const mutators: Mutators = (auth) => ({
-  update: async (tx, opts) => {
+  update: async (tx, $opts) => {
     assertIsAuthenticated(auth);
+
+    const opts = S.validateOption(UpdateOptions)($opts).pipe(Option.getOrThrow);
 
     const expense = await assertExpenseExists(tx, opts.expenseId);
 
-    if (opts.updates.expense.status) {
+    if (opts.updates.expense?.status) {
       assertExpenseHasValidSplit(expense as ExpenseWithParticipants);
     }
 
@@ -71,6 +93,7 @@ export const mutators: Mutators = (auth) => ({
     const participants = opts.updates.participants.map((participant) => ({
       ...participant,
       expenseId: opts.expenseId,
+      split: participant.split as [number, number], // mutators expects non-readonly
     }));
 
     await participantMutators(auth).updateMany(tx, { participants });

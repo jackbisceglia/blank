@@ -378,10 +378,18 @@ function useForm(
       const value = parse(fields.value);
 
       function makeExpense() {
+        const keys = ["description", "amount", "date"] as const;
+
+        const [description, amount, date] = keys.map(function isUpdated(key) {
+          return value[key] !== initial[key];
+        });
+
+        if (!description && !amount && !date) return;
+
         return {
-          description: value.description,
-          amount: value.amount,
-          date: value.date.getTime(),
+          ...(description && { description: value.description }),
+          ...(amount && { amount: value.amount }),
+          ...(date && { date: value.date.getTime() }),
         };
       }
 
@@ -416,7 +424,7 @@ function useForm(
           return updateMutation({
             expenseId: active.id,
             updates: {
-              expense: makeExpense(),
+              ...optional({ expense: makeExpense() }),
               ...optional({ participants: makeParticipants() }),
             },
           });
@@ -585,11 +593,9 @@ export function ExpenseSheet(props: ExpenseSheetProps) {
                   )}
                 />
               </div>
-              <Separator className="col-span-full my-2" />
+              <Separator className="col-span-full my-1.5 opacity-75" />
               <div className="col-span-full flex justify-between items-center">
-                <p className={cn(sharedSheetLabelClassNames, "text-sm")}>
-                  Splits
-                </p>
+                <p className={cn(sharedSheetLabelClassNames)}>Splits</p>
                 <ul className="flex">
                   {(["percent", "amount"] as const).map((tab, index, array) => (
                     <Button
@@ -599,11 +605,11 @@ export function ExpenseSheet(props: ExpenseSheetProps) {
                       variant="link"
                       className={cn(
                         sharedSheetLabelClassNames,
-                        "font-normal px-2",
+                        "font-normal px-2 h-auto",
                         mode.view === tab && "text-white font-medium",
                         mode.view === tab && underline_defaults,
-                        index === array.length - 1 && "pr-1",
-                        index === 0 && "pl-1",
+                        index === array.length - 1 && "pr-0",
+                        index === 0 && "",
                       )}
                     >
                       {String.capitalize(tab)}
