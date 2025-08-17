@@ -2,6 +2,15 @@ import { AnyFieldMeta, StandardSchemaV1Issue } from "@tanstack/react-form";
 import { cn } from "@/lib/utils";
 import { pipe } from "effect";
 
+export const formDataPartiallyUpdatedAction =
+  <T extends {}>(init: T) =>
+  (data: T) => {
+    return Object.keys(data).some(
+      (key) =>
+        data[key as keyof typeof data] !== init[key as keyof typeof data],
+    );
+  };
+
 export const local = {
   delimiter: "@",
   suffix: () => [local.delimiter, "FieldLevel"].join(""),
