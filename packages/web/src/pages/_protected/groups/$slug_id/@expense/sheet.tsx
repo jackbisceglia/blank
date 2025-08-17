@@ -1,4 +1,4 @@
-import { PropsWithChildren } from "react";
+import { PropsWithChildren, useState } from "react";
 import { ExpenseWithParticipants } from "../page";
 import { useAuthentication } from "@/lib/authentication";
 import {
@@ -10,6 +10,7 @@ import { withToast } from "@/lib/toast";
 import {
   DeleteOptions as DeleteExpenseOptions,
   UpdateOptions as UpdateExpenseOptions,
+  UpdateOptions,
 } from "@/lib/client-mutators/expense-mutators";
 import { DialogDescription } from "@/components/ui/dialog";
 import { ChevronRight } from "lucide-react";
@@ -20,7 +21,7 @@ import {
 } from "@/pages/_protected/@data/expenses";
 import * as v from "valibot";
 import { useAppForm } from "@/components/form";
-import { FieldsErrors } from "@/components/form/errors";
+import { FieldsErrors, local } from "@/components/form/errors";
 import { Participant } from "@blank/zero";
 import { optional } from "@blank/core/lib/utils/index";
 import {
@@ -34,6 +35,45 @@ import {
 import { Separator } from "@/components/ui/separator";
 import ExpenseSheetSearchRoute from "./route";
 import { fraction } from "@/lib/monetary/fractions";
+import { pipe, Number, Schema as S, Match } from "effect";
+import { formatUSD } from "@/lib/monetary/currency";
+
+type Split = {
+  memberUserId: string;
+  memberName: string;
+  amount: string;
+  percent: string;
+};
+
+type SplitDecoded = {
+  memberUserId: string;
+  amount: number;
+  memberName: string;
+};
+
+function checkSplitsEqual(
+  a: ReadonlyArray<SplitDecoded>,
+  b: ReadonlyArray<Split>,
+) {
+  return a.reduce((bool, split) => {
+    const match = b.find((s) => s.memberUserId === split.memberUserId);
+
+    return bool && split.amount === parseFloatCustom(match?.amount);
+  }, a.length === b.length);
+}
+
+function parseFloatCustom(total: string | undefined) {
+  const coerceEmptyStringToZero = (formValue: string) =>
+    pipe(
+      formValue,
+      (str) => str.trim(),
+      (trimmed) => (trimmed === "" ? "0" : trimmed),
+    );
+
+  const orEmptyString = (str: string | undefined) => str ?? "";
+
+  return pipe(total, orEmptyString, coerceEmptyStringToZero, parseFloat);
+}
 
 function useConfirmDeleteExpense(
   expenseId: string,
@@ -187,40 +227,144 @@ function useForm(
   active: ExpenseWithParticipants,
   updateMutation: (opts: UpdateExpenseOptions) => Promise<void>,
   leave: () => void,
+  view: SplitView,
 ) {
-  const schema = v.pipe(
-    v.object({
-      description: v.string(),
-      amount: v.pipe(
-        v.number(),
-        v.minValue(0.01, "Item must cost at least $0.01"),
-        v.maxValue(100_000, "Item must not exceed $100,000"),
+  const participants = active.participants.map((p) => p.userId);
+
+  const initialSplits: ReadonlyArray<Split> = active.participants.map((p) => {
+    const utils = fraction().from(...p.split);
+
+    return {
+      memberUserId: p.userId,
+      memberName: p.member?.nickname ?? "anon",
+      amount: utils.apply(active.amount).toFixed(2),
+      percent: utils.percent().toFixed(2),
+    };
+  });
+
+  const initial = {
+    description: active.description,
+    amount: pipe(active.amount, (amount) => amount.toFixed(2)),
+    date: timestampToDate(active.date),
+    paidBy: getPayerFromParticipants(active.participants)?.userId ?? "",
+    splits: initialSplits,
+  } as const;
+
+  const createSchema = (total: number) => {
+    const FormNumber = S.transform(S.String, S.Number, {
+      decode: (s) => parseFloatCustom(s),
+      encode: (n) => (n === 0 ? "" : n.toFixed(2)),
+    });
+
+    const SplitsSchema = S.Array(
+      S.Struct({
+        memberUserId: S.UUID,
+        memberName: S.Union(S.String, S.Literal("anon")),
+        amount: FormNumber.pipe(
+          S.positive(local.annotate("Must contribute > 0%")),
+          S.lessThan(total, local.annotate("Can't contribute > 100%")),
+        ),
+        percent: FormNumber.pipe(
+          S.positive(local.annotate("Must contribute > 0%")),
+          S.lessThan(100, local.annotate("Can't contribute > 100%")),
+        ),
+      }),
+    ).pipe(
+      S.filter((splits) => {
+        const splitsSum = Number.sumAll(splits.map((s) => s.amount));
+        const offset = splitsSum - total;
+
+        const remaining = Match.value(view).pipe(
+          Match.when("percent", function () {
+            const asPercent = pipe(
+              fraction().from(splitsSum, total).inverse().percent(),
+              Math.abs,
+              (percent) => percent.toFixed(2),
+              (percent) => `${percent}%`,
+            );
+
+            return Match.value(offset).pipe(
+              Match.when(Number.greaterThan(0), function () {
+                return `${asPercent} over`;
+              }),
+              Match.when(Number.lessThan(0), function () {
+                return `${asPercent} short`;
+              }),
+              Match.orElse(() => ""),
+            );
+          }),
+          Match.when("amount", function () {
+            const asAmount = formatUSD(offset);
+
+            return Match.value(offset).pipe(
+              Match.when(Number.greaterThan(0), function () {
+                return `${asAmount} over`;
+              }),
+              Match.when(Number.lessThan(0), function () {
+                return `${asAmount} short`;
+              }),
+              Match.orElse(() => ""),
+            );
+          }),
+          Match.orElseAbsurd,
+        );
+
+        return Match.value(splitsSum).pipe(
+          Match.when(total, () => true),
+          Match.orElse(() =>
+            Match.value(view).pipe(
+              Match.when(
+                "percent",
+                () => `Splits must sum to 100% (${remaining})`,
+              ),
+              Match.when(
+                "amount",
+                () => `Splits must sum to $${total} (${remaining})`,
+              ),
+              Match.orElseAbsurd,
+            ),
+          ),
+        );
+      }),
+    );
+
+    const Schema = S.Struct({
+      description: S.String,
+      date: S.DateFromSelf,
+      amount: FormNumber.pipe(
+        S.int(local.annotate("Amount must be a whole number")),
+        S.positive(local.annotate("Item must cost at least $0.01")),
+        S.lessThan(100_000, local.annotate("Item must not exceed $100,000")),
       ),
-      date: v.date(),
-      paidBy: v.picklist(
-        active.participants.map((p) => p.userId),
-        "paidBy must be a valid member",
+      paidBy: S.Literal(...participants).pipe(
+        S.annotations(local.annotate("Paid By must be a valid member")),
       ),
-    }),
-    v.check((schema) => {
-      return (
-        schema.amount !== active.amount ||
-        schema.description !== active.description ||
-        schema.date.getTime() !== active.date ||
-        schema.paidBy !== getPayerFromParticipants(active.participants)?.userId
-      );
-    }),
-  );
+      splits: SplitsSchema,
+    }).pipe(
+      S.filter(
+        (schema) =>
+          schema.amount !== parseFloatCustom(initial.amount) ||
+          schema.paidBy !== initial.paidBy ||
+          schema.description !== initial.description ||
+          schema.date.getTime() !== initial.date.getTime() ||
+          !checkSplitsEqual(schema.splits, initial.splits),
+        { message: () => "" },
+      ),
+    );
+
+    return Schema;
+  };
 
   const api = useAppForm({
-    defaultValues: {
-      description: active.description,
-      amount: active.amount,
-      date: timestampToDate(active.date),
-      paidBy: getPayerFromParticipants(active.participants)?.userId ?? "",
-    },
+    defaultValues: initial,
     validators: {
-      onChange: schema,
+      onChange: (ctx) => {
+        const total = parseFloatCustom(ctx.value.amount);
+        const Schema = createSchema(total);
+        const Standard = S.standardSchemaV1(Schema);
+
+        return ctx.formApi.parseValuesWithSchema(Standard);
+      },
       onSubmit: (ctx) => {
         return ctx.formApi.state.isPristine
           ? "Fields must be updated"
@@ -228,32 +372,50 @@ function useForm(
       },
     },
     onSubmit: async (fields) => {
+      const total = parseFloatCustom(fields.value.amount);
+      const Schema = createSchema(total);
+      const parse = S.decodeSync(Schema);
+
+      const value = parse(fields.value);
+
       function makeExpense() {
+        const keys = ["description", "amount", "date"] as const;
+
+        const [description, amount, date] = keys.map(function isUpdated(key) {
+          return value[key] !== initial[key];
+        });
+
+        if (!description && !amount && !date) return;
+
         return {
-          description: fields.value.description,
-          amount: fields.value.amount,
-          date: fields.value.date.getTime(),
+          ...(description && { description: value.description }),
+          ...(amount && { amount: value.amount }),
+          ...(date && { date: value.date.getTime() }),
         };
       }
 
       function makeParticipants() {
-        function entry(userId: string, role: Participant["role"]) {
-          return { userId, role };
-        }
+        type ParticipantUpdate = NonNullable<
+          UpdateOptions["updates"]["participants"]
+        >[number];
 
-        const payerId = getPayerFromParticipants(active.participants)?.userId;
+        const splitsEqual = checkSplitsEqual(value.splits, initial.splits);
+        const paidByAltered = value.paidBy === initial.paidBy;
 
-        if (payerId === fields.value.paidBy) return undefined;
+        if (splitsEqual && paidByAltered) return;
 
-        const entries = [];
+        const participants = value.splits.map((split) => {
+          return {
+            userId: split.memberUserId,
+            split: fraction().from(split.amount, value.amount).get(),
+            role: Match.value(split.memberUserId).pipe(
+              Match.when(value.paidBy, () => "payer" as const),
+              Match.orElse(() => "participant" as const),
+            ),
+          } satisfies ParticipantUpdate;
+        });
 
-        entries.push(entry(fields.value.paidBy, "payer"));
-
-        if (payerId) {
-          entries.push(entry(payerId, "participant"));
-        }
-
-        return entries;
+        return participants;
       }
 
       leave();
@@ -263,7 +425,7 @@ function useForm(
           return updateMutation({
             expenseId: active.id,
             updates: {
-              expense: makeExpense(),
+              expense: makeExpense() ?? {},
               ...optional({ participants: makeParticipants() }),
             },
           });
@@ -284,6 +446,16 @@ function useForm(
   return { api };
 }
 
+export type SplitView = "percent" | "amount";
+
+export function useSplitView(initial?: SplitView) {
+  const [view, setView] = useState<SplitView>(initial ?? "percent");
+
+  const toggle = () => setView((v) => (v === "percent" ? "amount" : "percent"));
+
+  return { value: view, toggle };
+}
+
 type ExpenseSheetProps = PropsWithChildren<{
   expense: ExpenseWithParticipants;
 }>;
@@ -292,11 +464,17 @@ export function ExpenseSheet(props: ExpenseSheetProps) {
   const auth = useAuthentication();
   const route = ExpenseSheetSearchRoute.useSearchRoute();
   const active = props.expense;
+  const view = useSplitView();
 
   const payer = getPayerFromParticipants(active.participants);
 
   const mutators = useMutators();
-  const form = useForm(active, mutators.expense.update, route.close);
+  const form = useForm(
+    active,
+    mutators.expense.update,
+    route.close,
+    view.value,
+  );
   const deleteExpense = useConfirmDeleteExpense(
     active.id,
     mutators.expense.delete,

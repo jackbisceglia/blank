@@ -417,3 +417,63 @@ export const DefaultGroupSelectField = (
     </>
   );
 };
+
+type SheetSplitFieldProps = {
+  view: "percent" | "amount";
+  total: number;
+  altDisplay: string; // the alternate split unit to display alongside input
+} & TextFieldProps;
+
+export const SheetSplitField = (props: SheetSplitFieldProps) => {
+  const field = useFieldContext<string>();
+  const { label, total, view, ...rest } = props;
+  const { className: labelClassName, ...restLabelProps } =
+    rest.labelProps ?? {};
+  const { className: inputClassName, ...restInputProps } =
+    rest.inputProps ?? {};
+  const { className: errorClassName, ...restErrorProps } =
+    rest.errorProps ?? {};
+
+  const position = props.errorPosition ?? positions.inline();
+
+  const errors = usePerFieldErrors(field, position);
+
+  return (
+    <>
+      {label && (
+        <div className="flex justify-between">
+          <SharedSheetLabel
+            className={labelClassName}
+            htmlFor={field.name}
+            {...restLabelProps}
+          >
+            {label}
+          </SharedSheetLabel>
+          <span className="text-xs text-muted-foreground/75">
+            {props.altDisplay}
+          </span>
+        </div>
+      )}
+      <div className="relative">
+        <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground text-sm">
+          {view === "percent" ? "%" : "$"}
+        </span>
+        <SharedInputFromField
+          type="number"
+          min={0}
+          field={field}
+          className={cn(
+            inputClassName,
+            "bg-accent/50 font-medium border-border/50 text-foreground placeholder:text-muted-foreground/60 h-10 pl-8",
+          )}
+          {...restInputProps}
+        />
+      </div>
+      {isInline(position) && errors.isErrored && (
+        <SharedError id={errors.id} {...restErrorProps}>
+          {local.extract(errors.values[0]?.message)}
+        </SharedError>
+      )}
+    </>
+  );
+};
