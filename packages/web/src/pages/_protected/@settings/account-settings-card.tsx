@@ -7,6 +7,7 @@ import { useMutation } from "@tanstack/react-query";
 import { updateUserServerFn } from "@/server/user.route";
 import { useInvalidate } from "@/lib/query";
 import { useAuthentication } from "@/lib/authentication";
+import { local } from "@/components/form/errors";
 
 type Data = { name: string; image: string };
 
@@ -18,18 +19,28 @@ const constraints = {
 const schemas = {
   name: v.pipe(
     v.string(),
-    v.minLength(constraints.name.minLength, "Name must not be empty"),
+    v.minLength(
+      constraints.name.minLength,
+      local.create("Name must not be empty"),
+    ),
     v.maxLength(
       constraints.name.maxLength,
-      `Name must be at most ${constraints.name.maxLength} characters`,
+      local.create(
+        `Name must be at most ${constraints.name.maxLength} characters`,
+      ),
     ),
   ),
   image: v.pipe(
     v.string(),
-    v.minLength(constraints.name.minLength, "Image URL must not be empty"),
+    v.minLength(
+      constraints.name.minLength,
+      local.create("Image URL must not be empty"),
+    ),
     v.maxLength(
       constraints.image.maxLength,
-      `Image URL must be at most ${constraints.image.maxLength} characters`,
+      local.create(
+        `Image URL must be at most ${constraints.image.maxLength} characters`,
+      ),
     ),
     v.url("Image must be a valid URL"),
   ),
@@ -39,7 +50,11 @@ const formSchemaNotStale = (init: Data) =>
   v.pipe(
     v.object({ name: schemas.name, image: schemas.image }),
     v.check(
-      (data) => JSON.stringify(data) !== JSON.stringify(init),
+      (data) =>
+        Object.keys(data).some(
+          (key) =>
+            data[key as keyof typeof data] !== init[key as keyof typeof data],
+        ),
       "These details are already set",
     ),
   );

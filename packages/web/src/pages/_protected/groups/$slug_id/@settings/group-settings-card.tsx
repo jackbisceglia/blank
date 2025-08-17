@@ -6,28 +6,44 @@ import { prevented } from "@/lib/utils";
 import * as v from "valibot";
 import { Group } from "@blank/zero";
 import { positions } from "@/components/form/fields";
+import { local } from "@/components/form/errors";
 
 const schemas = {
   title: v.pipe(
     v.string(),
-    v.minLength(1, "Title must not be empty"),
-    v.maxLength(32, "Title must be at most 32 characters"),
+    v.minLength(1, local.create("Title must not be empty")),
+    v.maxLength(32, local.create("Title must be at most 32 characters")),
     v.custom(
       (value) => slugify(value as string).isLossless(),
-      "Title contains invalid characters. Only letters, numbers, spaces, and basic punctuation are allowed.",
+      local.create(
+        "Title contains invalid characters. Only letters, numbers, spaces, and basic punctuation are allowed.",
+      ),
     ),
   ),
   description: v.pipe(
     v.string(),
-    v.minLength(1, "Description must not be empty"),
-    v.maxLength(128, "Description must be at most 128 characters"),
+    v.minLength(1, local.create("Description must not be empty")),
+    v.maxLength(
+      128,
+      local.create("Description must be at most 128 characters"),
+    ),
   ),
 };
 
-const formSchema = v.object({
-  title: schemas.title,
-  description: schemas.description,
-});
+type Data = { title: string; description: string };
+
+const formSchemaNotStale = (init: Data) =>
+  v.pipe(
+    v.object({ title: schemas.title, description: schemas.description }),
+    v.check(
+      (data) =>
+        Object.keys(data).some(
+          (key) =>
+            data[key as keyof typeof data] !== init[key as keyof typeof data],
+        ),
+      "These details are already set",
+    ),
+  );
 
 type GroupSettingsCardProps = {
   group: Group;
@@ -36,12 +52,11 @@ type GroupSettingsCardProps = {
 function useForm(group: Group) {
   const updateGroup = useUpdateGroup();
 
+  const initial = { title: group.title, description: group.description };
+
   const api = useAppForm({
-    defaultValues: {
-      title: group.title,
-      description: group.description,
-    },
-    validators: { onChange: formSchema },
+    defaultValues: initial,
+    validators: { onChange: formSchemaNotStale(initial) },
     onSubmit: async ({ value, formApi }) => {
       const hasChanges =
         value.title !== group.title || value.description !== group.description;

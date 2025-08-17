@@ -1,7 +1,7 @@
 import { Button } from "@/components/ui/button";
 import { Group, Member } from "@blank/zero";
 import { Badge } from "@/components/ui/badge";
-import { createBalanceMap } from "@/lib/balances";
+import { createBalanceMap } from "@/lib/monetary/balances";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import {
   DropdownMenu,

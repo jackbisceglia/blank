@@ -22,10 +22,12 @@ import { type ParticipantWithMember } from "@/lib/participants";
 import { useFieldContext } from ".";
 import { Member } from "@blank/zero";
 import { metaToErrors } from "@/lib/validation-errors";
-import { Data, Match } from "effect";
+import { Data, Number, Match, pipe, Option, Schema as S } from "effect";
 import { useGroupListByUserId } from "@/pages/_protected/@data/groups";
 import { useAuthentication } from "@/lib/authentication";
 import { Link } from "@tanstack/react-router";
+import { local } from "./errors";
+import { useStore } from "@tanstack/react-form";
 
 export type ErrorPositions = Data.TaggedEnum<{
   inline: {};
@@ -34,6 +36,33 @@ export type ErrorPositions = Data.TaggedEnum<{
 
 export const positions = Data.taggedEnum<ErrorPositions>();
 const isInline = positions.$is("inline");
+
+function usePerFieldErrors<T>(
+  field: ReturnType<typeof useFieldContext<T>>,
+  position: ErrorPositions,
+) {
+  const meta = useStore(field.store, (s) => s.meta);
+  const errors = metaToErrors(meta);
+
+  const id = Match.value(position).pipe(
+    Match.tags({
+      inline: () => `${field}-error`,
+      custom: (config) => config.elementId,
+    }),
+    Match.exhaustive,
+  );
+
+  const isErrored = Match.value(position).pipe(
+    Match.tags({
+      inline: () =>
+        errors.values.filter((e) => !local.filter(e.message)).length > 0,
+      custom: () => errors.status === "errored",
+    }),
+    Match.exhaustive,
+  );
+
+  return { id, errors, isErrored };
+}
 
 type TextFieldProps =
   | {
@@ -63,17 +92,9 @@ export const TextField = (props: TextFieldProps) => {
   const { className: errorClassName, ...restErrorProps } =
     rest.errorProps ?? {};
 
-  const errors = metaToErrors(field.state.meta);
+  const position = props.errorPosition ?? positions.inline();
 
-  const errorPosition = props.errorPosition ?? positions.inline();
-
-  const hasErrors = errors.status === "errored";
-
-  const errorId = Match.value(errorPosition).pipe(
-    Match.tag("inline", () => `${field}-error`),
-    Match.tag("custom", (config) => config.elementId),
-    Match.exhaustive,
-  );
+  const e = usePerFieldErrors(field, position);
 
   return (
     <>
@@ -87,9 +108,9 @@ export const TextField = (props: TextFieldProps) => {
         </SharedLabel>
       )}
       <SharedInputFromField
-        aria-invalid={hasErrors}
-        aria-errormessage={hasErrors ? errorId : undefined}
-        aria-describedby={hasErrors ? errorId : undefined}
+        aria-invalid={e.isErrored}
+        aria-errormessage={e.isErrored ? e.id : undefined}
+        aria-describedby={e.isErrored ? e.id : undefined}
         type="text"
         field={field}
         className={cn(
@@ -99,9 +120,9 @@ export const TextField = (props: TextFieldProps) => {
         {...restInputProps}
       />
 
-      {isInline(errorPosition) && hasErrors && (
-        <SharedError id={errorId} {...restErrorProps}>
-          {errors.values[0]?.message}
+      {isInline(position) && e.isErrored && (
+        <SharedError id={e.id} {...restErrorProps}>
+          {local.extract(e.errors.values[0]?.message)}
         </SharedError>
       )}
     </>
@@ -145,12 +166,19 @@ export const SheetTextField = (props: SheetTextFieldProps) => {
 type SheetCostFieldProps = TextFieldProps;
 
 export const SheetCostField = (props: SheetCostFieldProps) => {
-  const field = useFieldContext<number>();
+  const field = useFieldContext<string>();
   const { label, ...rest } = props;
   const { className: labelClassName, ...restLabelProps } =
     rest.labelProps ?? {};
   const { className: inputClassName, ...restInputProps } =
     rest.inputProps ?? {};
+
+  const { className: errorClassName, ...restErrorProps } =
+    rest.errorProps ?? {};
+
+  const position = props.errorPosition ?? positions.inline();
+
+  const e = usePerFieldErrors(field, position);
 
   return (
     <>
@@ -166,10 +194,10 @@ export const SheetCostField = (props: SheetCostFieldProps) => {
           $
         </span>
         <SharedInputFromField
-          transform={Number}
           type="number"
-          step="1.00"
+          step={1}
           field={field}
+          onChange={(e) => field.handleChange(e.target.value)}
           className={cn(
             inputClassName,
             "bg-accent/50 border-border/50 text-foreground placeholder:text-muted-foreground/60 h-10 pl-8",
@@ -177,6 +205,11 @@ export const SheetCostField = (props: SheetCostFieldProps) => {
           {...restInputProps}
         />
       </div>
+      {isInline(position) && e.isErrored && (
+        <SharedError id={e.id} {...restErrorProps}>
+          {local.extract(e.errors.values[0]?.message)}
+        </SharedError>
+      )}
     </>
   );
 };
@@ -308,11 +341,11 @@ export const DefaultGroupSelectField = (
   const groups = useGroupListByUserId(auth.user.id);
   const field = useFieldContext<string>();
 
-  const errors = metaToErrors(field.state.meta);
-  const errorPosition = props.errorPosition ?? positions.inline();
-  const hasErrors = errors.status === "errored";
+  const position = props.errorPosition ?? positions.inline();
 
-  const errorId = Match.value(errorPosition).pipe(
+  const e = usePerFieldErrors(field, position);
+
+  const errorId = Match.value(position).pipe(
     Match.tag("inline", () => `${field.name}-error`),
     Match.tag("custom", (config) => config.elementId),
     Match.exhaustive,
@@ -355,12 +388,12 @@ export const DefaultGroupSelectField = (
         <SelectTrigger
           className={cn(
             "bg-transparent border border-border hover:bg-secondary/25 text-foreground placeholder:text-foreground/40",
-            hasErrors && "border-destructive",
+            e.isErrored && "border-destructive",
             triggerClassName,
           )}
-          aria-invalid={hasErrors}
-          aria-errormessage={hasErrors ? errorId : undefined}
-          aria-describedby={hasErrors ? errorId : undefined}
+          aria-invalid={e.isErrored}
+          aria-errormessage={e.isErrored ? errorId : undefined}
+          aria-describedby={e.isErrored ? errorId : undefined}
           {...restTriggerProps}
         >
           <SelectValue placeholder="Select default group" />
@@ -379,9 +412,118 @@ export const DefaultGroupSelectField = (
         </SelectContent>
       </Select>
 
-      {isInline(errorPosition) && hasErrors && (
+      {isInline(position) && e.isErrored && (
         <SharedError id={errorId} {...rest.errorProps}>
-          {errors.values[0]?.message}
+          {e.errors.values[0]?.message}
+        </SharedError>
+      )}
+    </>
+  );
+};
+
+type SheetSplitFieldProps = {
+  view: "percent" | "amount";
+  total: number;
+} & TextFieldProps;
+
+export const SheetSplitField = (props: SheetSplitFieldProps) => {
+  const field = useFieldContext<string>();
+  const { label, total, view, ...rest } = props;
+  const { className: labelClassName, ...restLabelProps } =
+    rest.labelProps ?? {};
+  const { className: inputClassName, ...restInputProps } =
+    rest.inputProps ?? {};
+  const { className: errorClassName, ...restErrorProps } =
+    rest.errorProps ?? {};
+
+  const position = props.errorPosition ?? positions.inline();
+
+  const e = usePerFieldErrors(field, position);
+
+  const Transform = S.transform(S.String, S.String, {
+    encode: (amount) => {
+      const value = parseFloat(amount);
+
+      return pipe(
+        value,
+        Number.divide(total),
+        Option.getOrElse(() => 0),
+        Number.multiply(100),
+        Number.round(2),
+        (percent) => (isNaN(percent) ? 0 : percent),
+        (percent) => {
+          const shouldClamp = value < total && value > 0;
+          const clamp = Number.clamp({ minimum: 0.01, maximum: 99.9 });
+
+          return shouldClamp ? clamp(percent) : percent;
+        },
+        globalThis.String,
+      );
+    },
+    decode: (percent) =>
+      pipe(
+        percent,
+        Number.parse,
+        Option.getOrElse(() => 0),
+        Number.divide(100),
+        Option.getOrThrow,
+        Number.multiply(total),
+        Number.round(2),
+        (number) => number.toFixed(2),
+        globalThis.String,
+      ),
+  });
+
+  return (
+    <>
+      {label && (
+        <div className="flex justify-between">
+          <SharedSheetLabel
+            className={labelClassName}
+            htmlFor={field.name}
+            {...restLabelProps}
+          >
+            {label}
+          </SharedSheetLabel>
+          <span className="text-xs text-muted-foreground/75">
+            {Match.value(view).pipe(
+              Match.when("amount", () => {
+                const transform = Transform.pipe(S.encodeSync);
+                const percent = transform(field.state.value);
+
+                return `${percent}%`;
+              }),
+              Match.when("percent", () => {
+                const value = field.state.value;
+
+                return `$${value}`;
+              }),
+              Match.orElseAbsurd,
+            )}
+          </span>
+        </div>
+      )}
+      <div className="relative">
+        <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground text-sm">
+          {view === "percent" ? "%" : "$"}
+        </span>
+        <SharedInputFromField
+          type="number"
+          step={0.01}
+          min={0}
+          field={field}
+          className={cn(
+            inputClassName,
+            "bg-accent/50 font-medium border-border/50 text-foreground placeholder:text-muted-foreground/60 h-10 pl-8",
+          )}
+          encode={view === "percent" ? S.encodeSync(Transform) : undefined}
+          decode={view === "percent" ? S.decodeSync(Transform) : undefined}
+          {...restInputProps}
+        />
+      </div>
+      {isInline(position) && e.isErrored && (
+        <SharedError id={e.id} {...restErrorProps}>
+          {local.extract(e.errors.values[0]?.message)}
         </SharedError>
       )}
     </>

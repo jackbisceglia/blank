@@ -1,7 +1,7 @@
 import { Member } from "@blank/core/modules/member/schema";
 import { compareParticipantsCustomOrder } from "@/lib/participants";
 import { describe, it, expect } from "bun:test";
-import { withBalance } from "@/lib/balances";
+import { withBalance } from "@/lib/monetary/balances";
 import { pipe, Array, Number } from "effect";
 
 // sort order:

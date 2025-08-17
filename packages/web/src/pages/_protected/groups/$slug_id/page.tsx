@@ -21,7 +21,7 @@ import { useGroupById } from "../../@data/groups";
 import { FiltersSchema } from "./@dashboard/table-filters";
 import { QuerySchema, useQueryFromSearch } from "./@dashboard/table-query";
 import { StatusSchema, useStatusFromSearch } from "./@dashboard/table-status";
-import { createBalanceMap } from "@/lib/balances";
+import { createBalanceMap } from "@/lib/monetary/balances";
 import { slugify } from "@blank/core/lib/utils/index";
 import ExpenseSheetSearchRoute, {
   ExpenseSheetSearchRouteSchema,
