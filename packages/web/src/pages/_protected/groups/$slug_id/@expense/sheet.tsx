@@ -13,7 +13,7 @@ import {
 } from "@/lib/client-mutators/expense-mutators";
 import { DialogDescription } from "@/components/ui/dialog";
 import { ChevronRight } from "lucide-react";
-import { fraction, prevented, timestampToDate } from "@/lib/utils";
+import { prevented, timestampToDate } from "@/lib/utils";
 import {
   useDeleteOneExpense,
   useUpdateExpense,
@@ -33,6 +33,7 @@ import {
 } from "@/components/ui/sheet";
 import { Separator } from "@/components/ui/separator";
 import ExpenseSheetSearchRoute from "./route";
+import { fraction } from "@/lib/monetary/fractions";
 
 function useConfirmDeleteExpense(
   expenseId: string,
@@ -116,10 +117,18 @@ function useConfirmSettleExpense(opts: UseConfirmSettleExpense) {
                       {getSettleUpSentence(
                         p,
                         payer,
-                        fraction(p.split).apply(opts.expense.amount),
+                        fraction()
+                          .from(...p.split)
+                          .apply(opts.expense.amount),
                       )}
                       <span className="text-blank-theme ml-auto font-bold">
-                        [{Math.round(fraction(p.split).percent()).toString()}%]
+                        [
+                        {Math.round(
+                          fraction()
+                            .from(...p.split)
+                            .percent(),
+                        ).toString()}
+                        %]
                       </span>
                     </li>
                   ))
@@ -411,7 +420,9 @@ export function ExpenseSheet(props: ExpenseSheetProps) {
                     (p) =>
                       [
                         p.member?.nickname,
-                        fraction(p.split).percent(),
+                        fraction()
+                          .from(...p.split)
+                          .percent(),
                       ] as const,
                   )
                   .filter((tuple): tuple is [string, number] => !!tuple[0])

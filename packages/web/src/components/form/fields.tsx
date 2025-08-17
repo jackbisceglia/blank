@@ -192,7 +192,7 @@ export const SheetCostField = (props: SheetCostFieldProps) => {
           $
         </span>
         <SharedInputFromField
-          transform={Number}
+          decode={(value) => Number(value)}
           type="number"
           step="1.00"
           field={field}
