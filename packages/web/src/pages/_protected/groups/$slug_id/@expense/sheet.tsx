@@ -19,7 +19,8 @@ import {
   useUpdateExpense,
 } from "@/pages/_protected/@data/expenses";
 import * as v from "valibot";
-import { FieldsErrors, useAppForm } from "@/components/form";
+import { useAppForm } from "@/components/form";
+import { FieldsErrors } from "@/components/form/errors";
 import { Participant } from "@blank/zero";
 import { optional } from "@blank/core/lib/utils/index";
 import {

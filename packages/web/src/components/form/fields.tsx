@@ -21,11 +21,12 @@ import {
 import { type ParticipantWithMember } from "@/lib/participants";
 import { useFieldContext } from ".";
 import { Member } from "@blank/zero";
-import { metaToErrors } from "@/lib/validation-errors";
 import { Data, Match } from "effect";
 import { useGroupListByUserId } from "@/pages/_protected/@data/groups";
 import { useAuthentication } from "@/lib/authentication";
 import { Link } from "@tanstack/react-router";
+import { useStore } from "@tanstack/react-form";
+import { local, metaToErrors } from "./errors";
 
 export type ErrorPositions = Data.TaggedEnum<{
   inline: {};
@@ -34,6 +35,34 @@ export type ErrorPositions = Data.TaggedEnum<{
 
 export const positions = Data.taggedEnum<ErrorPositions>();
 const isInline = positions.$is("inline");
+
+function usePerFieldErrors<T>(
+  field: ReturnType<typeof useFieldContext<T>>,
+  position: ErrorPositions,
+) {
+  const formErrors = useStore(field.store, (s) => s.meta);
+  const errors = metaToErrors(formErrors);
+
+  const id = Match.value(position).pipe(
+    Match.tags({
+      inline: () => `${field}-error`,
+      custom: (config) => config.elementId,
+    }),
+    Match.exhaustive,
+  );
+
+  // filter out
+  const isErrored = Match.value(position).pipe(
+    Match.tags({
+      inline: () =>
+        local.filter(errors.values.map((e) => e.message)).length > 0,
+      custom: () => errors.status === "errored",
+    }),
+    Match.exhaustive,
+  );
+
+  return { id, values: errors.values, isErrored };
+}
 
 type TextFieldProps =
   | {
@@ -63,17 +92,8 @@ export const TextField = (props: TextFieldProps) => {
   const { className: errorClassName, ...restErrorProps } =
     rest.errorProps ?? {};
 
-  const errors = metaToErrors(field.state.meta);
-
   const errorPosition = props.errorPosition ?? positions.inline();
-
-  const hasErrors = errors.status === "errored";
-
-  const errorId = Match.value(errorPosition).pipe(
-    Match.tag("inline", () => `${field}-error`),
-    Match.tag("custom", (config) => config.elementId),
-    Match.exhaustive,
-  );
+  const errors = usePerFieldErrors(field, errorPosition);
 
   return (
     <>
@@ -87,9 +107,9 @@ export const TextField = (props: TextFieldProps) => {
         </SharedLabel>
       )}
       <SharedInputFromField
-        aria-invalid={hasErrors}
-        aria-errormessage={hasErrors ? errorId : undefined}
-        aria-describedby={hasErrors ? errorId : undefined}
+        aria-invalid={errors.isErrored}
+        aria-errormessage={errors.isErrored ? errors.id : undefined}
+        aria-describedby={errors.isErrored ? errors.id : undefined}
         type="text"
         field={field}
         className={cn(
@@ -99,9 +119,9 @@ export const TextField = (props: TextFieldProps) => {
         {...restInputProps}
       />
 
-      {isInline(errorPosition) && hasErrors && (
-        <SharedError id={errorId} {...restErrorProps}>
-          {errors.values[0]?.message}
+      {isInline(errorPosition) && errors.isErrored && (
+        <SharedError id={errors.id} {...restErrorProps}>
+          {local.extract(errors.values[0]?.message)}
         </SharedError>
       )}
     </>
@@ -115,6 +135,7 @@ export const SheetTextField = (props: SheetTextFieldProps) => {
   const { label, ...rest } = props;
   const { className: labelClassName, ...restLabelProps } =
     rest.labelProps ?? {};
+
   const { className: inputClassName, ...restInputProps } =
     rest.inputProps ?? {};
 
@@ -151,6 +172,11 @@ export const SheetCostField = (props: SheetCostFieldProps) => {
     rest.labelProps ?? {};
   const { className: inputClassName, ...restInputProps } =
     rest.inputProps ?? {};
+  const { className: errorClassName, ...restErrorProps } =
+    rest.errorProps ?? {};
+
+  const errorPosition = props.errorPosition ?? positions.inline();
+  const errors = usePerFieldErrors(field, errorPosition);
 
   return (
     <>
@@ -177,6 +203,11 @@ export const SheetCostField = (props: SheetCostFieldProps) => {
           {...restInputProps}
         />
       </div>
+      {isInline(errorPosition) && errors.isErrored && (
+        <SharedError id={errors.id} {...restErrorProps}>
+          {local.extract(errors.values[0]?.message)}
+        </SharedError>
+      )}
     </>
   );
 };
@@ -308,9 +339,8 @@ export const DefaultGroupSelectField = (
   const groups = useGroupListByUserId(auth.user.id);
   const field = useFieldContext<string>();
 
-  const errors = metaToErrors(field.state.meta);
   const errorPosition = props.errorPosition ?? positions.inline();
-  const hasErrors = errors.status === "errored";
+  const errors = usePerFieldErrors(field, errorPosition);
 
   const errorId = Match.value(errorPosition).pipe(
     Match.tag("inline", () => `${field.name}-error`),
@@ -355,12 +385,12 @@ export const DefaultGroupSelectField = (
         <SelectTrigger
           className={cn(
             "bg-transparent border border-border hover:bg-secondary/25 text-foreground placeholder:text-foreground/40",
-            hasErrors && "border-destructive",
+            errors.isErrored && "border-destructive",
             triggerClassName,
           )}
-          aria-invalid={hasErrors}
-          aria-errormessage={hasErrors ? errorId : undefined}
-          aria-describedby={hasErrors ? errorId : undefined}
+          aria-invalid={errors.isErrored}
+          aria-errormessage={errors.isErrored ? errorId : undefined}
+          aria-describedby={errors.isErrored ? errorId : undefined}
           {...restTriggerProps}
         >
           <SelectValue placeholder="Select default group" />
@@ -379,7 +409,7 @@ export const DefaultGroupSelectField = (
         </SelectContent>
       </Select>
 
-      {isInline(errorPosition) && hasErrors && (
+      {isInline(errorPosition) && errors.isErrored && (
         <SharedError id={errorId} {...rest.errorProps}>
           {errors.values[0]?.message}
         </SharedError>
