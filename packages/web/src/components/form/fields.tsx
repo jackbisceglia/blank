@@ -51,11 +51,14 @@ function usePerFieldErrors<T>(
     Match.exhaustive,
   );
 
-  // filter out
   const isErrored = Match.value(position).pipe(
     Match.tags({
-      inline: () =>
-        local.filter(errors.values.map((e) => e.message)).length > 0,
+      inline: () => {
+        const messages = errors.values.map((e) => e.message);
+        const filtered = local.filter(messages);
+
+        return filtered.length > 0;
+      },
       custom: () => errors.status === "errored",
     }),
     Match.exhaustive,
