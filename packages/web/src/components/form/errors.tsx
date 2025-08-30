@@ -18,7 +18,7 @@ export const local = {
   annotate: (message: string) => ({
     message: () => local.create(message),
   }),
-  isLocal: (message: string) => message.endsWith(local.suffix()),
+  isLocal: (message?: string) => message?.endsWith(local.suffix()),
   filter: (messages: string[]) => messages.filter(local.isLocal),
   extract: (annotation: string | undefined) =>
     pipe(
@@ -37,7 +37,6 @@ export const metaToErrors = (meta: AnyFieldMeta) => {
 // multiple metas
 export const metasToErrors = (metasRecord: Record<any, AnyFieldMeta>) => {
   const metas = Object.values(metasRecord);
-
   const errors = metas
     .map((meta) => meta.errors as StandardSchemaV1Issue[])
     .flat();
@@ -68,7 +67,7 @@ export const FieldsErrors = (props: FieldsErrorsProps) => {
     >
       {errors.status === "errored" &&
         errors.values
-          .filter((err) => local.isLocal(err.message))
+          .filter((err) => !local.isLocal(err.message))
           .map((error, index) => (
             <li
               key={index}

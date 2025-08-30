@@ -14,15 +14,13 @@ import {
 } from "@/lib/client-mutators/expense-mutators";
 import { DialogDescription } from "@/components/ui/dialog";
 import { ChevronRight } from "lucide-react";
-import { prevented, timestampToDate } from "@/lib/utils";
+import { cn, prevented, tapPipeline, timestampToDate } from "@/lib/utils";
 import {
   useDeleteOneExpense,
   useUpdateExpense,
 } from "@/pages/_protected/@data/expenses";
-import * as v from "valibot";
 import { useAppForm } from "@/components/form";
-import { FieldsErrors, local } from "@/components/form/errors";
-import { Participant } from "@blank/zero";
+import { FieldsErrors, local, metasToErrors } from "@/components/form/errors";
 import { optional } from "@blank/core/lib/utils/index";
 import {
   Sheet,
@@ -35,8 +33,13 @@ import {
 import { Separator } from "@/components/ui/separator";
 import ExpenseSheetSearchRoute from "./route";
 import { fraction } from "@/lib/monetary/fractions";
-import { pipe, Number, Schema as S, Match } from "effect";
+import { pipe, Number, Schema as S, Match, String, Option } from "effect";
 import { formatUSD } from "@/lib/monetary/currency";
+import { sharedSheetLabelClassNames } from "@/components/form/shared";
+import { SharedError } from "@/components/form/shared";
+import { Button } from "@/components/ui/button";
+import { underline_defaults } from "@/components/ui/utils";
+import { positions } from "@/components/form/fields";
 
 type Split = {
   memberUserId: string;
@@ -51,6 +54,65 @@ type SplitDecoded = {
   memberName: string;
 };
 
+type UpdateSplitOptions = {
+  value: string;
+  total: string;
+  key: SplitView;
+};
+
+const orStringifiedZeroIfEmpty = (value: string) =>
+  pipe(
+    Option.liftPredicate(value, (str) => !!str && str !== ""),
+    Option.getOrElse(() => "0"),
+  );
+
+const orEmptyStringIfNullable = (value: string | undefined) =>
+  pipe(
+    Option.fromNullable(value),
+    Option.getOrElse(() => ""),
+  );
+
+const toFixed2 = (num: number) => num.toFixed(2);
+
+function updateSplit(options: UpdateSplitOptions) {
+  const total = parseFloatCustom(options.total);
+
+  // we use the current total and updated field/value to derive the alternative format's value
+  // eg. when we're editing percentage, we return key/value of amount and derived amount to be set in the form
+  const derived = Match.value(options.key).pipe(
+    Match.when("percent", () => ({
+      key: "amount",
+      value: pipe(
+        options.value,
+        (percent) => parseFloatCustom(percent),
+        Number.divide(100),
+        Option.getOrThrow,
+        Number.multiply(total),
+        toFixed2,
+      ),
+    })),
+    Match.when("amount", () => ({
+      key: "percent",
+      value: pipe(
+        options.value,
+        (amount) => parseFloatCustom(amount),
+        Number.divide(total),
+        Option.getOrThrowWith(() => "Unable to split with $0 total"),
+        Number.multiply(100),
+        Number.round(2),
+        (amount) => amount.toString(),
+      ),
+    })),
+    Match.orElseAbsurd,
+  );
+
+  return (split: Split) => ({
+    ...split,
+    [options.key]: options.value, // value being updated (amount / percent)
+    [derived.key]: derived.value, // derived value (inverse of of ^)
+  });
+}
+
 function checkSplitsEqual(
   a: ReadonlyArray<SplitDecoded>,
   b: ReadonlyArray<Split>,
@@ -63,16 +125,13 @@ function checkSplitsEqual(
 }
 
 function parseFloatCustom(total: string | undefined) {
-  const coerceEmptyStringToZero = (formValue: string) =>
-    pipe(
-      formValue,
-      (str) => str.trim(),
-      (trimmed) => (trimmed === "" ? "0" : trimmed),
-    );
-
-  const orEmptyString = (str: string | undefined) => str ?? "";
-
-  return pipe(total, orEmptyString, coerceEmptyStringToZero, parseFloat);
+  return pipe(
+    total,
+    orEmptyStringIfNullable,
+    String.trim,
+    orStringifiedZeroIfEmpty,
+    parseFloat,
+  );
 }
 
 function useConfirmDeleteExpense(
@@ -244,7 +303,7 @@ function useForm(
 
   const initial = {
     description: active.description,
-    amount: pipe(active.amount, (amount) => amount.toFixed(2)),
+    amount: pipe(active.amount, toFixed2),
     date: timestampToDate(active.date),
     paidBy: getPayerFromParticipants(active.participants)?.userId ?? "",
     splits: initialSplits,
@@ -253,7 +312,7 @@ function useForm(
   const createSchema = (total: number) => {
     const FormNumber = S.transform(S.String, S.Number, {
       decode: (s) => parseFloatCustom(s),
-      encode: (n) => (n === 0 ? "" : n.toFixed(2)),
+      encode: (n) => n.toFixed(2),
     });
 
     const SplitsSchema = S.Array(
@@ -261,11 +320,11 @@ function useForm(
         memberUserId: S.UUID,
         memberName: S.Union(S.String, S.Literal("anon")),
         amount: FormNumber.pipe(
-          S.positive(local.annotate("Must contribute > 0%")),
+          S.greaterThan(0, local.annotate("Must contribute > 0%")),
           S.lessThan(total, local.annotate("Can't contribute > 100%")),
         ),
         percent: FormNumber.pipe(
-          S.positive(local.annotate("Must contribute > 0%")),
+          S.greaterThan(0, local.annotate("Must contribute > 0%")),
           S.lessThan(100, local.annotate("Can't contribute > 100%")),
         ),
       }),
@@ -279,7 +338,7 @@ function useForm(
             const asPercent = pipe(
               fraction().from(splitsSum, total).inverse().percent(),
               Math.abs,
-              (percent) => percent.toFixed(2),
+              toFixed2,
               (percent) => `${percent}%`,
             );
 
@@ -333,7 +392,7 @@ function useForm(
       date: S.DateFromSelf,
       amount: FormNumber.pipe(
         S.int(local.annotate("Amount must be a whole number")),
-        S.positive(local.annotate("Item must cost at least $0.01")),
+        S.greaterThan(0, local.annotate("Item must cost at least $0.01")),
         S.lessThan(100_000, local.annotate("Item must not exceed $100,000")),
       ),
       paidBy: S.Literal(...participants).pipe(
@@ -588,28 +647,98 @@ export function ExpenseSheet(props: ExpenseSheetProps) {
                   )}
                 />
               </div>
-              <Separator className="col-span-full my-4" />
-              <ul className="flex flex-col gap-2">
-                <p className="text-xs text-muted-foreground">
-                  just for debugging for now
-                </p>
-                {active.participants
-                  .map(
-                    (p) =>
-                      [
-                        p.member?.nickname,
-                        fraction()
-                          .from(...p.split)
-                          .percent(),
-                      ] as const,
-                  )
-                  .filter((tuple): tuple is [string, number] => !!tuple[0])
-                  .map(([name, split]) => (
-                    <li key={name}>
-                      {name}: {split.toString()}%
-                    </li>
+              <Separator className="col-span-full my-1.5 opacity-75" />
+              <div className="col-span-full flex justify-between items-center">
+                <p className={cn(sharedSheetLabelClassNames)}>Splits</p>
+                <ul className="flex">
+                  {(["percent", "amount"] as const).map((tab, index, array) => (
+                    <Button
+                      key={tab}
+                      onClick={view.toggle}
+                      type="button"
+                      variant="link"
+                      className={cn(
+                        sharedSheetLabelClassNames,
+                        "font-normal px-2 h-auto",
+                        view.value === tab && "text-white font-medium",
+                        view.value === tab && underline_defaults,
+                        index === array.length - 1 && "pr-0",
+                        index === 0 && "",
+                      )}
+                    >
+                      {String.capitalize(tab)}
+                    </Button>
                   ))}
-              </ul>
+                </ul>
+              </div>
+              <form.api.AppField
+                name="splits"
+                mode="array"
+                children={(field) => (
+                  <>
+                    {field.state.value.map((split, index) => (
+                      <form.api.AppField
+                        key={split.memberUserId}
+                        name={`splits[${index}]`}
+                        children={(splitFieldContext) => (
+                          // conditionally render either percent or amount at a time
+                          // we nest this within top level splits[i] to access reactive values for alt display
+                          <form.api.AppField
+                            key={split.memberUserId + view.value}
+                            name={
+                              view.value === "percent"
+                                ? `splits[${index}].percent`
+                                : `splits[${index}].amount`
+                            }
+                            listeners={{
+                              onBlur: () => {
+                                const formatToTwoDecimals = (value: string) =>
+                                  pipe(value, parseFloatCustom, toFixed2);
+
+                                splitFieldContext.setValue((prev) => ({
+                                  ...prev,
+                                  amount: formatToTwoDecimals(prev.amount),
+                                  percent: formatToTwoDecimals(prev.percent),
+                                }));
+                              },
+                            }}
+                            children={(fieldContext) => (
+                              <div key={view.value} className="space-y-2">
+                                <fieldContext.SheetSplitField
+                                  symbol={view.value === "percent" ? "%" : "$"}
+                                  altDisplay={
+                                    view.value === "percent"
+                                      ? `$${splitFieldContext.state.value.amount}`
+                                      : `${splitFieldContext.state.value.percent}%`
+                                  }
+                                  errorPosition={positions.inline()}
+                                  inputProps={{
+                                    disabled: active.status === "settled",
+                                    min: 0,
+                                    step: 0.01,
+                                    value: fieldContext.state.value,
+                                    onChange: (e) => {
+                                      const updateFn = updateSplit({
+                                        key: view.value,
+                                        value: e.target.value,
+                                        total:
+                                          fieldContext.form.state.values.amount,
+                                      });
+
+                                      splitFieldContext.setValue(updateFn);
+                                    },
+                                  }}
+                                  label={split.memberName}
+                                />
+                              </div>
+                            )}
+                          />
+                        )}
+                      />
+                    ))}
+                  </>
+                )}
+              />
             </SheetBody>
             <SheetFooter className="flex-col gap-2 mt-auto grid grid-cols-2">
               <form.api.Subscribe

@@ -121,3 +121,10 @@ export function useClientEffect(fn: () => void, deps?: unknown[]) {
     fn();
   }, deps ?? []);
 }
+
+export const tapPipeline = <T>(fn: (args: T) => unknown) => {
+  return (input: T) => {
+    fn(input);
+    return input;
+  };
+};

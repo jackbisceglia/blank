@@ -166,7 +166,7 @@ export const SheetTextField = (props: SheetTextFieldProps) => {
 type SheetCostFieldProps = TextFieldProps;
 
 export const SheetCostField = (props: SheetCostFieldProps) => {
-  const field = useFieldContext<number>();
+  const field = useFieldContext<string>();
   const { label, ...rest } = props;
   const { className: labelClassName, ...restLabelProps } =
     rest.labelProps ?? {};
@@ -192,7 +192,6 @@ export const SheetCostField = (props: SheetCostFieldProps) => {
           $
         </span>
         <SharedInputFromField
-          decode={(value) => Number(value)}
           type="number"
           step="1.00"
           field={field}
@@ -419,14 +418,13 @@ export const DefaultGroupSelectField = (
 };
 
 type SheetSplitFieldProps = {
-  view: "percent" | "amount";
-  total: number;
+  symbol: string;
   altDisplay: string; // the alternate split unit to display alongside input
 } & TextFieldProps;
 
 export const SheetSplitField = (props: SheetSplitFieldProps) => {
   const field = useFieldContext<string>();
-  const { label, total, view, ...rest } = props;
+  const { label, ...rest } = props;
   const { className: labelClassName, ...restLabelProps } =
     rest.labelProps ?? {};
   const { className: inputClassName, ...restInputProps } =
@@ -437,35 +435,46 @@ export const SheetSplitField = (props: SheetSplitFieldProps) => {
   const position = props.errorPosition ?? positions.inline();
 
   const errors = usePerFieldErrors(field, position);
+  const hintId = `${field.name}-alt`;
 
   return (
     <>
       {label && (
         <div className="flex justify-between">
           <SharedSheetLabel
-            className={labelClassName}
+            className={cn("w-full", labelClassName)}
             htmlFor={field.name}
             {...restLabelProps}
           >
             {label}
           </SharedSheetLabel>
-          <span className="text-xs text-muted-foreground/75">
+          <span id={hintId} className="text-xs text-muted-foreground/75">
             {props.altDisplay}
           </span>
         </div>
       )}
       <div className="relative">
-        <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground text-sm">
-          {view === "percent" ? "%" : "$"}
+        <span
+          className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground text-sm"
+          aria-hidden="true"
+        >
+          {props.symbol}
         </span>
         <SharedInputFromField
           type="number"
-          min={0}
           field={field}
           className={cn(
             inputClassName,
             "bg-accent/50 font-medium border-border/50 text-foreground placeholder:text-muted-foreground/60 h-10 pl-8",
           )}
+          aria-invalid={errors.isErrored}
+          aria-errormessage={errors.isErrored ? errors.id : undefined}
+          aria-describedby={[
+            errors.isErrored ? errors.id : undefined,
+            label ? hintId : undefined,
+          ]
+            .filter((entry) => !!entry)
+            .join(" ")}
           {...restInputProps}
         />
       </div>
