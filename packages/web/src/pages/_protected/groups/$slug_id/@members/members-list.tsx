@@ -23,6 +23,10 @@ import { prevented } from "@/lib/utils";
 import * as v from "valibot";
 import { useAppForm } from "@/components/form";
 
+const StyledItem = (props: ComponentProps<typeof DropdownMenuItem>) => (
+  <DropdownMenuItem className="text-xs uppercase" {...props} />
+);
+
 const constraints = { nickname: { minLength: 1, maxLength: 32 } };
 
 const gradients = [
@@ -63,17 +67,12 @@ function getInitials(name?: string) {
 type MemberDropdownMenuProps = PropsWithChildren<{
   remove: () => void;
   settle: () => void;
-  isAuthenticatedUser: boolean;
   isOwner: boolean;
   balance: number;
 }>;
 
 function MemberDropdownMenu(props: MemberDropdownMenuProps) {
   const settle = { enabled: false };
-
-  const StyledItem = (props: ComponentProps<typeof DropdownMenuItem>) => (
-    <DropdownMenuItem className="text-xs uppercase" {...props} />
-  );
 
   return (
     <DropdownMenu>
@@ -96,9 +95,39 @@ function MemberDropdownMenu(props: MemberDropdownMenuProps) {
             Settle
           </StyledItem>
         }
-        {props.isOwner && !props.isAuthenticatedUser && (
+        {props.isOwner && (
           <StyledItem variant="destructive" onClick={props.remove}>
             Remove
+          </StyledItem>
+        )}
+      </DropdownMenuContent>
+    </DropdownMenu>
+  );
+}
+
+type SelfDropdownMenuProps = PropsWithChildren<{
+  isOwner: boolean;
+  edit: () => void;
+  leave: () => Promise<void>;
+}>;
+
+function SelfDropdownMenu(props: SelfDropdownMenuProps) {
+  return (
+    <DropdownMenu>
+      <DropdownMenuTrigger asChild>
+        <Button
+          variant="outline"
+          size="xs"
+          className="uppercase border-border w-22"
+        >
+          {props.children}
+        </Button>
+      </DropdownMenuTrigger>
+      <DropdownMenuContent align="end">
+        <StyledItem onClick={props.edit}>Edit</StyledItem>
+        {!props.isOwner && (
+          <StyledItem variant="destructive" onClick={props.leave}>
+            Leave
           </StyledItem>
         )}
       </DropdownMenuContent>
@@ -201,6 +230,7 @@ type MemberManagementCardProps = {
   userId: string;
   settle: () => void;
   remove: (member: Member) => Promise<void>;
+  leave: () => Promise<void>;
 };
 
 function useEditState(defaultState?: "write" | "read") {
@@ -278,18 +308,27 @@ export function MembersList(props: MemberManagementCardProps) {
           </p>
         </div>
         {derived.isAuthenticatedUser ? (
-          <Button
-            variant="outline"
-            size="xs"
-            className="uppercase border-border w-22"
-            onClick={editing.toggle}
-          >
-            {editing.state === "write" ? "Cancel" : "Edit"}
-          </Button>
+          editing.state === "write" ? (
+            <Button
+              variant="outline"
+              size="xs"
+              className="uppercase border-border w-22"
+              onClick={editing.toggle}
+            >
+              Cancel
+            </Button>
+          ) : (
+            <SelfDropdownMenu
+              isOwner={derived.isOwner}
+              edit={editing.toggle}
+              leave={props.leave}
+            >
+              Manage
+            </SelfDropdownMenu>
+          )
         ) : (
           <MemberDropdownMenu
             balance={derived.balance}
-            isAuthenticatedUser={props.userId === member.userId}
             isOwner={props.userId === props.group.ownerId}
             remove={() => props.remove(member)}
             settle={props.settle}

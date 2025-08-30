@@ -1,5 +1,6 @@
 import { useZero } from "@/lib/zero";
 import {
+  LeaveGroupOptions,
   RemoveMemberOptions,
   UpdateMemberNicknameOptions,
 } from "@/lib/client-mutators/member-mutators";
@@ -20,3 +21,10 @@ export function useUpdateMemberNickname() {
   };
 }
 
+export function useLeaveGroup() {
+  const z = useZero();
+
+  return (options: LeaveGroupOptions) => {
+    return z.mutate.member.leave(options).client;
+  };
+}

@@ -42,6 +42,10 @@ export type RemoveMemberOptions = {
   memberUserId: string;
 };
 
+export type LeaveGroupOptions = {
+  groupId: string;
+};
+
 export type UpdateMemberNicknameOptions = {
   groupId: string;
   nickname: string;
@@ -49,6 +53,7 @@ export type UpdateMemberNicknameOptions = {
 
 type Mutators = ClientMutatorGroup<{
   remove: ClientMutator<RemoveMemberOptions, void>;
+  leave: ClientMutator<LeaveGroupOptions, void>;
   updateNickname: ClientMutator<UpdateMemberNicknameOptions, void>;
 }>;
 
@@ -84,6 +89,35 @@ export const mutators: Mutators = (auth) => ({
       groupId: opts.groupId,
       userId: opts.memberUserId,
     });
+  },
+
+  // Allow the currently authenticated member to remove themselves from a group
+  leave: async (tx, opts) => {
+    const authenticatedUser = assertIsAuthenticated(auth);
+    const userId = authenticatedUser.userID;
+
+    const group = await getGroup(tx, opts.groupId);
+
+    assertGroupExists(group);
+    await assertMemberExists(tx, opts.groupId, userId);
+
+    if (group.ownerId === userId) {
+      throw new Error("Group owners cannot leave their own group");
+    }
+
+    const participants = await tx.query.participant
+      .where("groupId", opts.groupId)
+      .where("userId", userId)
+      .run();
+
+    for (const participant of participants) {
+      await tx.mutate.participant.delete({
+        expenseId: participant.expenseId,
+        userId: participant.userId,
+      });
+    }
+
+    await tx.mutate.member.delete({ groupId: opts.groupId, userId });
   },
 
   updateNickname: async (tx, opts) => {
