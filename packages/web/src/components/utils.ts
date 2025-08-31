@@ -1,4 +1,5 @@
-import { formatUSD, matchSign } from "@/lib/utils";
+import { formatUSD } from "@/lib/monetary/currency";
+import { matchSign } from "@/lib/utils";
 
 export function getBalanceStyle(balance: number) {
   if (balance === 0) return "text-muted-foreground font-medium";

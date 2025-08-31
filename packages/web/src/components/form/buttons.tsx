@@ -42,6 +42,7 @@ type SubmitButtonProps = React.ComponentProps<typeof Button> & {
   dirty?: {
     disableForAria?: true;
     disable?: true;
+    checkDefaults?: true;
   };
 };
 
@@ -52,6 +53,13 @@ export const SubmitButton = (props: SubmitButtonProps) => {
   const isSubmitting = useStore(form.store, (state) => state.isSubmitting);
   const canSubmit = useStore(form.store, (state) => state.canSubmit);
   const isDirty = useStore(form.store, (state) => state.isDirty);
+  const isDefault = useStore(form.store, (state) => state.isDefaultValue);
+
+  const ariaDisabled =
+    !canSubmit ||
+    isSubmitting ||
+    (dirty?.disableForAria && !isDirty) ||
+    (dirty?.checkDefaults && isDefault);
 
   return (
     <Button
@@ -63,9 +71,7 @@ export const SubmitButton = (props: SubmitButtonProps) => {
         className,
       )}
       disabled={isSubmitting}
-      aria-disabled={
-        !canSubmit || isSubmitting || (dirty?.disableForAria && !isDirty)
-      }
+      aria-disabled={ariaDisabled}
       {...rest}
     />
   );

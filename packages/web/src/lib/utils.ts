@@ -1,17 +1,6 @@
-import { Participant } from "@blank/core/modules/participant/schema";
 import { clsx, type ClassValue } from "clsx";
 import { useEffect } from "react";
 import { twMerge } from "tailwind-merge";
-
-export function fraction(split: Participant["split"]) {
-  const [numerator, denominator] = split;
-
-  const apply = (amount: number) => amount * (numerator / denominator);
-  const inverse = () => fraction([denominator - numerator, denominator]);
-  const percent = () => apply(100);
-
-  return { apply, inverse, percent };
-}
 
 /**
  * Creates a function that joins a list of strings with a specified delimiter, filtering out any falsey values.
@@ -115,15 +104,6 @@ export function wrapInBox(...strings: string[]) {
   return [y, content, y].join("\n");
 }
 
-export function formatUSD(amount: number) {
-  return new Intl.NumberFormat("en-US", {
-    style: "currency",
-    currency: "USD",
-    minimumFractionDigits: 2,
-    maximumFractionDigits: 2,
-  }).format(amount);
-}
-
 export function sleep(ms: number): Promise<void> {
   return new Promise((resolve) => setTimeout(resolve, ms));
 }
@@ -141,3 +121,15 @@ export function useClientEffect(fn: () => void, deps?: unknown[]) {
     fn();
   }, deps ?? []);
 }
+
+export const tapPipeline = <T>(fn: (args: T) => unknown) => {
+  return (input: T) => {
+    fn(input);
+    return input;
+  };
+};
+
+export const logWith =
+  (value: string) =>
+  (...args: string[]) =>
+    console.log(value, ...args);

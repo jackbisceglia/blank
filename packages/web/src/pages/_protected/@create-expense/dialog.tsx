@@ -13,11 +13,12 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import { prevented } from "@/lib/utils";
-import { FieldsErrors, useAppForm } from "@/components/form";
+import { useAppForm } from "@/components/form";
 import { withToast } from "@/lib/toast";
 import * as v from "valibot";
 import SearchRoute from "./route";
 import { positions } from "@/components/form/fields";
+import { FieldsErrors } from "@/components/form/errors";
 
 export const schema = v.object({
   description: v.pipe(

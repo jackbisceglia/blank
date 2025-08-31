@@ -11,7 +11,7 @@ import { useRemoveMember } from "../../@data/members";
 import { withToast } from "@/lib/toast";
 import { useWithConfirmationImperative } from "@/components/with-confirmation-dialog";
 
-function useRemoveMemberWithConfirmation(groupId: string) {
+function useRemoveMemberWithConfirmation(groupId: string | null) {
   const remove = useRemoveMember();
   const action = useWithConfirmationImperative({
     title: "Remove Member?",
@@ -19,6 +19,7 @@ function useRemoveMemberWithConfirmation(groupId: string) {
   });
 
   async function confirm(member: Member) {
+    if (!groupId) return;
     if (!(await action.confirm())) return;
 
     const promise = remove({
@@ -43,6 +44,7 @@ function MembersRoute() {
   const params = Route.useParams({ select: (p) => p.slug_id });
   const authentication = useAuthentication();
   const group = useGroupById(params.id);
+  const removeMember = useRemoveMemberWithConfirmation(group.data?.id ?? null);
 
   const isLoading = group.status === "loading";
 
@@ -51,8 +53,6 @@ function MembersRoute() {
   if (group.status === "not-found") {
     return <States.NotFound title={slugify(params.slug).decode()} />;
   }
-
-  const removeMember = useRemoveMemberWithConfirmation(group.data.id);
 
   const members = group.data?.members as Member[];
   const currentMember = members?.find(

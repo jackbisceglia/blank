@@ -1,7 +1,7 @@
 import { Button } from "@/components/ui/button";
 import { Group, Member } from "@blank/zero";
 import { Badge } from "@/components/ui/badge";
-import { createBalanceMap } from "@/lib/balances";
+import { createBalanceMap } from "@/lib/monetary/balances";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import {
   DropdownMenu,
@@ -267,7 +267,7 @@ export function MembersList(props: MemberManagementCardProps) {
         </span>
       </div>
       <div className="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-x-6">
-        <div className="text-left sm:text-right min-w-0 min-w-28">
+        <div className="text-left sm:text-right min-w-28">
           {balances.get(member.userId) !== 0 && (
             <p className="mr-auto text-xs w-fit text-muted-foreground">
               {getBalanceLabel(balances.get(member.userId))}

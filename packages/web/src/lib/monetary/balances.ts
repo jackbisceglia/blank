@@ -1,8 +1,8 @@
 import { ExpenseWithParticipants } from "@/pages/_protected/groups/$slug_id/page";
 import { Member } from "@blank/zero";
 import { Match, Number, pipe } from "effect";
-import { fraction } from "./utils";
-import { ParticipantWithMember } from "./participants";
+import { fraction, PERCENTAGE_SUM_ERROR_MARGIN } from "./fractions";
+import { ParticipantWithMember } from "../participants";
 
 export type MemberWithBalance = Member & { balance: number };
 export type Balances = {
@@ -18,7 +18,7 @@ export function createBalanceMap(
 
     expenses.forEach((expense) => {
       expense.participants.forEach((p) => {
-        const s = fraction(p.split);
+        const s = fraction().from(...p.split);
         const balance = map.get(p.userId) ?? 0;
 
         // split: owed = (1 - split) * amount, owe = (split) * amount
@@ -124,13 +124,11 @@ export function calculateSettlements(
 export function checkExpenseSplitValidity(
   participants: ParticipantWithMember[],
 ) {
-  const ERROR_MARGIN = 1e-10;
-
   const split = participants.reduce((sum, participant) => {
     const [num, denom] = participant.split;
 
     return sum + num / denom;
   }, 0);
 
-  return Math.abs(split - 1) < ERROR_MARGIN;
+  return Math.abs(split - 1) < PERCENTAGE_SUM_ERROR_MARGIN;
 }
