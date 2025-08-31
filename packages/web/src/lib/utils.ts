@@ -128,3 +128,8 @@ export const tapPipeline = <T>(fn: (args: T) => unknown) => {
     return input;
   };
 };
+
+export const logWith =
+  (value: string) =>
+  (...args: string[]) =>
+    console.log(value, ...args);

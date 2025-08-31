@@ -1,4 +1,4 @@
-import { PropsWithChildren, useState } from "react";
+import { PropsWithChildren, useEffect, useState } from "react";
 import { ExpenseWithParticipants } from "../page";
 import { useAuthentication } from "@/lib/authentication";
 import {
@@ -14,13 +14,19 @@ import {
 } from "@/lib/client-mutators/expense-mutators";
 import { DialogDescription } from "@/components/ui/dialog";
 import { ChevronRight } from "lucide-react";
-import { cn, prevented, tapPipeline, timestampToDate } from "@/lib/utils";
+import {
+  cn,
+  logWith,
+  prevented,
+  tapPipeline,
+  timestampToDate,
+} from "@/lib/utils";
 import {
   useDeleteOneExpense,
   useUpdateExpense,
 } from "@/pages/_protected/@data/expenses";
 import { useAppForm } from "@/components/form";
-import { FieldsErrors, local, metasToErrors } from "@/components/form/errors";
+import { FieldsErrors, local } from "@/components/form/errors";
 import { optional } from "@blank/core/lib/utils/index";
 import {
   Sheet,
@@ -99,8 +105,7 @@ function updateSplit(options: UpdateSplitOptions) {
         Number.divide(total),
         Option.getOrThrowWith(() => "Unable to split with $0 total"),
         Number.multiply(100),
-        Number.round(2),
-        (amount) => amount.toString(),
+        toFixed2,
       ),
     })),
     Match.orElseAbsurd,
@@ -309,7 +314,7 @@ function useForm(
     splits: initialSplits,
   } as const;
 
-  const createSchema = (total: number) => {
+  const createSchema = (total: number, numParticipants: number) => {
     const FormNumber = S.transform(S.String, S.Number, {
       decode: (s) => parseFloatCustom(s),
       encode: (n) => n.toFixed(2),
@@ -320,12 +325,25 @@ function useForm(
         memberUserId: S.UUID,
         memberName: S.Union(S.String, S.Literal("anon")),
         amount: FormNumber.pipe(
-          S.greaterThan(0, local.annotate("Must contribute > 0%")),
-          S.lessThan(total, local.annotate("Can't contribute > 100%")),
+          S.greaterThan(0, local.annotate("Must contribute more than $0.00")),
+          numParticipants > 1
+            ? S.lessThan(
+                total,
+                local.annotate(`Can't contribute $${total} or more`),
+              )
+            : S.lessThanOrEqualTo(
+                total,
+                local.annotate(`Can't contribute more than $${total}`),
+              ),
         ),
         percent: FormNumber.pipe(
-          S.greaterThan(0, local.annotate("Must contribute > 0%")),
-          S.lessThan(100, local.annotate("Can't contribute > 100%")),
+          S.greaterThan(0, local.annotate("Must contribute more than 0%")),
+          numParticipants > 1
+            ? S.lessThan(100, local.annotate("Can't contribute 100% or more"))
+            : S.lessThanOrEqualTo(
+                100,
+                local.annotate("Can't contribute more than 100%"),
+              ),
         ),
       }),
     ).pipe(
@@ -388,7 +406,9 @@ function useForm(
     );
 
     const Schema = S.Struct({
-      description: S.String,
+      description: S.String.pipe(
+        S.nonEmptyString(local.annotate("Item must cost at least $0.01")),
+      ),
       date: S.DateFromSelf,
       amount: FormNumber.pipe(
         S.int(local.annotate("Amount must be a whole number")),
@@ -419,7 +439,8 @@ function useForm(
     validators: {
       onChange: (ctx) => {
         const total = parseFloatCustom(ctx.value.amount);
-        const Schema = createSchema(total);
+        const numParticipants = ctx.value.splits.length;
+        const Schema = createSchema(total, numParticipants);
         const Standard = S.standardSchemaV1(Schema);
 
         return ctx.formApi.parseValuesWithSchema(Standard);
@@ -432,7 +453,8 @@ function useForm(
     },
     onSubmit: async (fields) => {
       const total = parseFloatCustom(fields.value.amount);
-      const Schema = createSchema(total);
+      const numParticipants = fields.value.splits.length;
+      const Schema = createSchema(total, numParticipants);
       const parse = S.decodeSync(Schema);
 
       const value = parse(fields.value);
@@ -501,6 +523,10 @@ function useForm(
       return result;
     },
   });
+
+  useEffect(() => {
+    api.validate("change");
+  }, [view]);
 
   return { api };
 }
@@ -609,6 +635,24 @@ export function ExpenseSheet(props: ExpenseSheetProps) {
               <div className="col-span-1 space-y-2">
                 <form.api.AppField
                   name="amount"
+                  listeners={{
+                    onChange: (context) => {
+                      const form = context.fieldApi.form;
+                      const splits = form.state.values.splits;
+
+                      splits.forEach((split, index) => {
+                        const name = `splits[${index}]` as const;
+
+                        const payload = {
+                          key: view.value,
+                          total: context.value,
+                          value: split[view.value],
+                        };
+
+                        form.setFieldValue(name, updateSplit(payload));
+                      });
+                    },
+                  }}
                   children={(field) => (
                     <field.SheetCostField
                       inputProps={{
@@ -751,7 +795,10 @@ export function ExpenseSheet(props: ExpenseSheetProps) {
                 )}
               ></form.api.Subscribe>
               <form.api.AppForm>
-                <form.api.SubmitButton className="col-start-1 col-end-3">
+                <form.api.SubmitButton
+                  dirty={{ checkDefaults: true }}
+                  className="col-start-1 col-end-3"
+                >
                   Save
                 </form.api.SubmitButton>
                 {active.status === "active" ? (

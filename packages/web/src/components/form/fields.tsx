@@ -138,9 +138,12 @@ export const SheetTextField = (props: SheetTextFieldProps) => {
   const { label, ...rest } = props;
   const { className: labelClassName, ...restLabelProps } =
     rest.labelProps ?? {};
-
   const { className: inputClassName, ...restInputProps } =
     rest.inputProps ?? {};
+  const { ...restErrorProps } = rest.errorProps ?? {};
+
+  const errorPosition = props.errorPosition ?? positions.inline();
+  const errors = usePerFieldErrors(field, errorPosition);
 
   return (
     <>
@@ -160,8 +163,16 @@ export const SheetTextField = (props: SheetTextFieldProps) => {
           "bg-accent/50 border-border/50 text-foreground placeholder:text-muted-foreground/60 h-10",
           inputClassName,
         )}
+        aria-invalid={errors.isErrored}
+        aria-errormessage={errors.isErrored ? errors.id : undefined}
+        aria-describedby={errors.isErrored ? errors.id : undefined}
         {...restInputProps}
       />
+      {isInline(errorPosition) && errors.isErrored && (
+        <SharedError id={errors.id} {...restErrorProps}>
+          {local.extract(errors.values[0]?.message)}
+        </SharedError>
+      )}
     </>
   );
 };
@@ -202,6 +213,9 @@ export const SheetCostField = (props: SheetCostFieldProps) => {
             inputClassName,
             "bg-accent/50 border-border/50 text-foreground placeholder:text-muted-foreground/60 h-10 pl-8",
           )}
+          aria-invalid={errors.isErrored}
+          aria-errormessage={errors.isErrored ? errors.id : undefined}
+          aria-describedby={errors.isErrored ? errors.id : undefined}
           {...restInputProps}
         />
       </div>
