@@ -46,6 +46,7 @@ import { SharedError } from "@/components/form/shared";
 import { Button } from "@/components/ui/button";
 import { underline_defaults } from "@/components/ui/utils";
 import { positions } from "@/components/form/fields";
+import { isZero } from "effect/BigDecimal";
 
 type Split = {
   memberUserId: string;
@@ -62,8 +63,9 @@ type SplitDecoded = {
 
 type UpdateSplitOptions = {
   value: string;
-  total: string;
   key: SplitView;
+  total: string;
+  fallbackTotal: string;
 };
 
 const orStringifiedZeroIfEmpty = (value: string) =>
@@ -81,7 +83,17 @@ const orEmptyStringIfNullable = (value: string | undefined) =>
 const toFixed2 = (num: number) => num.toFixed(2);
 
 function updateSplit(options: UpdateSplitOptions) {
-  const total = parseFloatCustom(options.total);
+  const isNegative = (str: string) => pipe(str, String.startsWith("-"));
+  const isEmpty = (str: string) => pipe(str, String.isEmpty);
+  const isZero = (str: string) => str === "0";
+
+  // in the case of total === 0, we can't compute the derived value accurately
+  const orFallback = Match.value(options.total).pipe(
+    Match.whenOr(isEmpty, isZero, isNegative, () => options.fallbackTotal),
+    Match.orElse(() => options.total),
+  );
+
+  const total = parseFloatCustom(orFallback);
 
   // we use the current total and updated field/value to derive the alternative format's value
   // eg. when we're editing percentage, we return key/value of amount and derived amount to be set in the form
@@ -591,6 +603,8 @@ export function ExpenseSheet(props: ExpenseSheetProps) {
     });
   };
 
+  const fallbackTotal = active.amount.toFixed(2);
+
   return (
     <>
       <deleteExpense.dialog />
@@ -645,8 +659,9 @@ export function ExpenseSheet(props: ExpenseSheetProps) {
 
                         const payload = {
                           key: view.value,
-                          total: context.value,
                           value: split[view.value],
+                          total: context.value,
+                          fallbackTotal,
                         };
 
                         form.setFieldValue(name, updateSplit(payload));
@@ -767,6 +782,7 @@ export function ExpenseSheet(props: ExpenseSheetProps) {
                                         value: e.target.value,
                                         total:
                                           fieldContext.form.state.values.amount,
+                                        fallbackTotal,
                                       });
 
                                       splitFieldContext.setValue(updateFn);
