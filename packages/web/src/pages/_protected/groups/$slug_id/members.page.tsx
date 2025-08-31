@@ -1,4 +1,4 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { SubHeading } from "@/components/prose";
 import { GroupBody, SecondaryRow, States } from "./layout";
 import { useGroupById } from "../../@data/groups";
@@ -7,7 +7,7 @@ import { Member } from "@blank/zero";
 import { slugify } from "@blank/core/lib/utils/index";
 import { ExpenseWithParticipants } from "./page";
 import { MembersList } from "./@members/members-list";
-import { useRemoveMember } from "../../@data/members";
+import { useLeaveGroup, useRemoveMember } from "../../@data/members";
 import { withToast } from "@/lib/toast";
 import { useWithConfirmationImperative } from "@/components/with-confirmation-dialog";
 
@@ -40,11 +40,53 @@ function useRemoveMemberWithConfirmation(groupId: string | null) {
   return { confirm, dialog: action.dialog };
 }
 
+function useLeaveGroupWithConfirmation(groupId: string) {
+  const leave = useLeaveGroup();
+  const navigate = useNavigate();
+  const action = useWithConfirmationImperative({
+    title: "Leave Group?",
+    description: {
+      type: "custom",
+      value:
+        "This will remove you from the group and delete your participation in its expenses.",
+    },
+    confirm: "Leave",
+    confirmVariant: "destructive",
+  });
+
+  async function confirm(member: Member) {
+    if (!groupId) return;
+    if (!(await action.confirm())) return;
+
+    const promise = leave({
+      groupId,
+      memberUserId: member.userId,
+    });
+
+    const result = await withToast({
+      promise,
+      notify: {
+        loading: "Leaving group...",
+        success: "You have left the group",
+        error: "Failed to leave group",
+      },
+    });
+
+    await navigate({ to: "/groups" });
+
+    return result;
+  }
+
+  return { confirm, dialog: action.dialog };
+}
+
 function MembersRoute() {
   const params = Route.useParams({ select: (p) => p.slug_id });
   const authentication = useAuthentication();
   const group = useGroupById(params.id);
-  const removeMember = useRemoveMemberWithConfirmation(group.data?.id ?? null);
+
+  const removeMember = useRemoveMemberWithConfirmation(group.data?.id ?? "");
+  const leaveGroup = useLeaveGroupWithConfirmation(group.data?.id ?? "");
 
   const isLoading = group.status === "loading";
 
@@ -76,10 +118,12 @@ function MembersRoute() {
             // TODO: implement
             settle={() => {}}
             remove={removeMember.confirm}
+            leave={leaveGroup.confirm}
           />
         </ul>
       </GroupBody>
       <removeMember.dialog />
+      <leaveGroup.dialog />
     </>
   );
 }

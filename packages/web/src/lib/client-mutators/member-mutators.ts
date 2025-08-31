@@ -17,7 +17,7 @@ async function assertMemberExists(
   tx: ZTransaction,
   groupId: string,
   userId: string,
-  flip: boolean = false, // invert the assertion logic
+  inverted: boolean = false,
 ) {
   const member = await tx.query.member
     .where("groupId", groupId)
@@ -25,19 +25,45 @@ async function assertMemberExists(
     .one()
     .run();
 
-  const condition = !flip === !member;
-  const message = !flip ? "Member not found" : "Member already exists";
+  // if not inverted, then we check if member does not exist and throw
+  // if inverted, we check if member DOES exist and throw
+  const condition = inverted ? !!member : !member;
+  const message = !inverted ? "Member not found" : "Member already exists";
 
   if (condition) throw new Error(message);
 }
 
-async function assertUserIsGroupOwner(group: Group, userId: string) {
-  if (group.ownerId !== userId) {
-    throw new Error("Only group owners can manage members");
+function assertUserIsGroupOwner(
+  group: Group,
+  userId: string,
+  inverted: boolean = false,
+) {
+  const isOwner = group.ownerId === userId;
+
+  const condition = inverted ? isOwner : !isOwner;
+
+  const message = !inverted
+    ? "Only group owner can perform this action"
+    : "Group owner cannot perform this action";
+
+  if (condition) throw new Error(message);
+}
+
+const assertUserIsNotGroupOwner = (group: Group, userId: string) =>
+  assertUserIsGroupOwner(group, userId, true);
+
+function assertMemberIsCurrentUser(userId: string, memberUserId: string) {
+  if (userId !== memberUserId) {
+    throw new Error("Authenticated user does not match member");
   }
 }
 
 export type RemoveMemberOptions = {
+  groupId: string;
+  memberUserId: string;
+};
+
+export type LeaveGroupOptions = {
   groupId: string;
   memberUserId: string;
 };
@@ -49,6 +75,7 @@ export type UpdateMemberNicknameOptions = {
 
 type Mutators = ClientMutatorGroup<{
   remove: ClientMutator<RemoveMemberOptions, void>;
+  leave: ClientMutator<LeaveGroupOptions, void>;
   updateNickname: ClientMutator<UpdateMemberNicknameOptions, void>;
 }>;
 
@@ -67,6 +94,36 @@ export const mutators: Mutators = (auth) => ({
     if (group.ownerId === opts.memberUserId) {
       throw new Error("Cannot remove the group owner");
     }
+
+    const participants = await tx.query.participant
+      .where("groupId", opts.groupId)
+      .where("userId", opts.memberUserId)
+      .run();
+
+    for (const participant of participants) {
+      await tx.mutate.participant.delete({
+        expenseId: participant.expenseId,
+        userId: participant.userId,
+      });
+    }
+
+    await tx.mutate.member.delete({
+      groupId: opts.groupId,
+      userId: opts.memberUserId,
+    });
+  },
+
+  // Allow the currently authenticated member to remove themselves from a group
+  leave: async (tx, opts) => {
+    const authenticatedUser = assertIsAuthenticated(auth);
+    const userId = authenticatedUser.userID;
+
+    const group = await getGroup(tx, opts.groupId);
+
+    assertGroupExists(group);
+    await assertMemberExists(tx, opts.groupId, opts.memberUserId);
+    assertMemberIsCurrentUser(userId, opts.memberUserId);
+    assertUserIsNotGroupOwner(group, userId);
 
     const participants = await tx.query.participant
       .where("groupId", opts.groupId)
