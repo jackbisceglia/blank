@@ -650,6 +650,14 @@ export function ExpenseSheet(props: ExpenseSheetProps) {
                 <form.api.AppField
                   name="amount"
                   listeners={{
+                    onBlur: (context) => {
+                      const formatToTwoDecimals = (value: string) =>
+                        pipe(value, parseFloatCustom, toFixed2);
+
+                      context.fieldApi.setValue((previous) =>
+                        formatToTwoDecimals(previous),
+                      );
+                    },
                     onChange: (context) => {
                       const form = context.fieldApi.form;
                       const splits = form.state.values.splits;
