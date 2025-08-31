@@ -1,4 +1,4 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { SubHeading } from "@/components/prose";
 import { GroupBody, SecondaryRow, States } from "./layout";
 import { useGroupById } from "../../@data/groups";
@@ -42,6 +42,7 @@ function useRemoveMemberWithConfirmation(groupId: string | null) {
 
 function useLeaveGroupWithConfirmation(groupId: string) {
   const leave = useLeaveGroup();
+  const navigate = useNavigate();
   const action = useWithConfirmationImperative({
     title: "Leave Group?",
     description: {
@@ -54,6 +55,7 @@ function useLeaveGroupWithConfirmation(groupId: string) {
   });
 
   async function confirm(member: Member) {
+    if (!groupId) return;
     if (!(await action.confirm())) return;
 
     const promise = leave({
@@ -61,7 +63,7 @@ function useLeaveGroupWithConfirmation(groupId: string) {
       memberUserId: member.userId,
     });
 
-    return withToast({
+    const result = await withToast({
       promise,
       notify: {
         loading: "Leaving group...",
@@ -69,6 +71,10 @@ function useLeaveGroupWithConfirmation(groupId: string) {
         error: "Failed to leave group",
       },
     });
+
+    await navigate({ to: "/groups" });
+
+    return result;
   }
 
   return { confirm, dialog: action.dialog };
@@ -78,7 +84,9 @@ function MembersRoute() {
   const params = Route.useParams({ select: (p) => p.slug_id });
   const authentication = useAuthentication();
   const group = useGroupById(params.id);
-  const removeMember = useRemoveMemberWithConfirmation(group.data?.id ?? null);
+
+  const removeMember = useRemoveMemberWithConfirmation(group.data?.id ?? "");
+  const leaveGroup = useLeaveGroupWithConfirmation(group.data?.id ?? "");
 
   const isLoading = group.status === "loading";
 
@@ -87,9 +95,6 @@ function MembersRoute() {
   if (group.status === "not-found") {
     return <States.NotFound title={slugify(params.slug).decode()} />;
   }
-
-  const removeMember = useRemoveMemberWithConfirmation(group.data.id);
-  const leaveGroup = useLeaveGroupWithConfirmation(group.data.id);
 
   const members = group.data?.members as Member[];
   const currentMember = members?.find(
