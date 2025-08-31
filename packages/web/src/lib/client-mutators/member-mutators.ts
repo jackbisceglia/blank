@@ -31,9 +31,26 @@ async function assertMemberExists(
   if (condition) throw new Error(message);
 }
 
-async function assertUserIsGroupOwner(group: Group, userId: string) {
-  if (group.ownerId !== userId) {
-    throw new Error("Only group owners can manage members");
+function assertUserIsGroupOwner(
+  group: Group,
+  userId: string,
+  flip: boolean = false,
+) {
+  const isOwner = group.ownerId === userId;
+  const condition = !flip === !isOwner;
+  const message = !flip
+    ? "Only group owners can manage members"
+    : "Group owners cannot perform this action";
+
+  if (condition) throw new Error(message);
+}
+
+const assertUserIsNotGroupOwner = (group: Group, userId: string) =>
+  assertUserIsGroupOwner(group, userId, true);
+
+function assertMemberIsCurrentUser(userId: string, memberUserId: string) {
+  if (userId !== memberUserId) {
+    throw new Error("Authenticated user does not match member");
   }
 }
 
@@ -44,6 +61,7 @@ export type RemoveMemberOptions = {
 
 export type LeaveGroupOptions = {
   groupId: string;
+  memberUserId: string;
 };
 
 export type UpdateMemberNicknameOptions = {
@@ -99,15 +117,13 @@ export const mutators: Mutators = (auth) => ({
     const group = await getGroup(tx, opts.groupId);
 
     assertGroupExists(group);
-    await assertMemberExists(tx, opts.groupId, userId);
-
-    if (group.ownerId === userId) {
-      throw new Error("Group owners cannot leave their own group");
-    }
+    await assertMemberExists(tx, opts.groupId, opts.memberUserId);
+    assertMemberIsCurrentUser(userId, opts.memberUserId);
+    assertUserIsNotGroupOwner(group, userId);
 
     const participants = await tx.query.participant
       .where("groupId", opts.groupId)
-      .where("userId", userId)
+      .where("userId", opts.memberUserId)
       .run();
 
     for (const participant of participants) {
@@ -117,7 +133,10 @@ export const mutators: Mutators = (auth) => ({
       });
     }
 
-    await tx.mutate.member.delete({ groupId: opts.groupId, userId });
+    await tx.mutate.member.delete({
+      groupId: opts.groupId,
+      userId: opts.memberUserId,
+    });
   },
 
   updateNickname: async (tx, opts) => {

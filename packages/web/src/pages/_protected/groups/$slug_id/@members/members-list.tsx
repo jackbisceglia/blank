@@ -230,7 +230,7 @@ type MemberManagementCardProps = {
   userId: string;
   settle: () => void;
   remove: (member: Member) => Promise<void>;
-  leave: () => Promise<void>;
+  leave: (member: Member) => Promise<void>;
 };
 
 function useEditState(defaultState?: "write" | "read") {
@@ -321,7 +321,7 @@ export function MembersList(props: MemberManagementCardProps) {
             <SelfDropdownMenu
               isOwner={derived.isOwner}
               edit={editing.toggle}
-              leave={props.leave}
+              leave={() => props.leave(member)}
             >
               Manage
             </SelfDropdownMenu>

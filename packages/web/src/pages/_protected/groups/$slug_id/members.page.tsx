@@ -53,10 +53,13 @@ function useLeaveGroupWithConfirmation(groupId: string) {
     confirmVariant: "destructive",
   });
 
-  async function confirm() {
+  async function confirm(member: Member) {
     if (!(await action.confirm())) return;
 
-    const promise = leave({ groupId });
+    const promise = leave({
+      groupId,
+      memberUserId: member.userId,
+    });
 
     return withToast({
       promise,
