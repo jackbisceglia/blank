@@ -17,7 +17,7 @@ async function assertMemberExists(
   tx: ZTransaction,
   groupId: string,
   userId: string,
-  flip: boolean = false, // invert the assertion logic
+  inverted: boolean = false,
 ) {
   const member = await tx.query.member
     .where("groupId", groupId)
@@ -25,8 +25,10 @@ async function assertMemberExists(
     .one()
     .run();
 
-  const condition = !flip === !member;
-  const message = !flip ? "Member not found" : "Member already exists";
+  // if not inverted, then we check if member does not exist and throw
+  // if inverted, we check if member DOES exist and throw
+  const condition = inverted ? !!member : !member;
+  const message = !inverted ? "Member not found" : "Member already exists";
 
   if (condition) throw new Error(message);
 }
@@ -34,13 +36,15 @@ async function assertMemberExists(
 function assertUserIsGroupOwner(
   group: Group,
   userId: string,
-  flip: boolean = false,
+  inverted: boolean = false,
 ) {
   const isOwner = group.ownerId === userId;
-  const condition = !flip === !isOwner;
-  const message = !flip
-    ? "Only group owners can manage members"
-    : "Group owners cannot perform this action";
+
+  const condition = inverted ? isOwner : !isOwner;
+
+  const message = !inverted
+    ? "Only group owner can perform this action"
+    : "Group owner cannot perform this action";
 
   if (condition) throw new Error(message);
 }
