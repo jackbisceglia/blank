@@ -12,6 +12,7 @@ import {
 import { User, UserInsert, userTable } from "./schema";
 import { eq } from "drizzle-orm/sql";
 import { db } from "../../lib/drizzle";
+import { memberTable } from "../member/schema";
 import { organization } from "../organization/entity";
 
 class UserNotFoundError extends TaggedError("UserNotFoundError") {}
@@ -55,6 +56,24 @@ export namespace users {
       Effect.catchTag(
         "UnknownException",
         (e) => new DatabaseReadError("Failed fetching user by id", e),
+      ),
+    );
+  }
+
+  export function getMemberships(userId: string, tx?: Transaction) {
+    return pipe(
+      Effect.tryPromise(() =>
+        (tx ?? db).query.memberTable.findMany({
+          where: eq(memberTable.userId, userId),
+        }),
+      ),
+      Effect.catchTag(
+        "UnknownException",
+        (e) =>
+          new DatabaseReadError(
+            "Failed fetching members by user id",
+            e,
+          ),
       ),
     );
   }

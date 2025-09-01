@@ -5,6 +5,8 @@ import { requireUserAuthenticated, UserAuthorizationError } from "./auth/core";
 import { AuthTokens } from "./utils";
 import { invites } from "@blank/core/modules/invite/entity";
 import { members } from "@blank/core/modules/member/entity";
+import { preferences } from "@blank/core/modules/preference/entity";
+import { users } from "@blank/core/modules/user/entity";
 import { Transaction, withTransaction } from "@blank/core/lib/drizzle/utils";
 import {
   ACTIVE_INVITE_CAPACITY,
@@ -196,6 +198,7 @@ export const joinGroupServerFn = createServerFn()
       return yield* withTransaction(
         Effect.fn("joinGroupTx")(function* (tx) {
           yield* assertUserIsNotAMember(userId, data.groupId, tx);
+          const existingMemberships = yield* users.getMemberships(userId, tx);
 
           yield* assertGroupHasMemberCapacity(data.groupId, tx);
 
@@ -215,6 +218,10 @@ export const joinGroupServerFn = createServerFn()
             },
             tx,
           );
+
+          if (existingMemberships.length === 0) {
+            yield* preferences.upsert(userId, data.groupId, tx);
+          }
 
           yield* invites.updateStatus(token.token, "accepted", tx);
 
