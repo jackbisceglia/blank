@@ -9,7 +9,7 @@ import {
   requireValueExists,
   TaggedError,
 } from "../../lib/effect";
-import { Preference, PreferenceInsert, preferenceTable } from "./schema";
+import { PreferenceInsert, preferenceTable } from "./schema";
 import { eq } from "drizzle-orm/sql";
 import { db } from "../../lib/drizzle";
 
@@ -38,12 +38,6 @@ export namespace preferences {
       Effect.catchTag(
         "UnknownException",
         (e) => new DatabaseReadError("Failed fetching preference by userId", e),
-      ),
-      Effect.catchTag("PreferenceNotFoundError", () =>
-        Effect.succeed({
-          userId,
-          defaultGroupId: null,
-        } satisfies Preference),
       ),
     );
   }
