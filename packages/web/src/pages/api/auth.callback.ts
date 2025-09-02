@@ -1,5 +1,5 @@
 import { openauth } from "@/server/auth/core";
-import { AuthTokens, getBaseUrl } from "@/server/utils";
+import { AuthTokens } from "@/server/utils";
 import {
   createServerFileRoute,
   parseCookies,
@@ -8,22 +8,55 @@ import { Effect } from "effect";
 import { TaggedError } from "@blank/core/lib/effect/index";
 import { capitalizedToSnake } from "@blank/core/lib/utils/index";
 import { redirect } from "@tanstack/react-router";
+import {
+  RETURN_TO_KEY,
+  ROOT,
+  sanitizeReturnTo,
+} from "@/lib/authentication/return-to";
 
 class NoCodeError extends TaggedError("NoCodeError") {}
 class TokenExchangeError extends TaggedError("TokenExchangeError") {}
 
+const appSearchParams = [RETURN_TO_KEY] as const;
+const serverSearchParams = ["code", "state"] as const;
+
+const allSearchParams = [...appSearchParams, ...serverSearchParams];
+
+function createUrlUtils(urlString: string) {
+  const url = new URL(urlString);
+
+  const getAlLSearchParams = () => {
+    return allSearchParams
+      .map((key) => url.searchParams.get(key))
+      .map((search) => search ?? undefined);
+  };
+
+  const stripServerSearchParams = () => {
+    serverSearchParams.forEach((key) => url.searchParams.delete(key));
+  };
+
+  return {
+    url: () => url.toString(),
+    getAlLSearchParams,
+    stripServerSearchParams,
+  };
+}
+
 export const ServerRoute = createServerFileRoute("/api/auth/callback").methods({
   GET: async ({ request }) => {
     const Callback = Effect.gen(function* () {
-      const url = new URL(request.url);
-      const code = url.searchParams.get("code");
+      const utils = createUrlUtils(request.url);
+
+      const [returnTo, code, _] = utils.getAlLSearchParams();
 
       if (!code) {
         return yield* new NoCodeError("Code not found");
       }
 
+      utils.stripServerSearchParams();
+
       const exchanged = yield* Effect.tryPromise(() =>
-        openauth.exchange(code, `${getBaseUrl()}/api/auth/callback`),
+        openauth.exchange(code, utils.url()),
       );
 
       if (exchanged.err) {
@@ -40,7 +73,7 @@ export const ServerRoute = createServerFileRoute("/api/auth/callback").methods({
       return redirect({
         headers: cookies,
         reloadDocument: true,
-        to: "/",
+        to: sanitizeReturnTo(returnTo) ?? ROOT,
         statusCode: 302,
       });
     }).pipe(
