@@ -1,5 +1,5 @@
 import { openauth } from "@/server/auth/core";
-import { AuthTokens } from "@/server/utils";
+import { AuthTokens, getBaseUrl } from "@/server/utils";
 import {
   createServerFileRoute,
   parseCookies,
@@ -22,7 +22,7 @@ const serverSearchParams = ["code", "state"] as const;
 
 const allSearchParams = [...appSearchParams, ...serverSearchParams];
 
-function createUrlUtils(urlString: string) {
+function createRedirectUrlUtils(urlString: string) {
   const url = new URL(urlString);
 
   const getAlLSearchParams = () => {
@@ -35,8 +35,17 @@ function createUrlUtils(urlString: string) {
     serverSearchParams.forEach((key) => url.searchParams.delete(key));
   };
 
+  const createUrl = () => {
+    const baseUrl = getBaseUrl();
+    const restUrl = url.pathname + url.search;
+
+    const mergedUrl = new URL(restUrl, baseUrl);
+
+    return mergedUrl.toString();
+  };
+
   return {
-    url: () => url.toString(),
+    url: createUrl,
     getAlLSearchParams,
     stripServerSearchParams,
   };
@@ -45,7 +54,7 @@ function createUrlUtils(urlString: string) {
 export const ServerRoute = createServerFileRoute("/api/auth/callback").methods({
   GET: async ({ request }) => {
     const Callback = Effect.gen(function* () {
-      const utils = createUrlUtils(request.url);
+      const utils = createRedirectUrlUtils(request.url);
 
       const [returnTo, code, _] = utils.getAlLSearchParams();
 
@@ -54,6 +63,7 @@ export const ServerRoute = createServerFileRoute("/api/auth/callback").methods({
       }
 
       utils.stripServerSearchParams();
+      console.log("redirect: ", utils.url());
 
       const exchanged = yield* Effect.tryPromise(() =>
         openauth.exchange(code, utils.url()),
