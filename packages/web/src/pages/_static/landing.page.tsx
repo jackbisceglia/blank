@@ -11,11 +11,16 @@ import * as v from "valibot";
 
 function LandingRoute() {
   const login = useServerFn(loginRPC);
+  const search = Route.useSearch();
   const [targetPosition, setTargetPosition] = useState({ x: 0, y: 0 });
   const [laggedPosition, setLaggedPosition] = useState({ x: 0, y: 0 });
   const animationRef = useRef<number>(0);
   const windowSizeRef = useRef({ width: 0, height: 0 });
   const data = Route.useLoaderData();
+
+  function handleLogin() {
+    login({ data: { returnTo: search.returnTo } });
+  }
 
   useClientEffect(() => {
     if (toast.getToasts().length > 0) return;
@@ -187,20 +192,13 @@ function LandingRoute() {
 
       <header className="relative z-10 px-8">
         <nav className="flex items-center justify-between py-4 mx-auto w-full max-w-screen-2xl">
-          <Link
-            search={(prev) => ({
-              action: prev.action,
-              ...prev,
-            })}
-            to="/"
-            className="flex items-center gap-2 duration-150"
-          >
+          <Link to="/" className="flex items-center gap-2 duration-150">
             <img src="/blank-logo.svg" className="w-8 h-8" alt="BLANK logo" />
             <span className="text-xl font-semibold tracking-tight">BLANK</span>
           </Link>
           <div className="md:flex items-center gap-8">
             <Button
-              onClick={() => void login()}
+              onClick={handleLogin}
               variant="outline"
               size="sm"
               className="tracking-wide"
@@ -221,10 +219,7 @@ function LandingRoute() {
             handle your expenses without the hassle— as easy as sending a text.
           </p>
           <div className="flex gap-4 w-full text-center md:w-auto my-4">
-            <Button
-              onClick={() => void login()}
-              className="min-w-44 w-full md:w-auto"
-            >
+            <Button onClick={handleLogin} className="min-w-44 w-full md:w-auto">
               Get Started
             </Button>
             <Button
@@ -251,14 +246,15 @@ function LandingRoute() {
   );
 }
 
-const AuthError = v.object({
+const LandingSearch = v.object({
   auth_error: v.optional(v.pipe(v.string(), v.minLength(1))),
+  returnTo: v.optional(v.string()),
 });
 
 export const Route = createFileRoute("/_static/landing/")({
   ssr: true,
   component: LandingRoute,
-  validateSearch: AuthError,
+  validateSearch: LandingSearch,
   loaderDeps: ({ search: { auth_error } }) => ({ auth_error }),
   loader: (ctx) => {
     const { auth_error } = ctx.deps;
