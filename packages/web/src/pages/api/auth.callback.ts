@@ -9,6 +9,7 @@ import { TaggedError } from "@blank/core/lib/effect/index";
 import { capitalizedToSnake } from "@blank/core/lib/utils/index";
 import { redirect } from "@tanstack/react-router";
 import {
+  orElseRoot,
   RETURN_TO_KEY,
   ROOT,
   sanitizeReturnTo,
@@ -63,7 +64,6 @@ export const ServerRoute = createServerFileRoute("/api/auth/callback").methods({
       }
 
       utils.stripServerSearchParams();
-      console.log("redirect: ", utils.url());
 
       const exchanged = yield* Effect.tryPromise(() =>
         openauth.exchange(code, utils.url()),
@@ -80,10 +80,12 @@ export const ServerRoute = createServerFileRoute("/api/auth/callback").methods({
 
       const cookies = parseCookies();
 
+      const to = yield* sanitizeReturnTo(returnTo);
+
       return redirect({
         headers: cookies,
         reloadDocument: true,
-        to: sanitizeReturnTo(returnTo) ?? ROOT,
+        to: to.pipe(orElseRoot),
         statusCode: 302,
       });
     }).pipe(

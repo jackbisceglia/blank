@@ -10,7 +10,9 @@ import {
   sanitizeReturnTo,
   ROOT,
   RETURN_TO_KEY,
+  orElseRoot,
 } from "@/lib/authentication/return-to";
+import { Effect } from "effect";
 
 const inputs = { login: v.object({ returnTo: v.optional(v.string()) }) };
 
@@ -23,7 +25,9 @@ export const loginRPC = createServerFn()
   .handler(async function ({ data }) {
     const { access, refresh } = AuthTokens.cookies.get();
 
-    const returnTo = sanitizeReturnTo(data?.returnTo) ?? ROOT;
+    const returnTo = sanitizeReturnTo(data?.returnTo)
+      .pipe(Effect.runSync)
+      .pipe(orElseRoot);
 
     if (access) {
       const verified = await openauth.verify(subjects, access, {
