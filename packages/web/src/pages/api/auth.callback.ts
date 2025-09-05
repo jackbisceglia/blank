@@ -11,7 +11,6 @@ import { redirect } from "@tanstack/react-router";
 import {
   orElseRoot,
   RETURN_TO_KEY,
-  ROOT,
   sanitizeReturnTo,
 } from "../../server/auth/return-to";
 

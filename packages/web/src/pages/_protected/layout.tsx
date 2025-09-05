@@ -266,9 +266,6 @@ export const Route = createFileRoute("/_protected")({
   pendingComponent: () => (
     <Loading whatIsLoading="workspace" className="h-screen m-auto" />
   ),
-  // TODO: need to figure out how to tie down 'template' to 'new-group', otherwise there's no way to conveniently manage this
-  // another option is to update search routes to allow 'sibling keys' which they will handle cleanup for, but do not open
-  // or perhaps the opening could be a parameter as well
   validateSearch: v.object({
     action: v.optional(
       v.array(

@@ -28,7 +28,14 @@ function AccountRoute() {
 export const Route = createFileRoute("/_protected/account/")({
   component: AccountRoute,
   loader: async ({ context }) => {
-    await context.queryClient.ensureQueryData(userPreferencesQueryOptions());
+    // TODO: fix preloading
+    // currently the auth check rejects on returnTo /account
+    // not a massive deal for now, retry button resolves immediately afterwards
+    // try/catch is a workaround for now that stops error from hitting the ui
+    // --> (same problem is on /group/settings as well)
+    try {
+      context.queryClient.ensureQueryData(userPreferencesQueryOptions());
+    } catch {}
 
     return { crumb: "Account" };
   },

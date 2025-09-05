@@ -13,6 +13,7 @@ import {
 } from "@/server/preferences.route";
 import { Suspense } from "react";
 import { key, useInvalidate } from "@/lib/query";
+import { Loading } from "@/components/loading";
 
 type Data = { defaultGroupId: string };
 
@@ -105,6 +106,9 @@ function AppPreferencesForm() {
 }
 
 export function AppPreferencesCard() {
+  // temp solution until a proper skeleton is added
+  const fallback = <Loading omitBaseText className="my-4" />;
+
   return (
     <div className="border p-4 flex flex-col gap-3 h-full">
       <div>
@@ -114,7 +118,7 @@ export function AppPreferencesCard() {
         </p>
       </div>
 
-      <Suspense>
+      <Suspense fallback={fallback}>
         <AppPreferencesForm />
       </Suspense>
     </div>
