@@ -5,6 +5,7 @@ import { useQuery } from "@tanstack/react-query";
 import { authenticationQueryOptions } from ".";
 import { usePreserveReturnTo } from "./use-return-to";
 
+
 export function AuthProvider({ children }: { children: ReactNode }) {
   const query = useQuery(authenticationQueryOptions());
   const returnTo = usePreserveReturnTo();
