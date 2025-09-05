@@ -11,9 +11,9 @@ import { redirect } from "@tanstack/react-router";
 import {
   orElseRoot,
   RETURN_TO_KEY,
-  ROOT,
   sanitizeReturnTo,
-} from "@/lib/authentication/return-to";
+} from "../../server/auth/return-to";
+
 
 class NoCodeError extends TaggedError("NoCodeError") {}
 class TokenExchangeError extends TaggedError("TokenExchangeError") {}

@@ -3,7 +3,8 @@ import { Navigate } from "@tanstack/react-router";
 import { LoadingDelayed } from "@/components/loading";
 import { useQuery } from "@tanstack/react-query";
 import { authenticationQueryOptions } from ".";
-import { usePreserveReturnTo } from "./return-to";
+import { usePreserveReturnTo } from "./use-return-to";
+
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const query = useQuery(authenticationQueryOptions());

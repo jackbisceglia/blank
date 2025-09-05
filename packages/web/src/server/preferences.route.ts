@@ -4,7 +4,6 @@ import * as v from "valibot";
 import { requireUserAuthenticated } from "./auth/core";
 import { AuthTokens } from "./utils";
 import { preferences } from "@blank/core/modules/preference/entity";
-import { Preference } from "@blank/core/modules/preference/schema";
 
 const inputs = {
   updateDefaultGroup: v.object({
@@ -17,22 +16,20 @@ const inputs = {
 
 export const getUserPreferencesServerFn = createServerFn().handler(
   async function () {
-    const handler = Effect.fn("getUserPreferences")(function* () {
-      const auth = yield* requireUserAuthenticated(AuthTokens.cookies);
+    const handler = Effect.fn("getUserPreferences")(
+      function* () {
+        const auth = yield* requireUserAuthenticated(AuthTokens.cookies);
 
-      const userId = auth.subject.properties.userID;
+        const userId = auth.subject.properties.userID;
 
-      const defaultGroupId = yield* preferences
-        .getByUserId(userId)
-        .pipe(Effect.map((record) => record.defaultGroupId))
-        .pipe(
-          Effect.catchTag("PreferenceNotFoundError", () =>
-            Effect.succeed(null),
-          ),
-        );
+        const prefs = yield* preferences.getByUserId(userId);
 
-      return { defaultGroupId };
-    });
+        return { defaultGroupId: prefs.defaultGroupId };
+      },
+      Effect.catchTag("PreferenceNotFoundError", () =>
+        Effect.succeed({ defaultGroupId: null }),
+      ),
+    );
 
     return pipe(handler(), Effect.runPromise);
   },
