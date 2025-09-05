@@ -6,12 +6,7 @@ import { authenticate, openauth } from "@/server/auth/core";
 import { AuthTokens, getBaseUrl } from "@/server/utils";
 import { evaluate } from "@/lib/utils";
 import { optional } from "@blank/core/lib/utils/index";
-import {
-  sanitizeReturnTo,
-  ROOT,
-  RETURN_TO_KEY,
-  orElseRoot,
-} from "@/lib/authentication/return-to";
+import { sanitizeReturnTo, ROOT, RETURN_TO_KEY, orElseRoot } from "./return-to";
 import { Effect } from "effect";
 
 const inputs = { login: v.object({ returnTo: v.optional(v.string()) }) };

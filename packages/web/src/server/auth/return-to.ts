@@ -1,4 +1,3 @@
-import { useRouter } from "@tanstack/react-router";
 import { Effect, Schema as S, Option } from "effect";
 import p from "node:path";
 
@@ -11,16 +10,6 @@ export const orElseRoot = Option.getOrElse(() => ROOT);
 const annotate = (message: string) => ({
   message: () => `ReturnTo path ${message}`,
 });
-
-export function usePreserveReturnTo() {
-  const { pathname, searchStr, hash } = useRouter().state.location;
-  const fullpath = [pathname, searchStr, hash].join("");
-
-  // no need to set the search param if it's just the root, it clutters the url
-  if (fullpath === "/") return undefined;
-
-  return fullpath;
-}
 
 export const sanitizeReturnTo = Effect.fn("sanitizeReturnTo")(function* (
   path?: string,
