@@ -70,10 +70,10 @@ export namespace nl {
             }),
           ),
         }),
-        llm: v.object({
-          expense: expenseSchema,
+        llm: v.strictObject({
+          expense: v.strictObject(expenseSchema.entries),
           members: v.array(
-            v.object({
+            v.strictObject({
               ...memberSchemaBase.entries,
               split: llmSplit,
             }),

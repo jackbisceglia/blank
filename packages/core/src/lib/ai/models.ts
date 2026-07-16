@@ -29,6 +29,12 @@ export const models = {
   // openai
   "pro.gpt-4o": () => providers.openai("gpt-4o"),
   "pro.gpt-4.1": () => providers.openai("gpt-4.1"),
+  "pro.gpt-5.4-nano": () =>
+    providers.openai("gpt-5.4-nano-2026-03-17", {
+      structuredOutputs: true,
+      // This SDK version predates `none`, but passes the value through unchanged.
+      reasoningEffort: "none" as "low",
+    }),
   "mini.gpt-4o-mini": () => providers.openai("gpt-4o-mini"),
   "mini.gpt-4.1-mini": () => providers.openai("gpt-4.1-mini"),
   "mini.gpt-4.1-nano": () => providers.openai("gpt-4.1-nano"),

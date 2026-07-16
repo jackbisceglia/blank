@@ -180,8 +180,8 @@ export namespace expenses {
               ...(shouldUseMultiModal
                 ? {
                     models: {
-                      fast: "mini.gpt-4.1-mini",
-                      quality: "pro.gpt-4.1",
+                      fast: "pro.gpt-5.4-nano",
+                      quality: "pro.gpt-5.4-nano",
                     },
                   }
                 : {}),
