@@ -4,6 +4,7 @@ import * as v from "valibot";
 import { requireUserAuthenticated } from "./auth/core";
 import { AuthTokens } from "./utils";
 import { preferences } from "@blank/core/modules/preference/entity";
+import { members } from "@blank/core/modules/member/entity";
 
 const inputs = {
   updateDefaultGroup: v.object({
@@ -35,13 +36,14 @@ export const getUserPreferencesServerFn = createServerFn().handler(
   },
 );
 
-export const updateDefaultGroupServerFn = createServerFn()
+export const updateDefaultGroupServerFn = createServerFn({ method: "POST" })
   .validator(inputs.updateDefaultGroup)
   .handler(async function ({ data }) {
     const handler = Effect.fn("updateDefaultGroup")(function* () {
       const auth = yield* requireUserAuthenticated(AuthTokens.cookies);
 
       const userId = auth.subject.properties.userID;
+      yield* members.get(userId, data.defaultGroupId);
 
       const updatedPreferences = yield* preferences.upsert(
         userId,

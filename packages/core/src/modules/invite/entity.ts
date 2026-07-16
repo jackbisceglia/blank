@@ -78,6 +78,7 @@ export namespace invites {
 
   export function updateStatus(
     token: string,
+    groupId: string,
     status: "pending" | "accepted" | "expired",
     tx?: Transaction,
   ) {
@@ -89,7 +90,9 @@ export namespace invites {
             status,
             acceptedAt: status === "accepted" ? new Date() : null,
           })
-          .where(eq(inviteTable.token, token))
+          .where(
+            and(eq(inviteTable.token, token), eq(inviteTable.groupId, groupId)),
+          )
           .returning(),
       ),
       Effect.flatMap(

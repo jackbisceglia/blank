@@ -53,7 +53,9 @@ export const loginRPC = createServerFn()
     throw redirect({ href: url });
   });
 
-export const logoutRPC = createServerFn().handler(function () {
-  AuthTokens.cookies.delete();
-  throw redirect({ to: "/landing", reloadDocument: true });
-});
+export const logoutRPC = createServerFn({ method: "POST" }).handler(
+  function () {
+    AuthTokens.cookies.delete();
+    throw redirect({ to: "/landing", reloadDocument: true });
+  },
+);

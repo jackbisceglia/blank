@@ -24,6 +24,20 @@ export function assertIsAuthenticated(auth: OpenAuthToken | undefined) {
   return auth;
 }
 
+export async function assertUserIsGroupMember(
+  tx: ZTransaction,
+  groupId: string,
+  userId: string,
+) {
+  const member = await tx.query.member
+    .where("groupId", groupId)
+    .where("userId", userId)
+    .one()
+    .run();
+
+  if (!member) throw new Error("Must be a group member to perform this action");
+}
+
 export function createClientMutators(auth: OpenAuthToken | undefined) {
   return {
     expense: expenseMutators(auth),

@@ -1,6 +1,11 @@
-import { Participant } from "@blank/zero";
+import { Expense, Participant } from "@blank/zero";
 import { Prettify } from "@blank/core/lib/utils/index";
-import { assertIsAuthenticated, ClientMutator, ClientMutatorGroup } from ".";
+import {
+  assertIsAuthenticated,
+  assertUserIsGroupMember,
+  ClientMutator,
+  ClientMutatorGroup,
+} from ".";
 
 export type UpdateParticipant = Prettify<
   Required<Pick<Participant, "userId" | "expenseId">> &
@@ -20,16 +25,32 @@ type Mutators = ClientMutatorGroup<{
   updateMany: ClientMutator<UpdateManyOptions, void>;
 }>;
 
+function assertExpenseExists(
+  expense: Expense | undefined,
+): asserts expense is Expense {
+  if (!expense) throw new Error("Expense not found");
+}
+
 export const mutators: Mutators = (auth) => ({
   update: async (tx, opts) => {
-    assertIsAuthenticated(auth);
+    const authed = assertIsAuthenticated(auth);
 
-    const { expenseId, userId, ...rest } = opts.participant;
+    const expense = await tx.query.expense
+      .where("id", opts.participant.expenseId)
+      .one()
+      .run();
+
+    assertExpenseExists(expense);
+
+    await assertUserIsGroupMember(tx, expense.groupId, authed.userID);
+
+    const { expenseId, userId, role, split } = opts.participant;
 
     await tx.mutate.participant.update({
       expenseId,
       userId,
-      ...rest,
+      ...(role !== undefined ? { role } : {}),
+      ...(split !== undefined ? { split } : {}),
     });
   },
   updateMany: async (tx, opts) => {
