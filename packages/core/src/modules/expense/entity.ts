@@ -168,13 +168,16 @@ export namespace expenses {
     const create = Effect.gen(function* () {
       const members = yield* groups.getMembers(options.groupId);
 
+      const shouldUseMultiModal =
+        options.parser === "pro" && (options.images ?? []).length > 0;
+
       const generated = yield* Effect.tryPromise({
         try: () =>
           unwrapOrThrow(
             nl.expense.parse({
               description: options.description,
               ...optional({ images: options.images }),
-              ...(options.parser === "pro"
+              ...(shouldUseMultiModal
                 ? {
                     models: {
                       fast: "pro.gpt-5.4-nano",
