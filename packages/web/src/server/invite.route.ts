@@ -140,7 +140,7 @@ export const getInvitesByGroupServerFn = createServerFn()
     return pipe(handler(), Effect.runPromise);
   });
 
-export const createGroupInviteServerFn = createServerFn()
+export const createGroupInviteServerFn = createServerFn({ method: "POST" })
   .validator(inputs.createInviteToken)
   .handler(async function ({ data }) {
     const handler = Effect.fn("createGroupInvite")(function* () {
@@ -165,7 +165,7 @@ export const createGroupInviteServerFn = createServerFn()
     return pipe(handler(), Effect.runPromise);
   });
 
-export const revokeInviteServerFn = createServerFn()
+export const revokeInviteServerFn = createServerFn({ method: "POST" })
   .validator(inputs.revokeInvite)
   .handler(async function ({ data }) {
     const handler = Effect.fn("revokeInvite")(function* () {
@@ -177,7 +177,12 @@ export const revokeInviteServerFn = createServerFn()
         Effect.fn("revokeInviteTx")(function* (tx) {
           yield* assertUserIsOwner(data.groupId, userId, "revoke invite", tx);
 
-          return yield* invites.updateStatus(data.token, "expired", tx);
+          return yield* invites.updateStatus(
+            data.token,
+            data.groupId,
+            "expired",
+            tx,
+          );
         }),
       );
 
@@ -187,7 +192,7 @@ export const revokeInviteServerFn = createServerFn()
     return pipe(handler(), Effect.runPromise);
   });
 
-export const joinGroupServerFn = createServerFn()
+export const joinGroupServerFn = createServerFn({ method: "POST" })
   .validator(inputs.joinGroup)
   .handler(async function ({ data }) {
     const handler = Effect.fn("joinGroup")(function* () {
@@ -223,7 +228,12 @@ export const joinGroupServerFn = createServerFn()
             yield* preferences.upsert(userId, data.groupId, tx);
           }
 
-          yield* invites.updateStatus(token.token, "accepted", tx);
+          yield* invites.updateStatus(
+            token.token,
+            token.groupId,
+            "accepted",
+            tx,
+          );
 
           return member;
         }),

@@ -93,7 +93,7 @@ export const meRPC2 = createServerFn().handler(async function () {
   return Effect.runPromise(result);
 });
 
-export const updateUserServerFn = createServerFn()
+export const updateUserServerFn = createServerFn({ method: "POST" })
   .validator(inputs.updateUser)
   .handler(async function ({ data }) {
     const handler = Effect.fn("updateUser")(function* () {

@@ -1,5 +1,5 @@
 import { createServerFn } from "@tanstack/react-start";
-import { expenses, users } from "@blank/core/modules";
+import { expenses, members, users } from "@blank/core/modules";
 import {
   requireUserAuthenticated,
   UserAuthorizationError,
@@ -39,6 +39,7 @@ export const createFromDescriptionServerFn = createServerFn({
       const auth = yield* requireUserAuthenticated(AuthTokens.cookies);
 
       const user = yield* users.getById(auth.subject.properties.userID);
+      yield* members.get(user.id, ctx.data.groupId);
 
       if (ctx.data.images.length > 0) {
         yield* assertHasImageContextPerms(user);

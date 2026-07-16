@@ -1,6 +1,7 @@
 import { Expense } from "@blank/zero";
 import {
   assertIsAuthenticated,
+  assertUserIsGroupMember,
   ClientMutator,
   ClientMutatorGroup,
   ZTransaction,
@@ -53,17 +54,23 @@ type Mutators = ClientMutatorGroup<{
 
 export const mutators: Mutators = (auth) => ({
   update: async (tx, opts) => {
-    assertIsAuthenticated(auth);
+    const authed = assertIsAuthenticated(auth);
 
     const expense = await assertExpenseExists(tx, opts.expenseId);
+    await assertUserIsGroupMember(tx, expense.groupId, authed.userID);
 
     if (opts.updates.expense.status) {
       assertExpenseHasValidSplit(expense as ExpenseWithParticipants);
     }
 
+    const { amount, date, description, status } = opts.updates.expense;
+
     await tx.mutate.expense.update({
       id: opts.expenseId,
-      ...opts.updates.expense,
+      ...(amount !== undefined ? { amount } : {}),
+      ...(date !== undefined ? { date } : {}),
+      ...(description !== undefined ? { description } : {}),
+      ...(status !== undefined ? { status } : {}),
     });
 
     if (!opts.updates.participants) return;
@@ -78,9 +85,10 @@ export const mutators: Mutators = (auth) => ({
     return;
   },
   delete: async (tx, opts) => {
-    assertIsAuthenticated(auth);
+    const authed = assertIsAuthenticated(auth);
 
-    await assertExpenseExists(tx, opts.expenseId);
+    const expense = await assertExpenseExists(tx, opts.expenseId);
+    await assertUserIsGroupMember(tx, expense.groupId, authed.userID);
 
     await tx.mutate.expense.delete({ id: opts.expenseId });
 
@@ -96,7 +104,8 @@ export const mutators: Mutators = (auth) => ({
     }
   },
   deleteByGroupId: async (tx, opts) => {
-    assertIsAuthenticated(auth);
+    const authed = assertIsAuthenticated(auth);
+    await assertUserIsGroupMember(tx, opts.groupId, authed.userID);
 
     const expenses = await tx.query.expense
       .where("groupId", opts.groupId)
@@ -107,7 +116,8 @@ export const mutators: Mutators = (auth) => ({
     }
   },
   bulkSettle: async (tx, opts) => {
-    assertIsAuthenticated(auth);
+    const authed = assertIsAuthenticated(auth);
+    await assertUserIsGroupMember(tx, opts.groupId, authed.userID);
 
     const expenses = await tx.query.expense
       .where("groupId", opts.groupId)

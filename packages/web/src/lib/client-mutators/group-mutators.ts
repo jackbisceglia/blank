@@ -1,4 +1,5 @@
 import { GroupInsert } from "@blank/core/modules/group/schema";
+import { Group } from "@blank/zero";
 import {
   assertIsAuthenticated,
   ClientMutator,
@@ -41,6 +42,12 @@ const assertGroupExists = async (tx: ZTransaction, groupId: string) => {
   return group;
 };
 
+const assertUserOwnsGroup = (group: Group, userId: string) => {
+  if (group.ownerId !== userId) {
+    throw new Error("Only the group owner can perform this action");
+  }
+};
+
 type CreateOptions = Prettify<
   Pick<GroupInsert, "description" | "title"> & {
     id: string;
@@ -61,8 +68,6 @@ type Mutators = ClientMutatorGroup<{
 
 export const mutators: Mutators = (auth) => ({
   create: async (tx, opts) => {
-    const { nickname, ...rest } = opts;
-
     const authed = assertIsAuthenticated(auth);
 
     const groupsUserBelongsTo = await tx.query.group
@@ -73,40 +78,45 @@ export const mutators: Mutators = (auth) => ({
     await assertUserCanJoinGroup(groupsUserBelongsTo.length);
 
     await tx.mutate.group.insert({
+      id: opts.id,
       ownerId: authed.userID,
       createdAt: Date.now(),
       slug: slugify(opts.title).encode(),
-      ...rest,
+      title: opts.title,
+      description: opts.description,
     });
 
     await tx.mutate.member.insert({
       groupId: opts.id,
       userId: authed.userID,
-      nickname,
+      nickname: opts.nickname,
     });
 
     if (groupsUserBelongsTo.length === 0) {
       await tx.mutate.preference.upsert({
         userId: authed.userID,
-        defaultGroupId: rest.id,
+        defaultGroupId: opts.id,
       });
     }
   },
   update: async (tx, opts) => {
-    assertIsAuthenticated(auth);
+    const authed = assertIsAuthenticated(auth);
 
-    await assertGroupExists(tx, opts.groupId);
+    const group = await assertGroupExists(tx, opts.groupId);
+    assertUserOwnsGroup(group, authed.userID);
 
     await tx.mutate.group.update({
       id: opts.groupId,
       slug: slugify(opts.updates.title).encode(),
-      ...opts.updates,
+      title: opts.updates.title,
+      description: opts.updates.description,
     });
   },
   delete: async (tx, opts) => {
     const authed = assertIsAuthenticated(auth);
 
-    await assertGroupExists(tx, opts.groupId);
+    const group = await assertGroupExists(tx, opts.groupId);
+    assertUserOwnsGroup(group, authed.userID);
 
     await tx.mutate.group.delete({ id: opts.groupId });
 
