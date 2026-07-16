@@ -177,8 +177,8 @@ export namespace expenses {
               ...(options.parser === "pro"
                 ? {
                     models: {
-                      fast: "pro.gpt-5.6-luna",
-                      quality: "pro.gpt-5.6-luna",
+                      fast: "pro.gpt-5.4-nano",
+                      quality: "pro.gpt-5.4-nano",
                     },
                   }
                 : {}),

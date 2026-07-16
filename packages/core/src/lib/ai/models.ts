@@ -29,8 +29,8 @@ export const models = {
   // openai
   "pro.gpt-4o": () => providers.openai("gpt-4o"),
   "pro.gpt-4.1": () => providers.openai("gpt-4.1"),
-  "pro.gpt-5.6-luna": () =>
-    providers.openai("gpt-5.6-luna", {
+  "pro.gpt-5.4-nano": () =>
+    providers.openai("gpt-5.4-nano-2026-03-17", {
       structuredOutputs: true,
       // This SDK version predates `none`, but passes the value through unchanged.
       reasoningEffort: "none" as "low",
